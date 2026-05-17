@@ -3,9 +3,8 @@ import app from "./app";
 import mongoose from "mongoose";
 import http from "http";
 import config from "./app/config";
-import { seedSuperAdmin } from "./app/modules/auth/auth.seed";
+import { seedAdmin } from "./app/modules/auth/auth.seed";
 import { initSocket } from "./app/socket/socket";
-import { SlotJobs } from "./app/modules/slot/slot.jobs";
 
 let server: Server;
 
@@ -16,9 +15,7 @@ async function main() {
 
         initSocket(server);
 
-        seedSuperAdmin();
-
-        SlotJobs.initializeAllJobs();
+        seedAdmin();
 
         server.listen(Number(config.port), config.ip, () => {
             console.log(`✅ App listening on port ${config.port} on ${config.ip}`);
