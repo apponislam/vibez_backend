@@ -1,0 +1,47 @@
+import mongoose from "mongoose";
+import { TErrorSources, TGenericErrorResponse } from "../types/error";
+
+// const handleValidationError = (err: mongoose.Error.ValidationError): TGenericErrorResponse => {
+//     const errorSources: TErrorSources = Object.values(err.errors).map((val: mongoose.Error.ValidatorError | mongoose.Error.CastError) => {
+//         return {
+//             path: val?.path,
+//             message: val?.message,
+//         };
+//     });
+
+//     const statusCode = 400;
+
+//     return {
+//         statusCode,
+//         message: "Validation Error",
+//         errorSources,
+//     };
+// };
+
+// const handleValidationError = (err: mongoose.Error.ValidationError): TGenericErrorResponse => {
+//     const errorSources: TErrorSources = Object.values(err.errors).map((val: mongoose.Error.ValidatorError | mongoose.Error.CastError) => ({
+//         path: val?.path,
+//         message: val?.message,
+//     }));
+
+//     return {
+//         statusCode: 400,
+//         message: err.message,
+//         errorSources,
+//     };
+// };
+
+const handleValidationError = (err: mongoose.Error.ValidationError): TGenericErrorResponse => {
+    const errorSources: TErrorSources = Object.values(err.errors).map((val: mongoose.Error.ValidatorError | mongoose.Error.CastError) => ({
+        path: val.path,
+        message: val.message,
+    }));
+
+    return {
+        statusCode: 400,
+        message: errorSources[0]?.message || "Validation Error",
+        errorSources,
+    };
+};
+
+export default handleValidationError;

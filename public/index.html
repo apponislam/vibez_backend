@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Educate | Backend Engine</title>
+
+        <link rel="icon" type="image/png" href="/favicon.png" />
+        <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%230A47C2%22/><text y=%22.9em%22 x=%22.1em%22 font-size=%2270%22 font-weight=%22800%22 fill=%22white%22 font-family=%22Outfit%22>E</text></svg>" />
+        <link rel="apple-touch-icon" href="/favicon.png" />
+
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;800&display=swap" rel="stylesheet" />
+
+        <style>
+            :root {
+                --brand: #0a47c2;
+                --brand-glow: rgba(10, 71, 194, 0.4);
+                --bg: #02040a;
+                --surface: rgba(255, 255, 255, 0.03);
+                --border: rgba(255, 255, 255, 0.08);
+                --text-main: #ffffff;
+                --text-dim: #94a3b8;
+            }
+
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family: "Outfit", sans-serif;
+                background-color: var(--bg);
+                color: var(--text-main);
+                min-height: 100vh;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                overflow-x: hidden;
+                padding: 2rem 1rem;
+            }
+
+            /* Ultra-Modern Moving Mesh Background */
+            .mesh-container {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: -1;
+                overflow: hidden;
+            }
+
+            .mesh-blob {
+                position: absolute;
+                width: 600px;
+                height: 600px;
+                border-radius: 50%;
+                filter: blur(120px);
+                opacity: 0.15;
+                animation: float 20s infinite alternate ease-in-out;
+            }
+
+            .blob-1 {
+                background: var(--brand);
+                top: -10%;
+                left: -10%;
+            }
+            .blob-2 {
+                background: #4f46e5;
+                bottom: -10%;
+                right: -10%;
+                animation-delay: -5s;
+            }
+            .blob-3 {
+                background: #0ea5e9;
+                top: 40%;
+                left: 30%;
+                width: 300px;
+                height: 300px;
+                animation-delay: -10s;
+            }
+
+            @keyframes float {
+                from {
+                    transform: translate(0, 0) scale(1);
+                }
+                to {
+                    transform: translate(10%, 10%) scale(1.1);
+                }
+            }
+
+            .content-wrapper {
+                width: 100%;
+                max-width: 800px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 4rem;
+                z-index: 1;
+            }
+
+            /* Logo Section */
+            .brand {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                opacity: 0.9;
+            }
+
+            .brand-mark {
+                width: 40px;
+                height: 40px;
+                background: var(--brand);
+                border-radius: 12px;
+                box-shadow: 0 0 30px var(--brand-glow);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 800;
+                font-size: 1.2rem;
+            }
+
+            .brand-name {
+                font-size: 1.5rem;
+                font-weight: 800;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+            }
+
+            /* Main Status Section */
+            .hero {
+                text-align: center;
+            }
+
+            .status-badge {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.75rem;
+                padding: 0.75rem 1.5rem;
+                background: var(--surface);
+                border: 1px solid var(--border);
+                border-radius: 100px;
+                margin-bottom: 2rem;
+                font-weight: 600;
+                font-size: 0.85rem;
+                letter-spacing: 0.05em;
+                color: #22d3ee;
+            }
+
+            .pulse {
+                width: 10px;
+                height: 10px;
+                background: #22d3ee;
+                border-radius: 50%;
+                box-shadow: 0 0 15px #22d3ee;
+                animation: pulse 2s infinite;
+            }
+
+            @keyframes pulse {
+                0% {
+                    transform: scale(1);
+                    opacity: 1;
+                }
+                50% {
+                    transform: scale(1.3);
+                    opacity: 0.5;
+                }
+                100% {
+                    transform: scale(1);
+                    opacity: 1;
+                }
+            }
+
+            h1 {
+                font-size: clamp(3.5rem, 12vw, 7rem);
+                font-weight: 800;
+                line-height: 0.9;
+                letter-spacing: -0.04em;
+                margin-bottom: 1.5rem;
+                background: linear-gradient(to bottom, #fff, rgba(255, 255, 255, 0.4));
+                background-clip: text;
+                -webkit-text-fill-color: transparent;
+            }
+
+            .hero p {
+                color: var(--text-dim);
+                font-size: 1.1rem;
+                max-width: 500px;
+                margin: 0 auto;
+                line-height: 1.6;
+            }
+
+            /* Responsive Info Bar */
+            .info-bar {
+                width: 100%;
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 2rem;
+                padding: 2.5rem;
+                background: var(--surface);
+                backdrop-filter: blur(20px);
+                border: 1px solid var(--border);
+                border-radius: 32px;
+            }
+
+            .info-item {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .info-item label {
+                font-size: 0.7rem;
+                text-transform: uppercase;
+                color: var(--brand);
+                font-weight: 800;
+                letter-spacing: 0.1em;
+            }
+
+            .info-item span {
+                font-size: 1.1rem;
+                font-weight: 600;
+            }
+
+            #uptime {
+                font-family: monospace;
+                color: #22d3ee;
+            }
+
+            /* Mobile-Specific Adjustments */
+            @media (max-width: 768px) {
+                body {
+                    padding: 4rem 1.5rem;
+                    justify-content: flex-start;
+                }
+                .content-wrapper {
+                    gap: 3rem;
+                }
+                .info-bar {
+                    grid-template-columns: 1fr;
+                    gap: 1.5rem;
+                    padding: 2rem;
+                    text-align: center;
+                }
+                .info-item {
+                    align-items: center;
+                }
+                h1 {
+                    font-size: 4rem;
+                }
+            }
+
+            footer {
+                margin-top: 4rem;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 0.5rem;
+                color: var(--text-dim);
+                font-size: 0.8rem;
+                font-weight: 500;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="mesh-container">
+            <div class="mesh-blob blob-1"></div>
+            <div class="mesh-blob blob-2"></div>
+            <div class="mesh-blob blob-3"></div>
+        </div>
+
+        <div class="content-wrapper">
+            <header class="brand">
+                <div class="brand-mark">E</div>
+                <div class="brand-name">Educate</div>
+            </header>
+
+            <main class="hero">
+                <div class="status-badge">
+                    <div class="pulse"></div>
+                    ENGINE_OPERATIONAL
+                </div>
+                <h1>Live.</h1>
+                <p>Advanced high-performance backend infrastructure for the Educate platform.</p>
+            </main>
+
+            <div class="info-bar">
+                <div class="info-item">
+                    <label>Environment</label>
+                    <span>Production</span>
+                </div>
+                <div class="info-item">
+                    <label>Network_Port</label>
+                    <span>5000</span>
+                </div>
+                <div class="info-item">
+                    <label>Uptime</label>
+                    <span id="running-time">00:00:00</span>
+                </div>
+            </div>
+
+            <footer>
+                <p>&copy; <span id="year"></span> EDUCATE PLATFORM</p>
+                <p style="opacity: 0.5; font-size: 0.7rem">BUILD_STABLE: 1.0.0</p>
+            </footer>
+        </div>
+
+        <script>
+            document.getElementById("year").textContent = new Date().getFullYear();
+
+            // Real-time Clock tracker
+            function updateClock() {
+                const now = new Date();
+                const h = now.getHours().toString().padStart(2, "0");
+                const m = now.getMinutes().toString().padStart(2, "0");
+                const s = now.getSeconds().toString().padStart(2, "0");
+                document.getElementById("running-time").textContent = `${h}:${m}:${s}`;
+            }
+
+            updateClock();
+            setInterval(updateClock, 1000);
+        </script>
+    </body>
+</html>
