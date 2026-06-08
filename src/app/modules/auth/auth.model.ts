@@ -34,6 +34,11 @@ const UserSchema = new Schema<User>(
             required: true,
         },
 
+        staffRole: {
+            type: String,
+            enum: ["MANAGER", "CASHIER", "WAITER"],
+        },
+
         phone: {
             type: String,
         },

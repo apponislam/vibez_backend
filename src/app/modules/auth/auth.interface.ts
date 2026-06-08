@@ -1,12 +1,14 @@
 import { Types } from "mongoose";
 
 export type UserRole = "ADMIN" | "RESTAURANT_OWNER" | "USER" | "STAFF";
+export type StaffRole = "MANAGER" | "CASHIER" | "WAITER";
 
 export interface User {
     name: string;
     email: string;
     password: string;
     role: UserRole;
+    staffRole?: StaffRole;
     phone?: string;
     profileImage?: string;
     location?: {
