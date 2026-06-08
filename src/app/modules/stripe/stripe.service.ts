@@ -14,7 +14,7 @@ const createPaymentIntent = async (amount: number, currency: string = "usd") => 
     return paymentIntent;
 };
 
-const createCheckoutSession = async (priceId: string, successUrl: string, cancelUrl: string, customerEmail?: string) => {
+const createCheckoutSession = async (priceId: string, successUrl: string, cancelUrl: string, customerEmail?: string, metadata?: Record<string, string>) => {
     const session = await stripe.checkout.sessions.create({
         payment_method_types: ["card"],
         line_items: [
@@ -27,6 +27,7 @@ const createCheckoutSession = async (priceId: string, successUrl: string, cancel
         success_url: successUrl,
         cancel_url: cancelUrl,
         customer_email: customerEmail,
+        metadata,
     });
     return session;
 };
@@ -46,10 +47,26 @@ const createPrice = async (productId: string, amount: number, currency: string =
     return price;
 };
 
+const cancelSubscription = async (subscriptionId: string) => {
+    const subscription = await stripe.subscriptions.update(subscriptionId, {
+        cancel_at_period_end: true,
+    });
+    return subscription;
+};
+
+const resumeSubscription = async (subscriptionId: string) => {
+    const subscription = await stripe.subscriptions.update(subscriptionId, {
+        cancel_at_period_end: false,
+    });
+    return subscription;
+};
+
 export const stripeServices = {
     createPaymentIntent,
     createCheckoutSession,
     createProduct,
     createPrice,
+    cancelSubscription,
+    resumeSubscription,
     stripe,
 };

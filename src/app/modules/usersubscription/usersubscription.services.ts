@@ -4,6 +4,7 @@ import { UserSubscriptionModel } from "./usersubscription.model";
 import { IUserSubscription } from "./usersubscription.interface";
 import { SubscriptionPlanModel } from "../subscription/subscription.model";
 import { SubscriptionDuration } from "../subscription/subscription.interface";
+import { stripeServices } from "../stripe/stripe.service";
 
 const createUserSubscription = async (
     data: Partial<IUserSubscription>,
@@ -55,13 +56,39 @@ const getUserSubscriptionById = async (id: string, userId: string) => {
 };
 
 const cancelUserSubscription = async (id: string, userId: string) => {
-    const subscription = await UserSubscriptionModel.findOneAndUpdate(
+    const subscription = await UserSubscriptionModel.findOne({ _id: id, userId });
+    if (!subscription) throw new ApiError(httpStatus.NOT_FOUND, "Subscription not found");
+
+    // Cancel auto-renew on Stripe
+    if (subscription.stripeSubscriptionId) {
+        await stripeServices.cancelSubscription(subscription.stripeSubscriptionId);
+    }
+
+    // Update in DB
+    const updatedSubscription = await UserSubscriptionModel.findOneAndUpdate(
         { _id: id, userId },
         { $set: { status: "CANCELLED" } },
         { new: true }
     ).populate("subscriptionPlanId");
+    return updatedSubscription;
+};
+
+const resumeUserSubscription = async (id: string, userId: string) => {
+    const subscription = await UserSubscriptionModel.findOne({ _id: id, userId });
     if (!subscription) throw new ApiError(httpStatus.NOT_FOUND, "Subscription not found");
-    return subscription;
+
+    // Resume auto-renew on Stripe
+    if (subscription.stripeSubscriptionId) {
+        await stripeServices.resumeSubscription(subscription.stripeSubscriptionId);
+    }
+
+    // Update in DB
+    const updatedSubscription = await UserSubscriptionModel.findOneAndUpdate(
+        { _id: id, userId },
+        { $set: { status: "ACTIVE" } },
+        { new: true }
+    ).populate("subscriptionPlanId");
+    return updatedSubscription;
 };
 
 export const userSubscriptionServices = {
@@ -69,4 +96,5 @@ export const userSubscriptionServices = {
     getUserSubscriptions,
     getUserSubscriptionById,
     cancelUserSubscription,
+    resumeUserSubscription,
 };

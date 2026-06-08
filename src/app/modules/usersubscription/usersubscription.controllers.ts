@@ -18,7 +18,13 @@ const createCheckoutSession = catchAsync(async (req: Request, res: Response) => 
         throw new Error("Subscription plan has no Stripe price ID");
     }
 
-    const session = await stripeServices.createCheckoutSession(plan.stripePriceId, successUrl, cancelUrl, req.user.email);
+    const session = await stripeServices.createCheckoutSession(
+        plan.stripePriceId,
+        successUrl,
+        cancelUrl,
+        req.user.email,
+        { userId }, // Pass userId as metadata
+    );
 
     sendResponse(res, {
         statusCode: httpStatus.OK,
@@ -68,10 +74,21 @@ const cancelUserSubscription = catchAsync(async (req: Request, res: Response) =>
     });
 });
 
+const resumeUserSubscription = catchAsync(async (req: Request, res: Response) => {
+    const result = await userSubscriptionServices.resumeUserSubscription(req.params.id as string, req.user._id as string);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "User subscription resumed successfully",
+        data: result,
+    });
+});
+
 export const userSubscriptionControllers = {
     createCheckoutSession,
     createUserSubscription,
     getUserSubscriptions,
     getUserSubscriptionById,
     cancelUserSubscription,
+    resumeUserSubscription,
 };

@@ -11,5 +11,6 @@ router.post("/", userSubscriptionControllers.createUserSubscription);
 router.get("/", userSubscriptionControllers.getUserSubscriptions);
 router.get("/:id", userSubscriptionControllers.getUserSubscriptionById);
 router.patch("/:id/cancel", userSubscriptionControllers.cancelUserSubscription);
+router.patch("/:id/resume", userSubscriptionControllers.resumeUserSubscription);
 
 export const userSubscriptionRoutes = router;
