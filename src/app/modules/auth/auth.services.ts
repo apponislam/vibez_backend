@@ -383,6 +383,20 @@ const updateLocation = async (userId: string, lat: number, lng: number) => {
     return user;
 };
 
+const approveUser = async (userId: string, approvedBy: string) => {
+    const user = await UserModel.findByIdAndUpdate(userId, { $set: { approved: true, approvedBy, approvedAt: new Date() } }, { returnDocument: "after", runValidators: true }).select("-password");
+
+    if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+    return user;
+};
+
+const revokeUserApproval = async (userId: string) => {
+    const user = await UserModel.findByIdAndUpdate(userId, { $set: { approved: false, approvedBy: undefined, approvedAt: undefined } }, { returnDocument: "after", runValidators: true }).select("-password");
+
+    if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+    return user;
+};
+
 export const authServices = {
     registerUser,
     loginUser,
@@ -401,4 +415,6 @@ export const authServices = {
     verifyNewEmail,
     setUserPassword,
     updateLocation,
+    approveUser,
+    revokeUserApproval,
 };

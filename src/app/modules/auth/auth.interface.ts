@@ -29,6 +29,10 @@ export interface User {
     isDeleted: boolean;
     lastLogin?: Date;
 
+    approved: boolean;
+    approvedBy?: Types.ObjectId | null;
+    approvedAt?: Date;
+
     percentage?: number;
     balance?: number;
 

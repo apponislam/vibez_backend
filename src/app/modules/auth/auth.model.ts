@@ -86,6 +86,20 @@ const UserSchema = new Schema<User>(
             type: Date,
         },
 
+        approved: {
+            type: Boolean,
+            default: false,
+        },
+
+        approvedBy: {
+            type: Schema.Types.ObjectId,
+            ref: "User",
+        },
+
+        approvedAt: {
+            type: Date,
+        },
+
         balance: {
             type: Number,
             default: 0,
