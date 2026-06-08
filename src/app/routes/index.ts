@@ -4,6 +4,7 @@ import { publicRoutes } from "../modules/public/public.routes";
 import { faqRoutes } from "../modules/faq/faq.routes";
 import { promoCodeRoutes } from "../modules/promocodes/promocodes.routes";
 import { restaurantRoutes } from "../modules/restaurant/restaurant.routes";
+import { reservationRoutes } from "../modules/reservation/reservation.routes";
 
 const router = express.Router();
 
@@ -12,6 +13,7 @@ const moduleRoutes = [
         path: "/auth",
         route: authRoutes,
     },
+
     {
         path: "/public",
         route: publicRoutes,
@@ -27,6 +29,10 @@ const moduleRoutes = [
     {
         path: "/restaurants",
         route: restaurantRoutes,
+    },
+    {
+        path: "/reservations",
+        route: reservationRoutes,
     },
 ];
 
