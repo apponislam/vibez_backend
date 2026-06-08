@@ -5,8 +5,11 @@ import path from "path";
 import notFound from "./errors/notFound";
 import globalErrorHandler from "./errors/globalErrorhandler";
 import router from "./app/routes";
+import { stripeWebhooks } from "./app/modules/stripe/stripe.webhook";
 
 const app: Application = express();
+
+app.post("/api/v1/subscription/webhook", express.raw({ type: "application/json" }), stripeWebhooks.handleStripeWebhook);
 
 const corsOptions = {
     origin: ["http://localhost:3000"],

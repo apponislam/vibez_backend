@@ -2,7 +2,7 @@ import Stripe from "stripe";
 import config from "../../config";
 
 const stripe = new Stripe(config.stripe.secret_key as string, {
-    apiVersion: "2024-06-20",
+    apiVersion: "2026-05-27.dahlia",
 });
 
 const createPaymentIntent = async (amount: number, currency: string = "usd") => {
@@ -14,12 +14,7 @@ const createPaymentIntent = async (amount: number, currency: string = "usd") => 
     return paymentIntent;
 };
 
-const createCheckoutSession = async (
-    priceId: string,
-    successUrl: string,
-    cancelUrl: string,
-    customerEmail?: string
-) => {
+const createCheckoutSession = async (priceId: string, successUrl: string, cancelUrl: string, customerEmail?: string) => {
     const session = await stripe.checkout.sessions.create({
         payment_method_types: ["card"],
         line_items: [
@@ -41,12 +36,7 @@ const createProduct = async (name: string) => {
     return product;
 };
 
-const createPrice = async (
-    productId: string,
-    amount: number,
-    currency: string = "usd",
-    interval: "month" | "year"
-) => {
+const createPrice = async (productId: string, amount: number, currency: string = "usd", interval: "month" | "year") => {
     const price = await stripe.prices.create({
         product: productId,
         unit_amount: amount,
