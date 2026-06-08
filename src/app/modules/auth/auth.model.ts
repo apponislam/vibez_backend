@@ -29,7 +29,7 @@ const UserSchema = new Schema<User>(
 
         role: {
             type: String,
-            enum: ["ADMIN", "RESTAURANT_OWNER", "USER"],
+            enum: ["ADMIN", "RESTAURANT_OWNER", "USER", "STAFF"],
             default: "USER",
             required: true,
         },
@@ -79,11 +79,6 @@ const UserSchema = new Schema<User>(
 
         lastLogin: {
             type: Date,
-        },
-
-        availabilityLocation: {
-            lat: Number,
-            lng: Number,
         },
 
         balance: {
@@ -150,7 +145,6 @@ const UserSchema = new Schema<User>(
                 delete ret.emailVerificationToken;
                 delete ret.emailVerificationExpiry;
                 delete ret.pendingEmail;
-                delete ret.availabilityLocation;
                 return ret;
             },
         },

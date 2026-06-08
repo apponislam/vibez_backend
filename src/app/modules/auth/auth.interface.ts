@@ -1,6 +1,6 @@
 import { Types } from "mongoose";
 
-export type UserRole = "ADMIN" | "RESTAURANT_OWNER" | "USER";
+export type UserRole = "ADMIN" | "RESTAURANT_OWNER" | "USER" | "STAFF";
 
 export interface User {
     name: string;
@@ -26,11 +26,6 @@ export interface User {
     isEmailVerified: boolean;
     isDeleted: boolean;
     lastLogin?: Date;
-
-    availabilityLocation?: {
-        lat?: number;
-        lng?: number;
-    };
 
     percentage?: number;
     balance?: number;
