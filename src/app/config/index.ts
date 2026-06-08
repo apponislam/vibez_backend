@@ -21,22 +21,11 @@ export default {
         smtp_user: process.env.SMTP_USER,
         smtp_pass: process.env.SMTP_PASS,
     },
-    zoom: {
-        account_id: process.env.ZOOM_ACCOUNT_ID,
-        client_id: process.env.ZOOM_CLIENT_ID,
-        client_secret: process.env.ZOOM_CLIENT_SECRET,
-        webhook_secret: process.env.ZOOM_WEBHOOK_SECRET_TOKEN,
-    },
 
-    drive: {
-        folder_id: process.env.DRIVE_FOLDER_ID,
-        credentials_path: process.env.GOOGLE_APPLICATION_CREDENTIALS || path.join(process.cwd(), "google-credentials.json"),
-    },
-
-    myfatoorah: {
-        api_key: process.env.MYFATOORAH_API_KEY,
-        base_url: process.env.MYFATOORAH_BASE_URL,
-        webhook_secret: process.env.MYFATOORAH_WEBHOOK_SECRET,
+    stripe: {
+        publishable_key: process.env.STRIPE_PUBLISHABLE_KEY,
+        secret_key: process.env.STRIPE_SECRET_KEY,
+        webhook_secret: process.env.STRIPE_WEBHOOK_SECRET,
     },
 
     superAdminPassword: process.env.SUPERADMINPASSWORD,
