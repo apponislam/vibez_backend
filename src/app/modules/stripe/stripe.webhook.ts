@@ -5,6 +5,7 @@ import catchAsync from "../../../utils/catchAsync";
 import { UserSubscriptionModel } from "../usersubscription/usersubscription.model";
 import { SubscriptionPlanModel } from "../subscription/subscription.model";
 import { UserSubscriptionStatus } from "../subscription/subscription.interface";
+import { UserModel } from "../auth/auth.model";
 
 const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
     const sig = req.headers["stripe-signature"] as string;
@@ -51,6 +52,14 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                     endDate,
                     isTrial: false,
                 });
+
+                // Update User model with subscription info
+                await UserModel.findByIdAndUpdate(userId, {
+                    $set: {
+                        subscriptionPlanId: subscriptionPlan._id,
+                        subscriptionEndDate: endDate,
+                    },
+                });
             }
             break;
         }
@@ -79,6 +88,12 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                         $set: {
                             endDate: newEndDate,
                             status: UserSubscriptionStatus.ACTIVE,
+                        },
+                    });
+                    // Update User model as well
+                    await UserModel.findByIdAndUpdate(userSubscription.userId, {
+                        $set: {
+                            subscriptionEndDate: newEndDate,
                         },
                     });
                 }

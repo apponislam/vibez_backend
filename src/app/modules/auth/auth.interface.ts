@@ -33,6 +33,9 @@ export interface User {
     approvedBy?: Types.ObjectId | null;
     approvedAt?: Date;
 
+    subscriptionPlanId?: Types.ObjectId | null;
+    subscriptionEndDate?: Date;
+
     percentage?: number;
     balance?: number;
 
