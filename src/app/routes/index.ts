@@ -5,6 +5,9 @@ import { faqRoutes } from "../modules/faq/faq.routes";
 import { promoCodeRoutes } from "../modules/promocodes/promocodes.routes";
 import { restaurantRoutes } from "../modules/restaurant/restaurant.routes";
 import { reservationRoutes } from "../modules/reservation/reservation.routes";
+import { subscriptionRoutes } from "../modules/subscription/subscription.routes";
+import { userSubscriptionRoutes } from "../modules/usersubscription/usersubscription.routes";
+import { stripeRoutes } from "../modules/stripe/stripe.routes";
 
 const router = express.Router();
 
@@ -13,7 +16,6 @@ const moduleRoutes = [
         path: "/auth",
         route: authRoutes,
     },
-
     {
         path: "/public",
         route: publicRoutes,
@@ -33,6 +35,18 @@ const moduleRoutes = [
     {
         path: "/reservations",
         route: reservationRoutes,
+    },
+    {
+        path: "/subscriptions",
+        route: subscriptionRoutes,
+    },
+    {
+        path: "/user-subscriptions",
+        route: userSubscriptionRoutes,
+    },
+    {
+        path: "/stripe",
+        route: stripeRoutes,
     },
 ];
 

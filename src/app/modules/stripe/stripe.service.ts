@@ -1,0 +1,65 @@
+import Stripe from "stripe";
+import config from "../../config";
+
+const stripe = new Stripe(config.stripe.secret_key as string, {
+    apiVersion: "2024-06-20",
+});
+
+const createPaymentIntent = async (amount: number, currency: string = "usd") => {
+    const paymentIntent = await stripe.paymentIntents.create({
+        amount,
+        currency,
+        payment_method_types: ["card"],
+    });
+    return paymentIntent;
+};
+
+const createCheckoutSession = async (
+    priceId: string,
+    successUrl: string,
+    cancelUrl: string,
+    customerEmail?: string
+) => {
+    const session = await stripe.checkout.sessions.create({
+        payment_method_types: ["card"],
+        line_items: [
+            {
+                price: priceId,
+                quantity: 1,
+            },
+        ],
+        mode: "subscription",
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+        customer_email: customerEmail,
+    });
+    return session;
+};
+
+const createProduct = async (name: string) => {
+    const product = await stripe.products.create({ name });
+    return product;
+};
+
+const createPrice = async (
+    productId: string,
+    amount: number,
+    currency: string = "usd",
+    interval: "month" | "year"
+) => {
+    const price = await stripe.prices.create({
+        product: productId,
+        unit_amount: amount,
+        currency,
+        recurring: { interval },
+    });
+    return price;
+};
+
+export const stripeServices = {
+    createPaymentIntent,
+    createCheckoutSession,
+    createProduct,
+    createPrice,
+    stripe,
+};
