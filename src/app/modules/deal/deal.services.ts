@@ -13,24 +13,24 @@ const createDeal = async (userId: string, payload: any) => {
 
 const getAllDeals = async (query: any = {}) => {
     const filter: any = { isDeleted: false };
-    if (query.restaurant) filter.restaurant = query.restaurant;
+    if (query.restaurantId) filter.restaurantId = query.restaurantId;
     if (query.isActive !== undefined) filter.isActive = query.isActive === "true";
 
-    const deals = await DealModel.find(filter).populate("restaurant").sort({ createdAt: -1 });
+    const deals = await DealModel.find(filter).populate("restaurantId").sort({ createdAt: -1 });
     return deals;
 };
 
 const getActiveDeals = async (restaurantId?: string) => {
     const filter: any = { isActive: true, isDeleted: false };
     if (restaurantId) {
-        filter.restaurant = restaurantId;
+        filter.restaurantId = restaurantId;
     }
-    const deals = await DealModel.find(filter).populate("restaurant").sort({ createdAt: -1 });
+    const deals = await DealModel.find(filter).populate("restaurantId").sort({ createdAt: -1 });
     return deals;
 };
 
 const getDealById = async (dealId: string) => {
-    const deal = await DealModel.findOne({ _id: dealId, isDeleted: false }).populate("restaurant");
+    const deal = await DealModel.findOne({ _id: dealId, isDeleted: false }).populate("restaurantId");
     if (!deal) throw new ApiError(httpStatus.NOT_FOUND, "Deal not found");
     return deal;
 };
