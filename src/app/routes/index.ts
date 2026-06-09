@@ -10,6 +10,7 @@ import { userSubscriptionRoutes } from "../modules/usersubscription/usersubscrip
 import { dealRoutes } from "../modules/deal/deal.routes";
 import { reviewRoutes } from "../modules/review/review.routes";
 import { favoriteRoutes } from "../modules/favorite/favorite.routes";
+import { savedDealRoutes } from "../modules/saved-deal/saved-deal.routes";
 
 const router = express.Router();
 
@@ -57,6 +58,10 @@ const moduleRoutes = [
     {
         path: "/favorites",
         route: favoriteRoutes,
+    },
+    {
+        path: "/saved-deals",
+        route: savedDealRoutes,
     },
 ];
 
