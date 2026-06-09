@@ -47,4 +47,12 @@ const ReservationSchema = new Schema<IReservation>(
     },
 );
 
+// Indexes for common query patterns
+ReservationSchema.index({ userId: 1 });
+ReservationSchema.index({ restaurantId: 1 });
+ReservationSchema.index({ dealId: 1, reservationDate: 1 });
+ReservationSchema.index({ status: 1 });
+ReservationSchema.index({ restaurantId: 1, reservationDate: 1, reservationTime: 1 });
+ReservationSchema.index({ userId: 1, reservationDate: -1, reservationTime: -1 });
+
 export const ReservationModel = mongoose.model<IReservation>("Reservation", ReservationSchema);
