@@ -1,6 +1,11 @@
 import mongoose, { Schema } from "mongoose";
 import { IRestaurant, RestaurantType, CuisineType, DayOfWeek, MealTimeType } from "./resturant.interface";
 
+export const DEFAULT_MEAL_TIMES = {
+    [MealTimeType.LUNCH]: { openTime: "11:00", closeTime: "15:00" },
+    [MealTimeType.DINNER]: { openTime: "17:00", closeTime: "22:00" },
+};
+
 const RestaurantOpenHourSlotSchema = new Schema({
     type: { type: String, enum: Object.values(MealTimeType), required: true },
     openTime: { type: String, required: true },
@@ -72,7 +77,7 @@ const RestaurantSchema = new Schema<IRestaurant>(
     {
         timestamps: true,
         versionKey: false,
-    }
+    },
 );
 
 export const RestaurantModel = mongoose.model<IRestaurant>("Restaurant", RestaurantSchema);

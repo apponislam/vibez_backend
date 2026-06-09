@@ -38,7 +38,6 @@ export enum DayOfWeek {
 export enum MealTimeType {
     LUNCH = "LUNCH",
     DINNER = "DINNER",
-    BREAKFAST = "BREAKFAST",
 }
 
 export interface RestaurantOpenHourSlot {
