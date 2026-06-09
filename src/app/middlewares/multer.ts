@@ -11,33 +11,58 @@ if (!fs.existsSync(profileImageDir)) fs.mkdirSync(profileImageDir, { recursive: 
 const reviewImageDir = path.join(process.cwd(), "uploads", "review-images");
 if (!fs.existsSync(reviewImageDir)) fs.mkdirSync(reviewImageDir, { recursive: true });
 
+const shortsDir = path.join(process.cwd(), "uploads", "shorts");
+if (!fs.existsSync(shortsDir)) fs.mkdirSync(shortsDir, { recursive: true });
+
 // Multer memory storage
 const storage = multer.memoryStorage();
 
-// File filter (only allow images)
-const fileFilter = (_req: Request, file: Express.Multer.File, cb: FileFilterCallback) => {
+// File filter for images
+const imageFileFilter = (_req: Request, file: Express.Multer.File, cb: FileFilterCallback) => {
     const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
     if (allowedTypes.includes(file.mimetype)) cb(null, true);
     else cb(new Error("Image must be JPG, PNG, or WEBP"));
 };
 
-// Multer setup
-const upload = multer({
+// File filter for videos
+const videoFileFilter = (_req: Request, file: Express.Multer.File, cb: FileFilterCallback) => {
+    const allowedTypes = ["video/mp4", "video/webm", "video/quicktime"];
+    if (allowedTypes.includes(file.mimetype)) cb(null, true);
+    else cb(new Error("Video must be MP4, WEBM, or MOV"));
+};
+
+// Multer setup for images
+const imageUpload = multer({
     storage,
-    fileFilter,
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit per file
+    fileFilter: imageFileFilter,
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit per image
 });
 
-// Helper to generate unique filename
-const generateFileName = (prefix: string, originalName: string) => {
+// Multer setup for videos
+const videoUpload = multer({
+    storage,
+    fileFilter: videoFileFilter,
+    limits: { fileSize: 100 * 1024 * 1024 }, // 100MB limit per video
+});
+
+// Helper to generate unique filename for images
+const generateImageFileName = (prefix: string, originalName: string) => {
     const timestamp = Date.now().toString().slice(-6);
     const randomNum = Math.floor(Math.random() * 10000);
     return `${prefix}-${timestamp}-${randomNum}.webp`;
 };
 
+// Helper to generate unique filename for videos
+const generateVideoFileName = (prefix: string, originalName: string) => {
+    const ext = path.extname(originalName) || ".mp4";
+    const timestamp = Date.now().toString().slice(-6);
+    const randomNum = Math.floor(Math.random() * 10000);
+    return `${prefix}-${timestamp}-${randomNum}${ext}`;
+};
+
 // Middleware for single profile image upload
 export const uploadProfileImage = (req: Request, res: Response, next: NextFunction) => {
-    const uploadSingle = upload.single("profileImage");
+    const uploadSingle = imageUpload.single("profileImage");
 
     uploadSingle(req, res, async (err) => {
         if (err) return next(err);
@@ -46,7 +71,7 @@ export const uploadProfileImage = (req: Request, res: Response, next: NextFuncti
         if (req.file) {
             try {
                 const file = req.file;
-                const newName = generateFileName("profile", file.originalname);
+                const newName = generateImageFileName("profile", file.originalname);
                 const outputPath = path.join(profileImageDir, newName);
 
                 // Convert to webp
@@ -66,7 +91,7 @@ export const uploadProfileImage = (req: Request, res: Response, next: NextFuncti
 
 // Middleware for multiple review images upload (up to 10 images)
 export const uploadReviewImages = (req: Request, res: Response, next: NextFunction) => {
-    const uploadMultiple = upload.array("reviewImages", 10); // Max 10 images
+    const uploadMultiple = imageUpload.array("reviewImages", 10); // Max 10 images
 
     uploadMultiple(req, res, async (err) => {
         if (err) return next(err);
@@ -77,7 +102,7 @@ export const uploadReviewImages = (req: Request, res: Response, next: NextFuncti
                 const processedFiles: string[] = [];
 
                 for (const file of req.files) {
-                    const newName = generateFileName("review", file.originalname);
+                    const newName = generateImageFileName("review", file.originalname);
                     const outputPath = path.join(reviewImageDir, newName);
 
                     // Convert to webp
@@ -88,6 +113,37 @@ export const uploadReviewImages = (req: Request, res: Response, next: NextFuncti
 
                 // Add processed filenames to request body
                 req.body.images = processedFiles;
+            } catch (error) {
+                return next(error);
+            }
+        }
+
+        next();
+    });
+};
+
+// Middleware for shorts upload
+export const uploadShorts = (req: Request, res: Response, next: NextFunction) => {
+    const uploadSingle = videoUpload.single("short");
+
+    uploadSingle(req, res, async (err) => {
+        if (err) return next(err);
+
+        // Process short if uploaded
+        if (req.file) {
+            try {
+                const file = req.file;
+                const newName = generateVideoFileName("shorts", file.originalname);
+                const outputPath = path.join(shortsDir, newName);
+
+                // Write video to disk (no conversion for now)
+                fs.writeFileSync(outputPath, file.buffer);
+
+                file.filename = newName;
+                file.path = outputPath;
+
+                // Add short URL to request body
+                req.body.shortUrl = newName;
             } catch (error) {
                 return next(error);
             }
