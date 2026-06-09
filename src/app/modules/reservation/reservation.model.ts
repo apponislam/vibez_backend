@@ -13,6 +13,11 @@ const ReservationSchema = new Schema<IReservation>(
             ref: "User",
             required: [true, "User is required"],
         },
+        dealId: {
+            type: Schema.Types.ObjectId,
+            ref: "Deal",
+            required: [true, "Deal is required"],
+        },
         partySize: {
             type: Number,
             required: [true, "Party size is required"],

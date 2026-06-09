@@ -47,6 +47,11 @@ const DealSchema = new Schema<DealDocument>(
         end: {
             type: String,
         },
+        maxClaimsPerDay: {
+            type: Number,
+            required: [true, "Max claims per day is required"],
+            min: 1,
+        },
         isActive: { type: Boolean, default: true },
         isDeleted: { type: Boolean, default: false },
         twoForOne: {

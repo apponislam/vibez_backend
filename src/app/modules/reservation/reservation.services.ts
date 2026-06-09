@@ -1,7 +1,10 @@
 import httpStatus from "http-status";
+import { Types } from "mongoose";
 import ApiError from "../../../errors/ApiError";
 import { ReservationModel } from "./reservation.model";
 import { IReservation, ReservationStatus } from "./reservation.interface";
+import { DealModel } from "../deal/deal.model";
+import { DayOfWeek, MealTimeType } from "../deal/deal.interface";
 
 const createReservation = async (data: Partial<IReservation>, userId: string) => {
     const today = new Date();
@@ -14,9 +17,73 @@ const createReservation = async (data: Partial<IReservation>, userId: string) =>
         throw new ApiError(httpStatus.BAD_REQUEST, "Reservation date can't be in the past");
     }
 
+    // Validate deal if provided
+    if (data.dealId) {
+        const deal = await DealModel.findById(data.dealId);
+        if (!deal) {
+            throw new ApiError(httpStatus.NOT_FOUND, "Deal not found");
+        }
+
+        // Check if deal is active
+        if (!deal.isActive || deal.isDeleted) {
+            throw new ApiError(httpStatus.BAD_REQUEST, "Deal is not active");
+        }
+
+        // Check if deal belongs to the same restaurant as reservation
+        if (deal.restaurantId.toString() !== data.restaurantId?.toString()) {
+            throw new ApiError(httpStatus.BAD_REQUEST, "Deal does not belong to this restaurant");
+        }
+
+        // Check day of week matches
+        const reservationDay = reservationDate.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase() as DayOfWeek;
+        if (deal.day !== reservationDay) {
+            throw new ApiError(httpStatus.BAD_REQUEST, `Deal is only available on ${deal.day}`);
+        }
+
+        // Check reservation time falls within deal's meal time
+        const reservationTime = data.reservationTime as string;
+        if (deal.mealTime !== MealTimeType.ALL_DAY) {
+            if (deal.mealTime === MealTimeType.LUNCH) {
+                if (reservationTime < "11:00" || reservationTime > "15:00") {
+                    throw new ApiError(httpStatus.BAD_REQUEST, "Deal is only available for lunch (11:00 - 15:00)");
+                }
+            } else if (deal.mealTime === MealTimeType.DINNER) {
+                if (reservationTime < "17:00" || reservationTime > "22:00") {
+                    throw new ApiError(httpStatus.BAD_REQUEST, "Deal is only available for dinner (17:00 - 22:00)");
+                }
+            }
+        }
+
+        // Check max claims per day (using reservations)
+        const startOfDay = new Date(reservationDate);
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(reservationDate);
+        endOfDay.setHours(23, 59, 59, 999);
+
+        const currentClaims = await ReservationModel.countDocuments({
+            dealId: deal._id,
+            reservationDate: { $gte: startOfDay, $lte: endOfDay },
+        });
+
+        if (currentClaims >= deal.maxClaimsPerDay) {
+            throw new ApiError(httpStatus.BAD_REQUEST, "Deal has reached maximum claims for today");
+        }
+
+        // Check if user already claimed this deal today (using reservations)
+        const userClaimedToday = await ReservationModel.exists({
+            dealId: deal._id,
+            userId: new Types.ObjectId(userId),
+            reservationDate: { $gte: startOfDay, $lte: endOfDay },
+        });
+
+        if (userClaimedToday) {
+            throw new ApiError(httpStatus.BAD_REQUEST, "You have already claimed this deal today");
+        }
+    }
+
     const reservationData = { ...data, userId };
     const reservation = await ReservationModel.create(reservationData);
-    await reservation.populate("restaurantId userId");
+    await reservation.populate("restaurantId userId dealId");
     return reservation;
 };
 
@@ -47,7 +114,7 @@ const getAllReservations = async (filters: any = {}) => {
     const limit = parseInt(filters.limit as string) || 10;
     const skip = (page - 1) * limit;
 
-    const [reservations, total] = await Promise.all([ReservationModel.find(query).populate("restaurantId userId").sort({ reservationDate: 1, reservationTime: 1 }).skip(skip).limit(limit), ReservationModel.countDocuments(query)]);
+    const [reservations, total] = await Promise.all([ReservationModel.find(query).populate("restaurantId userId dealId").sort({ reservationDate: 1, reservationTime: 1 }).skip(skip).limit(limit), ReservationModel.countDocuments(query)]);
 
     const totalPages = Math.ceil(total / limit);
     const hasNext = page < totalPages;
@@ -67,7 +134,7 @@ const getAllReservations = async (filters: any = {}) => {
 };
 
 const getReservationById = async (id: string) => {
-    const reservation = await ReservationModel.findById(id).populate("restaurantId userId");
+    const reservation = await ReservationModel.findById(id).populate("restaurantId userId dealId");
     if (!reservation) throw new ApiError(httpStatus.NOT_FOUND, "Reservation not found");
     return reservation;
 };
@@ -83,7 +150,7 @@ const getMyReservations = async (userId: string, filters: any = {}) => {
     const limit = parseInt(filters.limit as string) || 10;
     const skip = (page - 1) * limit;
 
-    const [reservations, total] = await Promise.all([ReservationModel.find(query).populate("restaurantId").sort({ reservationDate: -1, reservationTime: -1 }).skip(skip).limit(limit), ReservationModel.countDocuments(query)]);
+    const [reservations, total] = await Promise.all([ReservationModel.find(query).populate("restaurantId dealId").sort({ reservationDate: -1, reservationTime: -1 }).skip(skip).limit(limit), ReservationModel.countDocuments(query)]);
 
     const totalPages = Math.ceil(total / limit);
     const hasNext = page < totalPages;

@@ -141,6 +141,7 @@ export interface IDeal {
     mealTime: MealTimeType;
     start?: string;
     end?: string;
+    maxClaimsPerDay: number;
     isActive: boolean;
     isDeleted: boolean;
     twoForOne?: {
