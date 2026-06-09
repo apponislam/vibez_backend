@@ -89,14 +89,33 @@ export interface IDeal {
 
 // export type PercentDiscountCategory = "MAIN_COURSE" | "MENU" | "DRINKS";
 
+// export enum DayOfWeek {
+//     MONDAY = "MONDAY",
+//     TUESDAY = "TUESDAY",
+//     WEDNESDAY = "WEDNESDAY",
+//     THURSDAY = "THURSDAY",
+//     FRIDAY = "FRIDAY",
+//     SATURDAY = "SATURDAY",
+//     SUNDAY = "SUNDAY",
+// }
+
+// export enum MealTimeType {
+//     LUNCH = "LUNCH",
+//     DINNER = "DINNER",
+//     ALL_DAY = "ALL_DAY",
+// }
+
 // export interface Deal {
 //     _id?: string | Types.ObjectId;
 //     restaurantId: Types.ObjectId;
+//     createdBy?: Types.ObjectId;
 //     dealType: DealType;
 //     title: string;
 //     description?: string;
-//     startDate: Date;
-//     endDate: Date;
+//     day: DayOfWeek;
+//     mealTime: MealTimeType;
+//     start: string;
+//     end: string;
 //     isActive: boolean;
 //     twoForOne?: {
 //         appliesTo: TwoForOneCategory;
