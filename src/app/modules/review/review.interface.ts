@@ -6,6 +6,7 @@ export interface IReview {
     userId: Types.ObjectId;
     rating: number; // 1-5
     comment?: string;
+    images?: string[]; // Array of image filenames
     isActive: boolean;
     isDeleted: boolean;
     createdAt?: Date;

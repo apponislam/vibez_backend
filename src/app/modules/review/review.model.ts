@@ -25,6 +25,10 @@ const ReviewSchema = new Schema<ReviewDocument>(
             type: String,
             trim: true,
         },
+        images: {
+            type: [String],
+            default: [],
+        },
         isActive: { type: Boolean, default: true },
         isDeleted: { type: Boolean, default: false },
     },
