@@ -1,0 +1,49 @@
+🧭 STEP 1: Select Deal Type (Required)
+The user sees exactly 4 large selection cards:
+Options:
+🥇 2 for 1 Deal
+🎁 Free Item Deal
+💸 Percentage Discount
+💰 Fixed Discount
+Behavior:
+Only one selection allowed
+After selection → proceed to Step 2
+No additional settings in this step
+🧩 STEP 2: Deal Parameters (based on selected type) if he choose
+
+🥇 TWO_FOR_ONE (2 for 1)
+Question:
+What does the deal apply to?
+Options:
+Main Course
+Drinks
+Desserts
+Starters
+🎁 FREE_ITEM (Free Item)
+Question 1:
+What does the customer need to buy?
+Main Course
+Menu
+Main Course + Drink
+Question 2:
+What does the customer get for free?
+Drink
+Dessert
+Starter
+💸 PERCENT_DISCOUNT
+Question 1:
+Discount percentage:
+10%
+15%
+20%
+30%
+Question 2:
+Applies to:
+Entire order
+Category (Main Course / Menu / Drinks)
+🧠 Wichtig (Design Principle)
+No free text logic
+No custom rules
+No combinations of deal types
+Only predefined options (dropdowns / buttons)
+Everything must be deterministic and structured
