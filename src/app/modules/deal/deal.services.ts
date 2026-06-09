@@ -11,13 +11,32 @@ const createDeal = async (userId: string, payload: any) => {
     return deal;
 };
 
-const getAllDeals = async (query: any = {}) => {
-    const filter: any = { isDeleted: false };
-    if (query.restaurantId) filter.restaurantId = query.restaurantId;
-    if (query.isActive !== undefined) filter.isActive = query.isActive === "true";
+const getAllDeals = async (filters: any = {}) => {
+    const query: any = { isDeleted: false };
+    if (filters.restaurantId) query.restaurantId = filters.restaurantId;
+    if (filters.isActive !== undefined) query.isActive = filters.isActive === "true";
 
-    const deals = await DealModel.find(filter).populate("restaurantId").sort({ createdAt: -1 });
-    return deals;
+    const page = parseInt(filters.page as string) || 1;
+    const limit = parseInt(filters.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    const [deals, total] = await Promise.all([DealModel.find(query).populate("restaurantId").skip(skip).limit(limit), DealModel.countDocuments(query)]);
+
+    const totalPages = Math.ceil(total / limit);
+    const hasNext = page < totalPages;
+    const hasPrev = page > 1;
+
+    return {
+        data: deals,
+        meta: {
+            page,
+            limit,
+            total,
+            totalPages,
+            hasNext,
+            hasPrev,
+        },
+    };
 };
 
 const getActiveDeals = async (restaurantId?: string) => {
@@ -36,11 +55,7 @@ const getDealById = async (dealId: string) => {
 };
 
 const updateDeal = async (dealId: string, payload: any) => {
-    const deal = await DealModel.findOneAndUpdate(
-        { _id: dealId, isDeleted: false },
-        { $set: payload },
-        { returnDocument: "after", runValidators: true },
-    );
+    const deal = await DealModel.findOneAndUpdate({ _id: dealId, isDeleted: false }, { $set: payload }, { returnDocument: "after", runValidators: true });
     if (!deal) throw new ApiError(httpStatus.NOT_FOUND, "Deal not found");
     return deal;
 };
@@ -54,11 +69,7 @@ const toggleDealStatus = async (dealId: string) => {
 };
 
 const deleteDeal = async (dealId: string) => {
-    const deal = await DealModel.findOneAndUpdate(
-        { _id: dealId, isDeleted: false },
-        { $set: { isDeleted: true, isActive: false } },
-        { returnDocument: "after" },
-    );
+    const deal = await DealModel.findOneAndUpdate({ _id: dealId, isDeleted: false }, { $set: { isDeleted: true, isActive: false } }, { returnDocument: "after" });
     if (!deal) throw new ApiError(httpStatus.NOT_FOUND, "Deal not found");
     return deal;
 };

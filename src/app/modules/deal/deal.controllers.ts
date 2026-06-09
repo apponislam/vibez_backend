@@ -22,7 +22,8 @@ const getAllDeals = catchAsync(async (req: Request, res: Response) => {
         statusCode: httpStatus.OK,
         success: true,
         message: "Deals retrieved successfully",
-        data: result,
+        data: result.data,
+        meta: result.meta,
     });
 });
 
