@@ -1,0 +1,1846 @@
+{
+  "info": {
+    "_postman_id": "8c59ff0b-12d8-4fbe-9b2f-76226cb8a481",
+    "name": "VIBEZ API Collection",
+    "description": "Full API Collection for the VIBEZ Backend system.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "body",
+                  "value": "{\"name\":\"John Doe\",\"email\":\"john@example.com\",\"password\":\"Password123\",\"phone\":\"+123456789\",\"role\":\"USER\"}",
+                  "type": "text"
+                },
+                {
+                  "key": "profileImage",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/auth/register"
+          }
+        },
+        {
+          "name": "Register Restaurant & Owner",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "body",
+                  "value": "{\"name\":\"Owner Name\",\"email\":\"owner@example.com\",\"password\":\"Password123\",\"phone\":\"+123456789\",\"restaurantName\":\"Gourmet Hub\",\"restaurantDescription\":\"Fine Dining Experience\",\"restaurantType\":\"DINE_IN\",\"cuisineType\":\"ITALIAN\",\"restaurantWebsite\":\"https://gourmet.com\",\"restaurantAddress\":{\"street\":\"123 Food St\",\"city\":\"Foodville\",\"state\":\"NY\",\"zipCode\":\"10001\",\"country\":\"USA\",\"lat\":40.7128,\"lng\":-74.006},\"restaurantOpenHours\":[{\"day\":\"MONDAY\",\"isOpen\":true,\"openTime\":\"09:00\",\"closeTime\":\"22:00\",\"slots\":[{\"type\":\"LUNCH\",\"openTime\":\"12:00\",\"closeTime\":\"15:00\"}]}]}",
+                  "type": "text"
+                },
+                {
+                  "key": "profileImage",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "restaurantImage",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/auth/register-restaurant"
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@example.com\",\n  \"password\": \"Password123\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "Verify Email",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/verify-email?email=john@example.com&token=verification_token_here&otp=123456",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "verify-email"],
+              "query": [
+                { "key": "email", "value": "john@example.com" },
+                { "key": "token", "value": "verification_token_here" },
+                { "key": "otp", "value": "123456" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Resend Verification Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@example.com\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/resend-verification"
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"refresh_token_here\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/refresh-token"
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@example.com\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/forgot-password"
+          }
+        },
+        {
+          "name": "Verify OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@example.com\",\n  \"otp\": \"123456\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/verify-otp"
+          }
+        },
+        {
+          "name": "Resend OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@example.com\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/resend-otp"
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"reset_token_here\",\n  \"newPassword\": \"NewPassword123\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/reset-password"
+          }
+        },
+        {
+          "name": "Get Me",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/auth/me"
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/auth/logout"
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"Password123\",\n  \"newPassword\": \"NewPassword123\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/change-password"
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "body",
+                  "value": "{\"name\":\"John Updated\",\"phone\":\"+987654321\"}",
+                  "type": "text"
+                },
+                {
+                  "key": "profileImage",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/auth/profile"
+          }
+        },
+        {
+          "name": "Update Email",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newemail@example.com\",\n  \"password\": \"Password123\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/update-email"
+          }
+        },
+        {
+          "name": "Resend Email Update OTP",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"Password123\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/resend-email-update"
+          }
+        },
+        {
+          "name": "Verify New Email",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/verify-new-email?email=newemail@example.com&token=new_verification_token",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "verify-new-email"],
+              "query": [
+                { "key": "email", "value": "newemail@example.com" },
+                { "key": "token", "value": "new_verification_token" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Set User Password (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"AdminNewPassword123\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/set-password/65a123456789abcdef000099"
+          }
+        },
+        {
+          "name": "Update Location",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lat\": 40.7128,\n  \"lng\": -74.006\n}"
+            },
+            "url": "{{baseUrl}}/auth/location"
+          }
+        },
+        {
+          "name": "Approve User (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "url": "{{baseUrl}}/auth/users/65a123456789abcdef000099/approve"
+          }
+        },
+        {
+          "name": "Revoke User Approval (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "url": "{{baseUrl}}/auth/users/65a123456789abcdef000099/revoke-approval"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Public Policies",
+      "item": [
+        {
+          "name": "Get All Policies",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/public"
+          }
+        },
+        {
+          "name": "Get Policy By Type",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/public/terms-and-conditions"
+          }
+        },
+        {
+          "name": "Upsert Policy (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"terms-and-conditions\",\n  \"title\": \"Terms & Conditions\",\n  \"content\": \"Welcome to VIBEZ. By using our service...\"\n}"
+            },
+            "url": "{{baseUrl}}/public"
+          }
+        },
+        {
+          "name": "Delete Policy (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/public/terms-and-conditions"
+          }
+        }
+      ]
+    },
+    {
+      "name": "FAQs",
+      "item": [
+        {
+          "name": "Get Active FAQs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/faqs"
+          }
+        },
+        {
+          "name": "Get FAQ By ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/faqs/65a987654321abcdef000001"
+          }
+        },
+        {
+          "name": "Create FAQ (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question\": \"How do I claim a deal?\",\n  \"answer\": \"Search for a restaurant, pick an active deal, and hit Reserve.\",\n  \"audience\": \"student\"\n}"
+            },
+            "url": "{{baseUrl}}/faqs"
+          }
+        },
+        {
+          "name": "Get All FAQs (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/faqs/admin/all"
+          }
+        },
+        {
+          "name": "Update FAQ (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question\": \"How do I claim a restaurant deal?\",\n  \"answer\": \"Simply choose your deal and book the reservation.\"\n}"
+            },
+            "url": "{{baseUrl}}/faqs/65a987654321abcdef000001"
+          }
+        },
+        {
+          "name": "Toggle FAQ Status (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "url": "{{baseUrl}}/faqs/65a987654321abcdef000001/toggle-status"
+          }
+        },
+        {
+          "name": "Delete FAQ (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/faqs/65a987654321abcdef000001"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Promo Codes",
+      "item": [
+        {
+          "name": "Create Promo Code",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"VIBEZ20\",\n  \"discountPercentage\": 20,\n  \"maxDiscountAmount\": 50,\n  \"minOrderAmount\": 100,\n  \"usageLimit\": 500,\n  \"isActive\": true\n}"
+            },
+            "url": "{{baseUrl}}/promocodes"
+          }
+        },
+        {
+          "name": "Get All Promo Codes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/promocodes"
+          }
+        },
+        {
+          "name": "Get Promo Code By ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/promocodes/65ab12345678abcdef000001"
+          }
+        },
+        {
+          "name": "Get Promo Code By Code String",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/promocodes/code/VIBEZ20"
+          }
+        },
+        {
+          "name": "Update Promo Code",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"discountPercentage\": 25,\n  \"isActive\": true\n}"
+            },
+            "url": "{{baseUrl}}/promocodes/65ab12345678abcdef000001"
+          }
+        },
+        {
+          "name": "Delete Promo Code",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/promocodes/65ab12345678abcdef000001"
+          }
+        },
+        {
+          "name": "Use Promo Code",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"VIBEZ20\"\n}"
+            },
+            "url": "{{baseUrl}}/promocodes/use"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Restaurants",
+      "item": [
+        {
+          "name": "Get All Restaurants",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/restaurants?page=1&limit=10&search=Gourmet&restaurantType=DINE_IN",
+              "host": ["{{baseUrl}}"],
+              "path": ["restaurants"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "search", "value": "Gourmet" },
+                { "key": "restaurantType", "value": "DINE_IN" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Restaurant By ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/restaurants/65ac12345678abcdef000001"
+          }
+        },
+        {
+          "name": "Get My Restaurant",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{restaurantOwnerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/restaurants/my/restaurant"
+          }
+        },
+        {
+          "name": "Create Restaurant",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{restaurantOwnerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "body",
+                  "value": "{\"restaurantName\":\"Tasty Bites\",\"restaurantDescription\":\"Best fast food\",\"restaurantType\":\"TAKE_AWAY\",\"cuisineType\":\"MEXICAN\",\"restaurantWebsite\":\"https://tastybites.com\",\"restaurantAddress\":{\"street\":\"456 Main St\",\"city\":\"Metroville\",\"state\":\"CA\",\"zipCode\":\"90210\",\"country\":\"USA\",\"lat\":34.0522,\"lng\":-118.2437},\"restaurantOpenHours\":[{\"day\":\"MONDAY\",\"isOpen\":true,\"openTime\":\"10:00\",\"closeTime\":\"21:00\"}]}",
+                  "type": "text"
+                },
+                {
+                  "key": "restaurantImage",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/restaurants"
+          }
+        },
+        {
+          "name": "Update Restaurant",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{restaurantOwnerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "body",
+                  "value": "{\"restaurantDescription\":\"Fully updated premium description\"}",
+                  "type": "text"
+                },
+                {
+                  "key": "restaurantImage",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/restaurants/65ac12345678abcdef000001"
+          }
+        },
+        {
+          "name": "Delete Restaurant",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{restaurantOwnerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/restaurants/65ac12345678abcdef000001"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reservations",
+      "item": [
+        {
+          "name": "Create Reservation",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"restaurantId\": \"65ac12345678abcdef000001\",\n  \"dealId\": \"65ad12345678abcdef000001\",\n  \"partySize\": 4,\n  \"reservationDate\": \"2026-06-25T18:00:00.000Z\",\n  \"reservationTime\": \"18:30\",\n  \"specialRequests\": \"Window table if possible\"\n}"
+            },
+            "url": "{{baseUrl}}/reservations"
+          }
+        },
+        {
+          "name": "Get My Reservations",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/reservations/my"
+          }
+        },
+        {
+          "name": "Get Reservation By ID",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/reservations/65ae12345678abcdef000001"
+          }
+        },
+        {
+          "name": "Update Reservation",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"partySize\": 6,\n  \"specialRequests\": \"No peanuts in the meals\"\n}"
+            },
+            "url": "{{baseUrl}}/reservations/65ae12345678abcdef000001"
+          }
+        },
+        {
+          "name": "Delete Reservation",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/reservations/65ae12345678abcdef000001"
+          }
+        },
+        {
+          "name": "Get All Reservations (Admin/Owner)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{restaurantOwnerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/reservations"
+          }
+        },
+        {
+          "name": "Update Reservation Status (Admin/Owner)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{restaurantOwnerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"COMPLETED\"\n}"
+            },
+            "url": "{{baseUrl}}/reservations/65ae12345678abcdef000001/status"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Subscriptions",
+      "item": [
+        {
+          "name": "Get All Subscription Plans",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/subscriptions/plans"
+          }
+        },
+        {
+          "name": "Create Subscription Plan (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Premium Plan\",\n  \"price\": 29.99,\n  \"duration\": \"MONTHLY\",\n  \"isFreeTrial\": true,\n  \"freeTrialDays\": 14\n}"
+            },
+            "url": "{{baseUrl}}/subscriptions/plans"
+          }
+        },
+        {
+          "name": "Get Subscription Plan By ID (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/subscriptions/plans/65af12345678abcdef000001"
+          }
+        },
+        {
+          "name": "Update Subscription Plan (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 34.99\n}"
+            },
+            "url": "{{baseUrl}}/subscriptions/plans/65af12345678abcdef000001"
+          }
+        },
+        {
+          "name": "Delete Subscription Plan (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/subscriptions/plans/65af12345678abcdef000001"
+          }
+        }
+      ]
+    },
+    {
+      "name": "User Subscriptions",
+      "item": [
+        {
+          "name": "Create Checkout Session",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subscriptionPlanId\": \"65af12345678abcdef000001\"\n}"
+            },
+            "url": "{{baseUrl}}/user-subscriptions/checkout"
+          }
+        },
+        {
+          "name": "Create User Subscription",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subscriptionPlanId\": \"65af12345678abcdef000001\",\n  \"stripeSubscriptionId\": \"sub_1234567890\",\n  \"stripeCustomerId\": \"cus_1234567890\"\n}"
+            },
+            "url": "{{baseUrl}}/user-subscriptions"
+          }
+        },
+        {
+          "name": "Get User Subscriptions",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/user-subscriptions"
+          }
+        },
+        {
+          "name": "Get User Subscription By ID",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/user-subscriptions/65b012345678abcdef000001"
+          }
+        },
+        {
+          "name": "Cancel User Subscription",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "url": "{{baseUrl}}/user-subscriptions/65b012345678abcdef000001/cancel"
+          }
+        },
+        {
+          "name": "Resume User Subscription",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "url": "{{baseUrl}}/user-subscriptions/65b012345678abcdef000001/resume"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Deals",
+      "item": [
+        {
+          "name": "Get Active Deals",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/deals?page=1&limit=10&search=Pizza&dealType=TWO_FOR_ONE",
+              "host": ["{{baseUrl}}"],
+              "path": ["deals"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "search", "value": "Pizza" },
+                { "key": "dealType", "value": "TWO_FOR_ONE" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Deal By ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/deals/65ad12345678abcdef000001"
+          }
+        },
+        {
+          "name": "Create Deal (Admin/Owner)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{restaurantOwnerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"restaurantId\": \"65ac12345678abcdef000001\",\n  \"dealType\": \"TWO_FOR_ONE\",\n  \"title\": \"2 for 1 Pizza Night\",\n  \"description\": \"Buy one premium pizza, get one free on Friday dinner!\",\n  \"day\": \"FRIDAY\",\n  \"mealTime\": \"DINNER\",\n  \"start\": \"18:00\",\n  \"end\": \"22:00\",\n  \"maxClaimsPerDay\": 50,\n  \"isActive\": true,\n  \"twoForOne\": {\n    \"appliesTo\": \"MAIN_COURSE\"\n  }\n}"
+            },
+            "url": "{{baseUrl}}/deals"
+          }
+        },
+        {
+          "name": "Get All Deals (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/deals/admin/all"
+          }
+        },
+        {
+          "name": "Update Deal (Admin/Owner)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{restaurantOwnerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Friday 2 for 1 Deal\",\n  \"maxClaimsPerDay\": 60\n}"
+            },
+            "url": "{{baseUrl}}/deals/65ad12345678abcdef000001"
+          }
+        },
+        {
+          "name": "Toggle Deal Status (Admin/Owner)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{restaurantOwnerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "url": "{{baseUrl}}/deals/65ad12345678abcdef000001/toggle-status"
+          }
+        },
+        {
+          "name": "Delete Deal (Admin/Owner)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{restaurantOwnerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/deals/65ad12345678abcdef000001"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reviews",
+      "item": [
+        {
+          "name": "Get Active Reviews",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reviews?restaurantId=65ac12345678abcdef000001",
+              "host": ["{{baseUrl}}"],
+              "path": ["reviews"],
+              "query": [
+                { "key": "restaurantId", "value": "65ac12345678abcdef000001" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Review By ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/reviews/65b112345678abcdef000001"
+          }
+        },
+        {
+          "name": "Create Review",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "body",
+                  "value": "{\"restaurantId\":\"65ac12345678abcdef000001\",\"rating\":5,\"comment\":\"Amazing service and great food!\"}",
+                  "type": "text"
+                },
+                {
+                  "key": "images",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/reviews"
+          }
+        },
+        {
+          "name": "Update Review",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "body",
+                  "value": "{\"rating\":4,\"comment\":\"Still highly recommend!\"}",
+                  "type": "text"
+                },
+                {
+                  "key": "images",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/reviews/65b112345678abcdef000001"
+          }
+        },
+        {
+          "name": "Delete Review",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/reviews/65b112345678abcdef000001"
+          }
+        },
+        {
+          "name": "Get All Reviews (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/reviews/admin/all"
+          }
+        },
+        {
+          "name": "Toggle Review Status (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "url": "{{baseUrl}}/reviews/65b112345678abcdef000001/toggle-status"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Favorites",
+      "item": [
+        {
+          "name": "Get User Favorites",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/favorites"
+          }
+        },
+        {
+          "name": "Check Is Favorite",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/favorites/check/65ac12345678abcdef000001"
+          }
+        },
+        {
+          "name": "Add Favorite",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"restaurantId\": \"65ac12345678abcdef000001\"\n}"
+            },
+            "url": "{{baseUrl}}/favorites"
+          }
+        },
+        {
+          "name": "Remove Favorite",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/favorites/65ac12345678abcdef000001"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Saved Deals",
+      "item": [
+        {
+          "name": "Get User Saved Deals",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/saved-deals"
+          }
+        },
+        {
+          "name": "Check Is Saved Deal",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/saved-deals/check/65ad12345678abcdef000001"
+          }
+        },
+        {
+          "name": "Save Deal",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dealId\": \"65ad12345678abcdef000001\"\n}"
+            },
+            "url": "{{baseUrl}}/saved-deals"
+          }
+        },
+        {
+          "name": "Unsave Deal",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/saved-deals/65ad12345678abcdef000001"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Shorts",
+      "item": [
+        {
+          "name": "Get Random Shorts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/shorts/random"
+          }
+        },
+        {
+          "name": "Get Shorts By Restaurant ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/shorts/restaurant/65ac12345678abcdef000001"
+          }
+        },
+        {
+          "name": "Get My Shorts",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{restaurantOwnerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/shorts/my-short"
+          }
+        },
+        {
+          "name": "Upload Shorts Video",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{restaurantOwnerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "body",
+                  "value": "{\"restaurantId\":\"65ac12345678abcdef000001\"}",
+                  "type": "text"
+                },
+                {
+                  "key": "short",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/shorts/upload"
+          }
+        },
+        {
+          "name": "Delete Shorts Video",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{restaurantOwnerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shortId\": \"65c212345678abcdef000001\"\n}"
+            },
+            "url": "{{baseUrl}}/shorts"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://10.10.26.171:5055/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "adminToken",
+      "value": "admin_jwt_token_here",
+      "type": "string"
+    },
+    {
+      "key": "restaurantOwnerToken",
+      "value": "restaurant_owner_jwt_token_here",
+      "type": "string"
+    },
+    {
+      "key": "userToken",
+      "value": "user_jwt_token_here",
+      "type": "string"
+    }
+  ]
+}

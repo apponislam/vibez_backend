@@ -12,7 +12,7 @@ import { RestaurantModel } from "../restaurant/restaurant.model";
 const registerUser = async (data: any) => {
     // Check existing user
     const existing = await UserModel.findOne({ email: data.email });
-    if (existing) throw new ApiError(httpStatus.BAD_REQUEST, "Email already in use");
+    if (existing) throw new ApiError(httpStatus.BAD_REQUEST, "Email already registered. Please sign in.");
 
     // Remove balance and percentage if sent in payload to prevent manual setting
     if (data.balance !== undefined) {
@@ -68,11 +68,11 @@ const registerUser = async (data: any) => {
 const loginUser = async (data: { email: string; password: string }) => {
     // Find user
     const user = await UserModel.findOne({ email: data.email });
-    if (!user) throw new ApiError(httpStatus.UNAUTHORIZED, "User Not Found");
+    if (!user) throw new ApiError(httpStatus.UNAUTHORIZED, "Incorrect email or password");
 
     // Check password
     const isPasswordValid = await bcrypt.compare(data.password, user.password as string);
-    if (!isPasswordValid) throw new ApiError(httpStatus.UNAUTHORIZED, "Wrong Password Or Email");
+    if (!isPasswordValid) throw new ApiError(httpStatus.UNAUTHORIZED, "Incorrect email or password");
 
     // Check if active
     if (!user.isActive) throw new ApiError(httpStatus.FORBIDDEN, "Account is deactivated");
@@ -292,7 +292,7 @@ const changePassword = async (userId: string, currentPassword: string, newPasswo
     if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not found");
 
     const isPasswordValid = await bcrypt.compare(currentPassword, user.password as string);
-    if (!isPasswordValid) throw new ApiError(httpStatus.BAD_REQUEST, "Current password is incorrect");
+    if (!isPasswordValid) throw new ApiError(httpStatus.BAD_REQUEST, "Incorrect current password");
 
     const hashedPassword = await bcrypt.hash(newPassword, Number(config.bcrypt_salt_rounds));
     user.password = hashedPassword;
@@ -304,10 +304,10 @@ const updateEmail = async (userId: string, newEmail: string, password: string) =
     if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not found");
 
     const isPasswordValid = await bcrypt.compare(password, user.password as string);
-    if (!isPasswordValid) throw new ApiError(httpStatus.BAD_REQUEST, "Password is incorrect");
+    if (!isPasswordValid) throw new ApiError(httpStatus.BAD_REQUEST, "Incorrect password");
 
     const existingUser = await UserModel.findOne({ email: newEmail });
-    if (existingUser) throw new ApiError(httpStatus.BAD_REQUEST, "Email already in use");
+    if (existingUser) throw new ApiError(httpStatus.BAD_REQUEST, "Email is already registered");
 
     // Generate verification token for new email
     const verificationToken = crypto.randomBytes(32).toString("hex");
@@ -402,7 +402,7 @@ const revokeUserApproval = async (userId: string) => {
 const registerRestaurant = async (data: any) => {
     // Check existing user
     const existing = await UserModel.findOne({ email: data.email });
-    if (existing) throw new ApiError(httpStatus.BAD_REQUEST, "Email already in use");
+    if (existing) throw new ApiError(httpStatus.BAD_REQUEST, "Email already registered. Please sign in.");
 
     // Remove balance and percentage if sent in payload to prevent manual setting
     if (data.balance !== undefined) {
