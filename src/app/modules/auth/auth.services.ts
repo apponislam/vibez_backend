@@ -6,6 +6,8 @@ import { UserModel } from "./auth.model";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { sendOtpEmail, sendVerificationEmail, sendWelcomeEmail, sendEmailUpdateVerification } from "../../../utils/emailTemplates";
+import mongoose from "mongoose";
+import { RestaurantModel } from "../restaurant/restaurant.model";
 
 const registerUser = async (data: any) => {
     // Check existing user
@@ -397,8 +399,147 @@ const revokeUserApproval = async (userId: string) => {
     return user;
 };
 
+const registerRestaurant = async (data: any) => {
+    // Check existing user
+    const existing = await UserModel.findOne({ email: data.email });
+    if (existing) throw new ApiError(httpStatus.BAD_REQUEST, "Email already in use");
+
+    // Remove balance and percentage if sent in payload to prevent manual setting
+    if (data.balance !== undefined) {
+        delete data.balance;
+    }
+    if (data.percentage !== undefined) {
+        delete data.percentage;
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(data.password, Number(config.bcrypt_salt_rounds));
+
+    // Generate verification token
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const verificationExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    // Prepare User Data
+    const userData = {
+        name: data.name,
+        email: data.email,
+        password: hashedPassword,
+        role: "RESTAURANT_OWNER" as const,
+        phone: data.phone,
+        profileImage: data.profileImage,
+        location: data.location,
+        address: data.address,
+        isActive: true,
+        isEmailVerified: false,
+        balance: 0,
+        verificationToken,
+        verificationCode,
+        verificationExpiry,
+    };
+
+    // Parse Address and Open Hours if they are strings
+    let address = data.restaurantAddress;
+    if (typeof address === "string") {
+        try {
+            address = JSON.parse(address);
+        } catch (error) {
+            throw new ApiError(httpStatus.BAD_REQUEST, "Invalid restaurant address format");
+        }
+    }
+
+    let openHours = data.restaurantOpenHours;
+    if (typeof openHours === "string") {
+        try {
+            openHours = JSON.parse(openHours);
+        } catch (error) {
+            throw new ApiError(httpStatus.BAD_REQUEST, "Invalid restaurant open hours format");
+        }
+    }
+
+    // Parse lat/lng to GeoJSON if provided in address
+    if (address && address.lat !== undefined && address.lng !== undefined) {
+        const lat = parseFloat(address.lat);
+        const lng = parseFloat(address.lng);
+        address.location = {
+            type: "Point",
+            coordinates: [lng, lat],
+        };
+    }
+
+    // Prepare Restaurant Data
+    const restaurantData: any = {
+        restaurantName: data.restaurantName,
+        restaurantDescription: data.restaurantDescription,
+        restaurantType: data.restaurantType,
+        cuisineType: data.cuisineType,
+        restaurantWebsite: data.restaurantWebsite,
+        restaurantAddress: address,
+        restaurantOpenHours: openHours,
+        restaurantImage: data.restaurantImage,
+    };
+
+    // Start a Mongoose Session for Transaction
+    const session = await mongoose.startSession();
+    let createdUser;
+    let createdRestaurant;
+
+    try {
+        session.startTransaction();
+
+        // 1. Create User
+        const user = new UserModel(userData);
+        await user.save({ session });
+        createdUser = user;
+
+        // 2. Create Restaurant
+        restaurantData.restaurantOwner = createdUser._id;
+        const restaurant = new RestaurantModel(restaurantData);
+        await restaurant.save({ session });
+        createdRestaurant = restaurant;
+
+        await session.commitTransaction();
+    } catch (error) {
+        await session.abortTransaction();
+        throw error;
+    } finally {
+        session.endSession();
+    }
+
+    // Send emails (non-blocking, don't revert registration if email fails)
+    try {
+        const verificationUrl = `${config.client_url}/verify-email?token=${verificationToken}&email=${createdUser.email}`;
+        sendVerificationEmail(createdUser.email as string, createdUser.name as string, verificationUrl, verificationCode);
+        sendWelcomeEmail(createdUser.email as string, createdUser.name as string);
+    } catch (emailError) {
+        console.error("Failed to send verification/welcome email:", emailError);
+    }
+
+    // Generate tokens
+    const jwtPayload = {
+        _id: createdUser._id,
+        name: createdUser.name,
+        email: createdUser.email,
+        role: createdUser.role,
+    };
+
+    const accessToken = jwtHelper.generateToken(jwtPayload, config.jwt_access_secret as string, config.jwt_access_expire as string);
+    const refreshToken = jwtHelper.generateToken(jwtPayload, config.jwt_refresh_secret as string, config.jwt_refresh_expire as string);
+
+    const userObject = createdUser.toObject();
+    const { password: pwd, verificationToken: vToken, verificationExpiry: vExpiry, verificationCode: vCode, ...userWithoutSensitive } = userObject;
+
+    return {
+        user: userWithoutSensitive,
+        restaurant: createdRestaurant,
+        accessToken,
+        refreshToken,
+    };
+};
+
 export const authServices = {
     registerUser,
+    registerRestaurant,
     loginUser,
     verifyEmail,
     resendVerificationEmail,

@@ -152,3 +152,76 @@ export const uploadShorts = (req: Request, res: Response, next: NextFunction) =>
         next();
     });
 };
+
+// Ensure restaurant images directory exists
+const restaurantImageDir = path.join(process.cwd(), "uploads", "restaurant-images");
+if (!fs.existsSync(restaurantImageDir)) fs.mkdirSync(restaurantImageDir, { recursive: true });
+
+// Middleware for restaurant registration (profile image + restaurant image)
+export const uploadRestaurantRegistration = (req: Request, res: Response, next: NextFunction) => {
+    const uploadFields = imageUpload.fields([
+        { name: "profileImage", maxCount: 1 },
+        { name: "restaurantImage", maxCount: 1 },
+    ]);
+
+    uploadFields(req, res, async (err) => {
+        if (err) return next(err);
+
+        // Process profileImage
+        if (req.files && !Array.isArray(req.files) && req.files["profileImage"]) {
+            try {
+                const file = req.files["profileImage"][0];
+                const newName = generateImageFileName("profile", file.originalname);
+                const outputPath = path.join(profileImageDir, newName);
+
+                await sharp(file.buffer).webp({ quality: 80 }).toFile(outputPath);
+
+                req.body.profileImage = `/uploads/profile-images/${newName}`;
+            } catch (error) {
+                return next(error);
+            }
+        }
+
+        // Process restaurantImage
+        if (req.files && !Array.isArray(req.files) && req.files["restaurantImage"]) {
+            try {
+                const file = req.files["restaurantImage"][0];
+                const newName = generateImageFileName("restaurant", file.originalname);
+                const outputPath = path.join(restaurantImageDir, newName);
+
+                await sharp(file.buffer).webp({ quality: 80 }).toFile(outputPath);
+
+                req.body.restaurantImage = `/uploads/restaurant-images/${newName}`;
+            } catch (error) {
+                return next(error);
+            }
+        }
+
+        next();
+    });
+};
+
+// Middleware for single restaurant image upload
+export const uploadRestaurantImage = (req: Request, res: Response, next: NextFunction) => {
+    const uploadSingle = imageUpload.single("restaurantImage");
+
+    uploadSingle(req, res, async (err) => {
+        if (err) return next(err);
+
+        if (req.file) {
+            try {
+                const file = req.file;
+                const newName = generateImageFileName("restaurant", file.originalname);
+                const outputPath = path.join(restaurantImageDir, newName);
+
+                await sharp(file.buffer).webp({ quality: 80 }).toFile(outputPath);
+
+                req.body.restaurantImage = `/uploads/restaurant-images/${newName}`;
+            } catch (error) {
+                return next(error);
+            }
+        }
+
+        next();
+    });
+};

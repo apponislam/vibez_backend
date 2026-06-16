@@ -4,8 +4,31 @@ import sendResponse from "../../../utils/sendResponse";
 import { Request, Response } from "express";
 import { restaurantServices } from "./restaurant.services";
 
+const parseRequestBody = (req: Request): any => {
+    let data: any = {};
+    if (req.body.body && typeof req.body.body === "string") {
+        try {
+            data = JSON.parse(req.body.body);
+        } catch (error) {
+            try {
+                data = JSON.parse(`{${req.body.body}}`);
+            } catch (innerError) {
+                data = req.body;
+            }
+        }
+    } else {
+        data = req.body;
+    }
+
+    if (req.body.restaurantImage) {
+        data.restaurantImage = req.body.restaurantImage;
+    }
+    return data;
+};
+
 const createRestaurant = catchAsync(async (req: Request, res: Response) => {
-    const result = await restaurantServices.createRestaurant(req.body, req.user._id as string);
+    const data = parseRequestBody(req);
+    const result = await restaurantServices.createRestaurant(data, req.user._id as string);
     sendResponse(res, {
         statusCode: httpStatus.CREATED,
         success: true,
@@ -46,7 +69,8 @@ const getMyRestaurant = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateRestaurant = catchAsync(async (req: Request, res: Response) => {
-    const result = await restaurantServices.updateRestaurant(req.params.id as string, req.body, req.user._id as string);
+    const data = parseRequestBody(req);
+    const result = await restaurantServices.updateRestaurant(req.params.id as string, data, req.user._id as string);
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,

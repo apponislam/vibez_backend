@@ -346,8 +346,60 @@ const revokeUserApproval = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const registerRestaurant = catchAsync(async (req: Request, res: Response) => {
+    // Parse the body field if it's a string
+    let data: any = {};
+    if (req.body.body && typeof req.body.body === "string") {
+        try {
+            data = JSON.parse(req.body.body);
+        } catch (error) {
+            try {
+                const bodyStr = `{${req.body.body}}`;
+                data = JSON.parse(bodyStr);
+            } catch (innerError) {
+                throw new ApiError(httpStatus.BAD_REQUEST, "Invalid JSON in request body");
+            }
+        }
+    } else {
+        data = req.body;
+    }
+
+    // Attach profileImage and restaurantImage from req.body (populated by multer uploadRestaurantRegistration middleware)
+    if (req.body.profileImage) {
+        data.profileImage = req.body.profileImage;
+    }
+    if (req.body.restaurantImage) {
+        data.restaurantImage = req.body.restaurantImage;
+    }
+
+    // Basic validation
+    if (!data.email || !data.password || !data.name || !data.restaurantName || !data.restaurantType || !data.cuisineType || !data.restaurantAddress) {
+        throw new ApiError(httpStatus.BAD_REQUEST, "Missing required fields");
+    }
+
+    const result = await authServices.registerRestaurant(data);
+
+    res.cookie("refreshToken", result.refreshToken, {
+        httpOnly: true,
+        secure: config.node_env === "production",
+        sameSite: "strict",
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+
+    sendResponse(res, {
+        statusCode: httpStatus.CREATED,
+        success: true,
+        message: "Restaurant owner registered and restaurant created successfully",
+        data: {
+            user: result.user,
+            accessToken: result.accessToken,
+        },
+    });
+});
+
 export const authControllers = {
     register,
+    registerRestaurant,
     login,
     verifyEmail,
     resendVerificationEmail,

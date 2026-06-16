@@ -75,4 +75,5 @@ export interface IRestaurant {
         };
     };
     restaurantOpenHours: RestaurantOpenHour[];
+    restaurantImage?: string;
 }

@@ -73,6 +73,9 @@ const RestaurantSchema = new Schema<IRestaurant>(
             type: [RestaurantOpenHourSchema],
             required: [true, "Restaurant open hours are required"],
         },
+        restaurantImage: {
+            type: String,
+        },
     },
     {
         timestamps: true,

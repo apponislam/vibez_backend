@@ -1,11 +1,12 @@
 import { Router } from "express";
 import { authControllers } from "./auth.controllers";
 import auth from "../../middlewares/auth";
-import { uploadProfileImage } from "../../middlewares/multer";
+import { uploadProfileImage, uploadRestaurantRegistration } from "../../middlewares/multer";
 const router = Router();
 
 // Public routes
 router.post("/register", uploadProfileImage, authControllers.register);
+router.post("/register-restaurant", uploadRestaurantRegistration, authControllers.registerRestaurant);
 router.post("/login", authControllers.login);
 router.get("/verify-email", authControllers.verifyEmail);
 router.post("/resend-verification", authControllers.resendVerificationEmail);
