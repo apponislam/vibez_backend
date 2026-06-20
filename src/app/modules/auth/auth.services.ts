@@ -22,6 +22,23 @@ const registerUser = async (data: any) => {
         delete data.percentage;
     }
 
+    // Resolve referral/referredBy if provided
+    let referredBy = null;
+    const referralCodeInput = data.referredByCode || data.referralCode;
+    if (data.referredBy && mongoose.Types.ObjectId.isValid(data.referredBy)) {
+        referredBy = data.referredBy;
+    } else if (referralCodeInput) {
+        const referrer = await UserModel.findOne({ referralCode: referralCodeInput });
+        if (referrer) {
+            referredBy = referrer._id;
+        }
+    }
+
+    // Remove these fields so they don't interfere with the new user's database document fields
+    delete data.referralCode;
+    delete data.referredByCode;
+    delete data.referredBy;
+
     // Hash password
     const hashedPassword = await bcrypt.hash(data.password, Number(config.bcrypt_salt_rounds));
 
@@ -37,6 +54,7 @@ const registerUser = async (data: any) => {
         isActive: true,
         isEmailVerified: false,
         balance: 0,
+        referredBy,
         verificationToken,
         verificationCode,
         verificationExpiry,
@@ -420,6 +438,18 @@ const registerRestaurant = async (data: any) => {
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
     const verificationExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
+    // Resolve referral/referredBy if provided
+    let referredBy = null;
+    const referralCodeInput = data.referredByCode || data.referralCode;
+    if (data.referredBy && mongoose.Types.ObjectId.isValid(data.referredBy)) {
+        referredBy = data.referredBy;
+    } else if (referralCodeInput) {
+        const referrer = await UserModel.findOne({ referralCode: referralCodeInput });
+        if (referrer) {
+            referredBy = referrer._id;
+        }
+    }
+
     // Prepare User Data
     const userData = {
         name: data.name,
@@ -433,6 +463,7 @@ const registerRestaurant = async (data: any) => {
         isActive: true,
         isEmailVerified: false,
         balance: 0,
+        referredBy,
         verificationToken,
         verificationCode,
         verificationExpiry,
