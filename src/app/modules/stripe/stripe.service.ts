@@ -14,7 +14,15 @@ const createPaymentIntent = async (amount: number, currency: string = "usd") => 
     return paymentIntent;
 };
 
-const createCheckoutSession = async (priceId: string, successUrl: string, cancelUrl: string, customerEmail?: string, metadata?: Record<string, string>, trialPeriodDays?: number) => {
+const createCheckoutSession = async (
+    priceId: string,
+    successUrl: string,
+    cancelUrl: string,
+    customerEmail?: string,
+    metadata?: Record<string, string>,
+    trialPeriodDays?: number,
+    coupon?: string
+) => {
     const session = await stripe.checkout.sessions.create({
         payment_method_types: ["card"],
         line_items: [
@@ -28,6 +36,11 @@ const createCheckoutSession = async (priceId: string, successUrl: string, cancel
         cancel_url: cancelUrl,
         customer_email: customerEmail,
         metadata,
+        ...(coupon ? {
+            discounts: [{ coupon }],
+        } : {
+            allow_promotion_codes: true,
+        }),
         ...(trialPeriodDays && {
             subscription_data: {
                 trial_period_days: trialPeriodDays,
@@ -66,6 +79,24 @@ const resumeSubscription = async (subscriptionId: string) => {
     return subscription;
 };
 
+const createCoupon = async (
+    id: string,
+    percentOff?: number,
+    amountOff?: number,
+    currency: string = "usd",
+    duration: "once" | "repeating" | "forever" = "forever",
+    durationInMonths?: number
+) => {
+    const coupon = await stripe.coupons.create({
+        id,
+        ...(percentOff !== undefined && { percent_off: percentOff }),
+        ...(amountOff !== undefined && { amount_off: amountOff, currency }),
+        duration,
+        ...(duration === "repeating" && durationInMonths && { duration_in_months: durationInMonths }),
+    });
+    return coupon;
+};
+
 export const stripeServices = {
     createPaymentIntent,
     createCheckoutSession,
@@ -73,5 +104,6 @@ export const stripeServices = {
     createPrice,
     cancelSubscription,
     resumeSubscription,
+    createCoupon,
     stripe,
 };

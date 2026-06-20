@@ -53,10 +53,30 @@ const deleteSubscriptionPlan = async (id: string) => {
     return { message: "Subscription plan deleted successfully" };
 };
 
+const createCoupon = async (data: {
+    id: string;
+    percentOff?: number;
+    amountOff?: number;
+    currency?: string;
+    duration?: "once" | "repeating" | "forever";
+    durationInMonths?: number;
+}) => {
+    const coupon = await stripeServices.createCoupon(
+        data.id,
+        data.percentOff,
+        data.amountOff,
+        data.currency,
+        data.duration,
+        data.durationInMonths
+    );
+    return coupon;
+};
+
 export const subscriptionServices = {
     createSubscriptionPlan,
     getAllSubscriptionPlans,
     getSubscriptionPlanById,
     updateSubscriptionPlan,
     deleteSubscriptionPlan,
+    createCoupon,
 };

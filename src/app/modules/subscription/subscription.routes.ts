@@ -11,6 +11,7 @@ router.get("/plans", subscriptionControllers.getAllSubscriptionPlans);
 // Admin routes
 router.use(auth, authorize(["ADMIN"]));
 router.post("/plans", subscriptionControllers.createSubscriptionPlan);
+router.post("/coupons", subscriptionControllers.createCoupon);
 router.get("/plans/:id", subscriptionControllers.getSubscriptionPlanById);
 router.patch("/plans/:id", subscriptionControllers.updateSubscriptionPlan);
 router.delete("/plans/:id", subscriptionControllers.deleteSubscriptionPlan);

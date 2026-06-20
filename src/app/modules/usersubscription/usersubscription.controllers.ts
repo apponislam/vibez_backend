@@ -8,7 +8,7 @@ import { SubscriptionPlanModel } from "../subscription/subscription.model";
 import config from "../../config";
 
 const createCheckoutSession = catchAsync(async (req: Request, res: Response) => {
-    const { planId, subscriptionPlanId, successUrl, cancelUrl } = req.body;
+    const { planId, subscriptionPlanId, successUrl, cancelUrl, coupon } = req.body;
     const targetPlanId = planId || subscriptionPlanId;
     const userId = req.user._id.toString();
 
@@ -30,6 +30,7 @@ const createCheckoutSession = catchAsync(async (req: Request, res: Response) => 
         req.user.email,
         { userId }, // Pass userId as metadata
         plan.isFreeTrial ? plan.freeTrialDays : undefined,
+        coupon,
     );
 
     sendResponse(res, {
