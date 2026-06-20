@@ -108,7 +108,7 @@ const verifyEmail = async (email: string, token?: string, otp?: string) => {
     });
 
     if (!user) {
-        throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+        throw new ApiError(httpStatus.NOT_FOUND, "User not registered");
     }
 
     if (token) {
@@ -135,7 +135,7 @@ const verifyEmail = async (email: string, token?: string, otp?: string) => {
 
 const resendVerificationEmail = async (email: string) => {
     const user = await UserModel.findOne({ email });
-    if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+    if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not registered");
 
     if (user.isEmailVerified) {
         throw new ApiError(httpStatus.BAD_REQUEST, "Email already verified");
@@ -160,7 +160,7 @@ const resendVerificationEmail = async (email: string) => {
 
 const getUserById = async (userId: string) => {
     const user = await UserModel.findById(userId).select("-password");
-    if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+    if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not registered");
     return user;
 };
 
@@ -171,7 +171,7 @@ const refreshAccessToken = async (refreshToken: string) => {
         const decoded = jwtHelper.verifyToken(refreshToken, config.jwt_refresh_secret as string);
 
         const user = await UserModel.findById(decoded._id).select("-password");
-        if (!user) throw new ApiError(httpStatus.UNAUTHORIZED, "User not found");
+        if (!user) throw new ApiError(httpStatus.UNAUTHORIZED, "User not registered");
 
         const jwtPayload = {
             _id: user._id,
@@ -190,7 +190,7 @@ const refreshAccessToken = async (refreshToken: string) => {
 
 const requestPasswordReset = async (email: string) => {
     const user = await UserModel.findOne({ email });
-    if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+    if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not registered");
 
     // Generate OTP
     const otp = crypto.randomInt(100000, 999999).toString();
@@ -208,7 +208,7 @@ const requestPasswordReset = async (email: string) => {
 
 const verifyOtp = async (email: string, otp: string) => {
     const user = await UserModel.findOne({ email });
-    if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+    if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not registered");
 
     if (!user.resetPasswordOtp || !user.resetPasswordOtpExpiry) {
         throw new ApiError(httpStatus.BAD_REQUEST, "No OTP request found");
@@ -238,7 +238,7 @@ const verifyOtp = async (email: string, otp: string) => {
 
 const resendOtp = async (email: string) => {
     const user = await UserModel.findOne({ email });
-    if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+    if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not registered");
 
     // Generate new OTP
     const otp = crypto.randomInt(100000, 999999).toString();
@@ -260,7 +260,7 @@ const resetPassword = async (token: string, newPassword: string) => {
         resetPasswordTokenExpiry: { $gt: new Date() },
     });
 
-    if (!user) throw new ApiError(httpStatus.BAD_REQUEST, "Invalid or expired token");
+    if (!user) throw new ApiError(httpStatus.BAD_REQUEST, "The password reset link is invalid or has expired. Please try again.");
 
     // Hash new password
     const hashedPassword = await bcrypt.hash(newPassword, Number(config.bcrypt_salt_rounds));
@@ -283,13 +283,13 @@ const updateProfile = async (userId: string, data: any) => {
 
     const user = await UserModel.findByIdAndUpdate(userId, { $set: data }, { returnDocument: "after", runValidators: true }).select("-password");
 
-    if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+    if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not registered");
     return user;
 };
 
 const changePassword = async (userId: string, currentPassword: string, newPassword: string) => {
     const user = await UserModel.findById(userId);
-    if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+    if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not registered");
 
     const isPasswordValid = await bcrypt.compare(currentPassword, user.password as string);
     if (!isPasswordValid) throw new ApiError(httpStatus.BAD_REQUEST, "Incorrect current password");
@@ -301,7 +301,7 @@ const changePassword = async (userId: string, currentPassword: string, newPasswo
 
 const updateEmail = async (userId: string, newEmail: string, password: string) => {
     const user = await UserModel.findById(userId);
-    if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+    if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not registered");
 
     const isPasswordValid = await bcrypt.compare(password, user.password as string);
     if (!isPasswordValid) throw new ApiError(httpStatus.BAD_REQUEST, "Incorrect password");
@@ -325,7 +325,7 @@ const updateEmail = async (userId: string, newEmail: string, password: string) =
 
 const resendEmailUpdate = async (userId: string, password: string) => {
     const user = await UserModel.findById(userId);
-    if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+    if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not registered");
 
     if (!user.pendingEmail) {
         throw new ApiError(httpStatus.BAD_REQUEST, "No pending email update");
@@ -356,7 +356,7 @@ const verifyNewEmail = async (token: string, email: string) => {
         emailVerificationExpiry: { $gt: new Date() },
     });
 
-    if (!user) throw new ApiError(httpStatus.BAD_REQUEST, "Invalid or expired token");
+    if (!user) throw new ApiError(httpStatus.BAD_REQUEST, "The email verification link is invalid or has expired. Please try again.");
 
     // Update email
     user.email = email;
@@ -371,7 +371,7 @@ const verifyNewEmail = async (token: string, email: string) => {
 
 const setUserPassword = async (userId: string, newPassword: string) => {
     const user = await UserModel.findById(userId);
-    if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+    if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not registered");
 
     const hashedPassword = await bcrypt.hash(newPassword, Number(config.bcrypt_salt_rounds));
     user.password = hashedPassword;
@@ -381,21 +381,21 @@ const setUserPassword = async (userId: string, newPassword: string) => {
 const updateLocation = async (userId: string, lat: number, lng: number) => {
     const user = await UserModel.findByIdAndUpdate(userId, { $set: { location: { lat, lng } } }, { returnDocument: "after", runValidators: true }).select("-password");
 
-    if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+    if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not registered");
     return user;
 };
 
 const approveUser = async (userId: string, approvedBy: string) => {
     const user = await UserModel.findByIdAndUpdate(userId, { $set: { approved: true, approvedBy, approvedAt: new Date() } }, { returnDocument: "after", runValidators: true }).select("-password");
 
-    if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+    if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not registered");
     return user;
 };
 
 const revokeUserApproval = async (userId: string) => {
     const user = await UserModel.findByIdAndUpdate(userId, { $set: { approved: false, approvedBy: undefined, approvedAt: undefined } }, { returnDocument: "after", runValidators: true }).select("-password");
 
-    if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+    if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not registered");
     return user;
 };
 
