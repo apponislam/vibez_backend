@@ -140,6 +140,10 @@ const userSchemaDefinition: any = {
         ref: "User",
     },
 
+    stripeConnectedAccountId: {
+        type: String,
+    },
+
     resetPasswordOtp: String,
     resetPasswordOtpExpiry: Date,
     resetPasswordToken: String,

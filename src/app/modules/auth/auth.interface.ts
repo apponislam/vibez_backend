@@ -43,6 +43,7 @@ export interface User {
     dietaryPreferences?: string[];
     referralCode?: string;
     referredBy?: Types.ObjectId | null;
+    stripeConnectedAccountId?: string;
 
     // Password reset fields
     resetPasswordOtp?: string;
