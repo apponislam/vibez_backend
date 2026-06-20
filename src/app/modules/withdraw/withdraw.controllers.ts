@@ -29,7 +29,7 @@ const requestWithdrawal = catchAsync(async (req: Request, res: Response) => {
 });
 
 const approveWithdrawal = catchAsync(async (req: Request, res: Response) => {
-    const result = await withdrawServices.approveWithdrawal(req.params.id);
+    const result = await withdrawServices.approveWithdrawal(req.params.id as string);
 
     sendResponse(res, {
         statusCode: httpStatus.OK,
@@ -41,7 +41,7 @@ const approveWithdrawal = catchAsync(async (req: Request, res: Response) => {
 
 const rejectWithdrawal = catchAsync(async (req: Request, res: Response) => {
     const { adminFeedback } = req.body;
-    const result = await withdrawServices.rejectWithdrawal(req.params.id, adminFeedback);
+    const result = await withdrawServices.rejectWithdrawal(req.params.id as string, adminFeedback);
 
     sendResponse(res, {
         statusCode: httpStatus.OK,
