@@ -9,6 +9,10 @@ const createSubscriptionPlan = async (data: Partial<ISubscriptionPlan>) => {
     let stripeProductId;
     let stripePriceId;
 
+    if (data.isFreeTrial === false) {
+        delete data.freeTrialDays;
+    }
+
     if (data.price !== undefined) {
         // Create product and price on Stripe
         const product = await stripeServices.createProduct(data.name as string);
@@ -42,7 +46,13 @@ const getSubscriptionPlanById = async (id: string) => {
 };
 
 const updateSubscriptionPlan = async (id: string, data: Partial<ISubscriptionPlan>) => {
-    const plan = await SubscriptionPlanModel.findByIdAndUpdate(id, { $set: data }, { new: true, runValidators: true });
+    const updateQuery: any = { $set: data };
+    if (data.isFreeTrial === false) {
+        delete data.freeTrialDays;
+        updateQuery.$unset = { freeTrialDays: "" };
+    }
+
+    const plan = await SubscriptionPlanModel.findByIdAndUpdate(id, updateQuery, { new: true, runValidators: true });
     if (!plan) throw new ApiError(httpStatus.NOT_FOUND, "Subscription plan not found");
     return plan;
 };
