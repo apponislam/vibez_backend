@@ -9,7 +9,7 @@ const createSubscriptionPlan = async (data: Partial<ISubscriptionPlan>) => {
     let stripeProductId;
     let stripePriceId;
 
-    if (!data.isFreeTrial && data.price !== undefined) {
+    if (data.price !== undefined) {
         // Create product and price on Stripe
         const product = await stripeServices.createProduct(data.name as string);
         stripeProductId = product.id;

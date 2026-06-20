@@ -5,12 +5,14 @@ import { Request, Response } from "express";
 import { userSubscriptionServices } from "./usersubscription.services";
 import { stripeServices } from "../stripe/stripe.service";
 import { SubscriptionPlanModel } from "../subscription/subscription.model";
+import config from "../../config";
 
 const createCheckoutSession = catchAsync(async (req: Request, res: Response) => {
-    const { planId, successUrl, cancelUrl } = req.body;
-    const userId = req.user._id as string;
+    const { planId, subscriptionPlanId, successUrl, cancelUrl } = req.body;
+    const targetPlanId = planId || subscriptionPlanId;
+    const userId = req.user._id.toString();
 
-    const plan = await SubscriptionPlanModel.findById(planId);
+    const plan = await SubscriptionPlanModel.findById(targetPlanId);
     if (!plan) {
         throw new Error("Subscription plan not found");
     }
@@ -18,12 +20,16 @@ const createCheckoutSession = catchAsync(async (req: Request, res: Response) => 
         throw new Error("Subscription plan has no Stripe price ID");
     }
 
+    const finalSuccessUrl = successUrl || `${config.client_url}/subscription/success?session_id={CHECKOUT_SESSION_ID}`;
+    const finalCancelUrl = cancelUrl || `${config.client_url}/subscription/cancel`;
+
     const session = await stripeServices.createCheckoutSession(
         plan.stripePriceId,
-        successUrl,
-        cancelUrl,
+        finalSuccessUrl,
+        finalCancelUrl,
         req.user.email,
         { userId }, // Pass userId as metadata
+        plan.isFreeTrial ? plan.freeTrialDays : undefined,
     );
 
     sendResponse(res, {

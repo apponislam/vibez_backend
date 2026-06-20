@@ -14,7 +14,7 @@ const createPaymentIntent = async (amount: number, currency: string = "usd") => 
     return paymentIntent;
 };
 
-const createCheckoutSession = async (priceId: string, successUrl: string, cancelUrl: string, customerEmail?: string, metadata?: Record<string, string>) => {
+const createCheckoutSession = async (priceId: string, successUrl: string, cancelUrl: string, customerEmail?: string, metadata?: Record<string, string>, trialPeriodDays?: number) => {
     const session = await stripe.checkout.sessions.create({
         payment_method_types: ["card"],
         line_items: [
@@ -28,6 +28,11 @@ const createCheckoutSession = async (priceId: string, successUrl: string, cancel
         cancel_url: cancelUrl,
         customer_email: customerEmail,
         metadata,
+        ...(trialPeriodDays && {
+            subscription_data: {
+                trial_period_days: trialPeriodDays,
+            },
+        }),
     });
     return session;
 };
