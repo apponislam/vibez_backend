@@ -3,7 +3,6 @@ import catchAsync from "../../../utils/catchAsync";
 import sendResponse from "../../../utils/sendResponse";
 import { Request, Response } from "express";
 import { faqServices } from "./faq.services";
-import { FAQAudienceEnum } from "./faq.interface";
 
 const createFAQ = catchAsync(async (req: Request, res: Response) => {
     const result = await faqServices.createFAQ(req.user._id, req.body);
@@ -28,10 +27,10 @@ const getAllFAQs = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
-// Public: get only active FAQs, optionally filtered by audience
+// Public: get only active FAQs
 const getActiveFAQs = catchAsync(async (req: Request, res: Response) => {
-    const audience = req.query.audience as FAQAudienceEnum | undefined;
-    const result = await faqServices.getActiveFAQs(audience);
+    const result = await faqServices.getActiveFAQs();
+
 
     sendResponse(res, {
         statusCode: httpStatus.OK,
