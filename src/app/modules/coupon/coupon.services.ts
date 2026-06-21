@@ -12,19 +12,9 @@ const createCoupon = async (data: Partial<ICoupon>) => {
 
     // 1. Create Coupon in Stripe
     try {
-        await stripeServices.createCoupon(
-            data.couponId,
-            data.percentOff,
-            data.amountOff,
-            data.currency,
-            data.duration,
-            data.durationInMonths
-        );
+        await stripeServices.createCoupon(data.couponId, data.percentOff, data.amountOff, data.currency, data.duration, data.durationInMonths);
     } catch (error: any) {
-        throw new ApiError(
-            httpStatus.BAD_REQUEST,
-            `Failed to create coupon in Stripe: ${error.message}`
-        );
+        throw new ApiError(httpStatus.BAD_REQUEST, `Failed to create coupon in Stripe: ${error.message}`);
     }
 
     // 2. Save Coupon details locally in database
@@ -95,11 +85,7 @@ const updateCoupon = async (id: string, data: Partial<ICoupon>) => {
     }
 
     // 2. Update locally
-    const updatedCoupon = await CouponModel.findByIdAndUpdate(
-        id,
-        { $set: data },
-        { new: true, runValidators: true }
-    );
+    const updatedCoupon = await CouponModel.findByIdAndUpdate(id, { $set: data }, { new: true, runValidators: true });
     return updatedCoupon;
 };
 
