@@ -5,6 +5,7 @@ import http from "http";
 import config from "./app/config";
 import { seedAdmin } from "./app/modules/auth/auth.seed";
 import { initSocket } from "./app/socket/socket";
+import { cronJobs } from "./utils/cronJobs";
 
 let server: Server;
 
@@ -16,6 +17,9 @@ async function main() {
         initSocket(server);
 
         seedAdmin();
+
+        // Start background cron jobs
+        cronJobs.startSubscriptionExpiryCron();
 
         server.listen(Number(config.port), config.ip, () => {
             console.log(`✅ App listening on port ${config.port} on ${config.ip}`);
