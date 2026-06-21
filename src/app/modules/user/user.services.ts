@@ -57,6 +57,8 @@ const getAllUsers = async (query: any) => {
     );
 
     const totalPages = Math.ceil(total / parsedLimit);
+    const hasNext = parsedPage < totalPages;
+    const hasPrev = parsedPage > 1;
 
     return {
         data: usersWithCounts,
@@ -65,6 +67,8 @@ const getAllUsers = async (query: any) => {
             limit: parsedLimit,
             total,
             totalPages,
+            hasNext,
+            hasPrev,
         },
     };
 };
