@@ -10,7 +10,7 @@ const createRestaurant = async (data: Partial<IRestaurant>, ownerId: string) => 
 };
 
 const getAllRestaurants = async (filters: any = {}) => {
-    let query: any = {};
+    let query: any = { approved: true };
 
     if (filters.cuisineType) {
         query.cuisineType = filters.cuisineType;
@@ -29,6 +29,56 @@ const getAllRestaurants = async (filters: any = {}) => {
                     coordinates: [parseFloat(filters.lng), parseFloat(filters.lat)],
                 },
                 $maxDistance: parseFloat(filters.maxDistance) * 1000, // Convert km to meters
+            },
+        };
+    }
+
+    const page = parseInt(filters.page as string) || 1;
+    const limit = parseInt(filters.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    const [restaurants, total] = await Promise.all([RestaurantModel.find(query).populate("restaurantOwner", "name email phone").skip(skip).limit(limit), RestaurantModel.countDocuments(query)]);
+
+    const totalPages = Math.ceil(total / limit);
+    const hasNext = page < totalPages;
+    const hasPrev = page > 1;
+
+    return {
+        data: restaurants,
+        meta: {
+            page,
+            limit,
+            total,
+            totalPages,
+            hasNext,
+            hasPrev,
+        },
+    };
+};
+
+const getAllRestaurantsForAdmin = async (filters: any = {}) => {
+    let query: any = {};
+
+    if (filters.approved !== undefined) {
+        query.approved = filters.approved === "true";
+    }
+    if (filters.cuisineType) {
+        query.cuisineType = filters.cuisineType;
+    }
+    if (filters.restaurantType) {
+        query.restaurantType = filters.restaurantType;
+    }
+    if (filters.search) {
+        query.$or = [{ restaurantName: { $regex: filters.search, $options: "i" } }, { restaurantDescription: { $regex: filters.search, $options: "i" } }];
+    }
+    if (filters.lat && filters.lng && filters.maxDistance) {
+        query["restaurantAddress.location"] = {
+            $near: {
+                $geometry: {
+                    type: "Point",
+                    coordinates: [parseFloat(filters.lng), parseFloat(filters.lat)],
+                },
+                $maxDistance: parseFloat(filters.maxDistance) * 1000,
             },
         };
     }
@@ -105,6 +155,7 @@ const revokeRestaurantApproval = async (id: string) => {
 export const restaurantServices = {
     createRestaurant,
     getAllRestaurants,
+    getAllRestaurantsForAdmin,
     getRestaurantById,
     getRestaurantByOwner,
     updateRestaurant,

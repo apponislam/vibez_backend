@@ -114,9 +114,21 @@ const revokeRestaurantApproval = catchAsync(async (req: Request, res: Response) 
     });
 });
 
+const getAllRestaurantsForAdmin = catchAsync(async (req: Request, res: Response) => {
+    const result = await restaurantServices.getAllRestaurantsForAdmin(req.query);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Restaurants retrieved successfully for admin",
+        data: result.data,
+        meta: result.meta,
+    });
+});
+
 export const restaurantControllers = {
     createRestaurant,
     getAllRestaurants,
+    getAllRestaurantsForAdmin,
     getRestaurantById,
     getMyRestaurant,
     updateRestaurant,

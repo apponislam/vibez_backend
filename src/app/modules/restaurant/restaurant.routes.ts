@@ -8,6 +8,7 @@ const router = Router();
 
 // Public routes
 router.get("/", restaurantControllers.getAllRestaurants);
+router.get("/admin/all", auth, authorize(["ADMIN"]), restaurantControllers.getAllRestaurantsForAdmin);
 router.get("/:id", restaurantControllers.getRestaurantById);
 
 // Protected routes (require auth)
