@@ -299,6 +299,30 @@ const updateProfile = async (userId: string, data: any) => {
     return user;
 };
 
+const addFcmToken = async (userId: string, token: string) => {
+    if (!token) throw new ApiError(httpStatus.BAD_REQUEST, "FCM token is required");
+    
+    const user = await UserModel.findById(userId);
+    if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not registered");
+
+    // Initialize if undefined
+    if (!user.fcmTokens) {
+        user.fcmTokens = [];
+    }
+
+    // Filter out if it already exists, then push to the end so it's marked as the newest/most recently active
+    user.fcmTokens = user.fcmTokens.filter(t => t !== token);
+    user.fcmTokens.push(token);
+
+    // Keep only the newest 10 tokens
+    if (user.fcmTokens.length > 10) {
+        user.fcmTokens = user.fcmTokens.slice(-10);
+    }
+
+    await user.save();
+    return user;
+};
+
 const changePassword = async (userId: string, currentPassword: string, newPassword: string) => {
     const user = await UserModel.findById(userId);
     if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not registered");
@@ -572,6 +596,7 @@ export const authServices = {
     resendOtp,
     resetPassword,
     updateProfile,
+    addFcmToken,
     changePassword,
     updateEmail,
     resendEmailUpdate,

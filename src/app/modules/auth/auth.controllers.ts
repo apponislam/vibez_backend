@@ -399,6 +399,19 @@ const registerRestaurant = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const addFcmToken = catchAsync(async (req: Request, res: Response) => {
+    const { token } = req.body;
+    const userId = req.user._id;
+    const result = await authServices.addFcmToken(userId, token);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "FCM token added successfully",
+        data: result,
+    });
+});
+
 export const authControllers = {
     register,
     registerRestaurant,
@@ -413,6 +426,7 @@ export const authControllers = {
     resendOtp,
     resetPassword,
     updateProfile,
+    addFcmToken,
     changePassword,
     updateEmail,
     resendEmailUpdate,
