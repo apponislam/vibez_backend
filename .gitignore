@@ -2,5 +2,4 @@ dist
 .env
 node_modules
 uploads
-public/educate-492716-62d5a7fd4aa5.json
 config/*.json
