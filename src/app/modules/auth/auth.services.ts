@@ -100,12 +100,12 @@ const loginUser = async (data: { email: string; password: string }) => {
     if (!isPasswordValid) throw new ApiError(httpStatus.UNAUTHORIZED, "Incorrect email or password");
 
     // Check if active
-    if (!user.isActive) throw new ApiError(httpStatus.FORBIDDEN, "Account is deactivated");
-
-    // Check if email verified
-    // if (!user.isEmailVerified) {
-    //     throw new ApiError(httpStatus.FORBIDDEN, "Please verify your email first");
-    // }
+    if (!user.isActive) {
+        throw new ApiError(
+            httpStatus.FORBIDDEN,
+            "Your account has been deactivated. Please contact support for assistance."
+        );
+    }
 
     // Update last login
     await UserModel.updateOne({ _id: user._id }, { $set: { lastLogin: new Date() } });
@@ -311,7 +311,7 @@ const updateProfile = async (userId: string, data: any) => {
 
 const addFcmToken = async (userId: string, token: string) => {
     if (!token) throw new ApiError(httpStatus.BAD_REQUEST, "FCM token is required");
-    
+
     const user = await UserModel.findById(userId);
     if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not registered");
 
@@ -321,7 +321,7 @@ const addFcmToken = async (userId: string, token: string) => {
     }
 
     // Filter out if it already exists, then push to the end so it's marked as the newest/most recently active
-    user.fcmTokens = user.fcmTokens.filter(t => t !== token);
+    user.fcmTokens = user.fcmTokens.filter((t) => t !== token);
     user.fcmTokens.push(token);
 
     // Keep only the newest 10 tokens
@@ -430,8 +430,6 @@ const updateLocation = async (userId: string, lat: number, lng: number) => {
     if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not registered");
     return user;
 };
-
-
 
 const registerRestaurant = async (data: any) => {
     // Check existing user
