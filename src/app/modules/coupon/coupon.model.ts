@@ -35,6 +35,10 @@ const CouponSchema = new Schema<ICoupon>(
             type: Number,
             min: 1,
         },
+        isDefault: {
+            type: Boolean,
+            default: false,
+        },
         isActive: {
             type: Boolean,
             default: true,

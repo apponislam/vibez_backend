@@ -17,6 +17,11 @@ const createCoupon = async (data: Partial<ICoupon>) => {
         throw new ApiError(httpStatus.BAD_REQUEST, `Failed to create coupon in Stripe: ${error.message}`);
     }
 
+    // If this new coupon is default, disable other default coupons first
+    if (data.isDefault) {
+        await CouponModel.updateMany({}, { $set: { isDefault: false } });
+    }
+
     // 2. Save Coupon details locally in database
     const localCouponData = {
         couponId: data.couponId,
@@ -28,6 +33,7 @@ const createCoupon = async (data: Partial<ICoupon>) => {
         durationInMonths: data.durationInMonths,
         maxRedemptions: data.maxRedemptions,
         timesRedeemed: 0,
+        isDefault: !!data.isDefault,
         isActive: true,
     };
 
@@ -82,6 +88,11 @@ const updateCoupon = async (id: string, data: Partial<ICoupon>) => {
         } catch (error: any) {
             console.warn(`Stripe coupon update warning: ${error.message}`);
         }
+    }
+
+    // If updated coupon is set as default, disable other default coupons
+    if (data.isDefault) {
+        await CouponModel.updateMany({ _id: { $ne: id } }, { $set: { isDefault: false } });
     }
 
     // 2. Update locally

@@ -9,6 +9,7 @@ export interface ICoupon {
     currency?: string;
     duration: "once" | "repeating" | "forever";
     durationInMonths?: number;
+    isDefault: boolean; // Indicates if this is the default coupon given to new users
     isActive: boolean;
     maxRedemptions?: number;
     timesRedeemed: number;
