@@ -4,23 +4,14 @@ import sendResponse from "../../../utils/sendResponse";
 import { Request, Response } from "express";
 import { commissionServices } from "./commission.services";
 
-const createCommission = catchAsync(async (req: Request, res: Response) => {
-    const result = await commissionServices.createCommission(req.user._id, req.body);
-    sendResponse(res, {
-        statusCode: httpStatus.CREATED,
-        success: true,
-        message: "Commission created successfully",
-        data: result,
-    });
-});
-
 const getAllCommissions = catchAsync(async (req: Request, res: Response) => {
-    const result = await commissionServices.getAllCommissions();
+    const result = await commissionServices.getAllCommissions(req.query);
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
         message: "Commissions retrieved successfully",
-        data: result,
+        meta: result.meta,
+        data: result.data,
     });
 });
 
@@ -44,20 +35,19 @@ const updateCommission = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
-const deleteCommission = catchAsync(async (req: Request, res: Response) => {
-    const result = await commissionServices.deleteCommission(req.params.id as string);
+const getMonthlyCommissionStats = catchAsync(async (req: Request, res: Response) => {
+    const result = await commissionServices.getMonthlyCommissionStats();
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
-        message: "Commission deleted successfully",
+        message: "Monthly commission statistics retrieved successfully",
         data: result,
     });
 });
 
 export const commissionControllers = {
-    createCommission,
     getAllCommissions,
     getCommissionById,
     updateCommission,
-    deleteCommission,
+    getMonthlyCommissionStats,
 };

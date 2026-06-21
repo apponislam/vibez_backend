@@ -3,6 +3,26 @@ import { ICommission } from "./commission.interface";
 
 export interface CommissionDocument extends Omit<ICommission, "_id">, Document {}
 
+const CommissionGetByMonthSchema = new Schema(
+    {
+        count: {
+            type: Number,
+            required: [true, "Month count is required"],
+        },
+        commission: {
+            type: Number,
+            required: [true, "Commission amount is required"],
+            min: [0, "Commission amount cannot be negative"],
+        },
+        time: {
+            type: Date,
+            required: [true, "Commission time is required"],
+            default: Date.now,
+        },
+    },
+    { _id: false }
+);
+
 const CommissionSchema = new Schema<CommissionDocument>(
     {
         commissionPercentage: {
@@ -18,20 +38,30 @@ const CommissionSchema = new Schema<CommissionDocument>(
         },
         commissionDuration: {
             type: Number,
-            required: [true, "Commission duration is required"],
-            min: [1, "Commission duration must be at least 1 day"],
+            required: [true, "Commission duration in months is required"],
+            min: [1, "Commission duration must be at least 1 month"],
         },
-        createdBy: {
+        commissionUser: {
             type: Schema.Types.ObjectId,
             ref: "User",
+            required: [true, "Commission user (receiver) is required"],
+        },
+        commissionFrom: {
+            type: Schema.Types.ObjectId,
+            ref: "User",
+            required: [true, "Commission from (source user) is required"],
+        },
+        totalCount: {
+            type: Number,
+            default: 0,
+        },
+        commissionGetByMonth: {
+            type: [CommissionGetByMonthSchema],
+            default: [],
         },
         isActive: {
             type: Boolean,
             default: true,
-        },
-        isDeleted: {
-            type: Boolean,
-            default: false,
         },
     },
     {
@@ -40,7 +70,10 @@ const CommissionSchema = new Schema<CommissionDocument>(
     },
 );
 
-// Index strategy for faster queries
-CommissionSchema.index({ isDeleted: 1, isActive: 1, createdAt: -1 });
+// Index strategy for faster queries and uniqueness constraint
+CommissionSchema.index({ commissionUser: 1, commissionFrom: 1 }, { unique: true });
+CommissionSchema.index({ isActive: 1, createdAt: -1 });
+CommissionSchema.index({ commissionUser: 1, isActive: 1 });
+CommissionSchema.index({ commissionFrom: 1 });
 
 export const CommissionModel = mongoose.model<CommissionDocument>("Commission", CommissionSchema);
