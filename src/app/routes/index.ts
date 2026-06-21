@@ -14,13 +14,19 @@ import { savedDealRoutes } from "../modules/saved-deal/saved-deal.routes";
 import { shortsRoutes } from "../modules/shorts/shorts.routes";
 import { withdrawRoutes } from "../modules/withdraw/withdraw.routes";
 import { couponRoutes } from "../modules/coupon/coupon.routes";
+import { commissionRoutes } from "../modules/commission/commission.routes";
 
 const router = express.Router();
+
 
 const moduleRoutes = [
     {
         path: "/coupons",
         route: couponRoutes,
+    },
+    {
+        path: "/commissions",
+        route: commissionRoutes,
     },
     {
         path: "/withdrawals",
