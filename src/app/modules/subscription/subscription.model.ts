@@ -3,7 +3,7 @@ import { ISubscriptionPlan, SubscriptionDuration } from "./subscription.interfac
 
 const SubscriptionPlanSchema = new Schema<ISubscriptionPlan>(
     {
-        name: { type: String, required: true },
+        name: { type: String, required: true, trim: true },
         price: { type: Number, required: true },
         duration: {
             type: String,
@@ -12,8 +12,8 @@ const SubscriptionPlanSchema = new Schema<ISubscriptionPlan>(
         },
         isFreeTrial: { type: Boolean, default: false },
         freeTrialDays: { type: Number },
-        stripeProductId: { type: String },
-        stripePriceId: { type: String },
+        stripeProductId: { type: String, trim: true },
+        stripePriceId: { type: String, trim: true },
     },
     {
         timestamps: true,
@@ -21,4 +21,10 @@ const SubscriptionPlanSchema = new Schema<ISubscriptionPlan>(
     },
 );
 
+// Indexes for faster lookups
+SubscriptionPlanSchema.index({ name: 1 }, { unique: true });
+SubscriptionPlanSchema.index({ stripePriceId: 1 }, { unique: true, sparse: true });
+SubscriptionPlanSchema.index({ stripeProductId: 1 }, { unique: true, sparse: true });
+
 export const SubscriptionPlanModel = mongoose.model<ISubscriptionPlan>("SubscriptionPlan", SubscriptionPlanSchema);
+
