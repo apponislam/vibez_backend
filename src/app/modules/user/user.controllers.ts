@@ -55,10 +55,35 @@ const getUserStats = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const createStaffByOwner = catchAsync(async (req: Request, res: Response) => {
+    const ownerId = req.user._id as string;
+    const result = await userServices.createStaffByOwner(ownerId, req.body);
+    sendResponse(res, {
+        statusCode: httpStatus.CREATED,
+        success: true,
+        message: "Staff member created successfully",
+        data: result,
+    });
+});
+
+const getStaffByOwner = catchAsync(async (req: Request, res: Response) => {
+    const ownerId = req.user._id as string;
+    const result = await userServices.getStaffByOwner(ownerId, req.query);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Staff members retrieved successfully",
+        data: result.data,
+        meta: result.meta,
+    });
+});
+
 export const userControllers = {
     getAllUsers,
     getUserActivity,
     updateUserByAdmin,
     toggleUserActiveStatus,
     getUserStats,
+    createStaffByOwner,
+    getStaffByOwner,
 };

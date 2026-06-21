@@ -9,6 +9,7 @@ export interface User {
     password: string;
     role: UserRole;
     staffRole?: StaffRole;
+    restaurantId?: Types.ObjectId | null;
     phone?: string;
     profileImage?: string;
     location?: {

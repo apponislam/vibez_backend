@@ -5,6 +5,9 @@ import { UserSubscriptionModel } from "../usersubscription/usersubscription.mode
 import { CommissionModel } from "../commission/commission.model";
 import { WithdrawModel } from "../withdraw/withdraw.model";
 import { UserSubscriptionStatus } from "../subscription/subscription.interface";
+import { RestaurantModel } from "../restaurant/restaurant.model";
+import bcrypt from "bcrypt";
+import config from "../../config";
 
 const getAllUsers = async (query: any) => {
     const { search, role, isInfluencer, isActive, page = 1, limit = 10 } = query;
@@ -169,10 +172,76 @@ const getUserStats = async () => {
     };
 };
 
+const createStaffByOwner = async (ownerId: string, staffData: any) => {
+    const restaurant = await RestaurantModel.findOne({ restaurantOwner: ownerId });
+    if (!restaurant) {
+        throw new ApiError(httpStatus.NOT_FOUND, "You must register a restaurant before creating staff.");
+    }
+
+    const existingUser = await UserModel.findOne({ email: staffData.email });
+    if (existingUser) {
+        throw new ApiError(httpStatus.BAD_REQUEST, "Email already registered");
+    }
+
+    const hashedPassword = await bcrypt.hash(staffData.password, Number(config.bcrypt_salt_rounds));
+
+    const staff = await UserModel.create({
+        name: staffData.name,
+        email: staffData.email,
+        password: hashedPassword,
+        role: "STAFF",
+        staffRole: staffData.staffRole,
+        restaurantId: restaurant._id,
+        phone: staffData.phone,
+        isActive: true,
+        isEmailVerified: true,
+    });
+
+    const staffObject = staff.toObject();
+    const { password, ...staffWithoutPassword } = staffObject;
+    return staffWithoutPassword;
+};
+
+const getStaffByOwner = async (ownerId: string, query: any) => {
+    const restaurant = await RestaurantModel.findOne({ restaurantOwner: ownerId });
+    if (!restaurant) {
+        throw new ApiError(httpStatus.NOT_FOUND, "Restaurant not found.");
+    }
+
+    const page = parseInt(query.page as string) || 1;
+    const limit = parseInt(query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    const filter = { restaurantId: restaurant._id, role: "STAFF" as const, isDeleted: false };
+
+    const [staff, total] = await Promise.all([
+        UserModel.find(filter).select("-password").skip(skip).limit(limit),
+        UserModel.countDocuments(filter),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+    const hasNext = page < totalPages;
+    const hasPrev = page > 1;
+
+    return {
+        data: staff,
+        meta: {
+            page,
+            limit,
+            total,
+            totalPages,
+            hasNext,
+            hasPrev,
+        },
+    };
+};
+
 export const userServices = {
     getAllUsers,
     getUserActivity,
     updateUserByAdmin,
     toggleUserActiveStatus,
     getUserStats,
+    createStaffByOwner,
+    getStaffByOwner,
 };

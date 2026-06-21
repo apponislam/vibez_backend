@@ -45,6 +45,11 @@ const userSchemaDefinition: any = {
         enum: ["MANAGER", "CASHIER", "WAITER"],
     },
 
+    restaurantId: {
+        type: Schema.Types.ObjectId,
+        ref: "Restaurant",
+    },
+
     phone: {
         type: String,
     },
