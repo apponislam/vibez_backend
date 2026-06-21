@@ -552,6 +552,10 @@ const registerRestaurant = async (data: any) => {
         await restaurant.save({ session });
         createdRestaurant = restaurant;
 
+        // 3. Update User with Restaurant ID
+        createdUser.restaurantId = createdRestaurant._id;
+        await createdUser.save({ session });
+
         await session.commitTransaction();
     } catch (error) {
         await session.abortTransaction();

@@ -2,10 +2,15 @@ import httpStatus from "http-status";
 import ApiError from "../../../errors/ApiError";
 import { RestaurantModel } from "./restaurant.model";
 import { IRestaurant } from "./resturant.interface";
+import { UserModel } from "../auth/auth.model";
 
 const createRestaurant = async (data: Partial<IRestaurant>, ownerId: string) => {
     const restaurantData = { ...data, restaurantOwner: ownerId };
     const restaurant = await RestaurantModel.create(restaurantData);
+
+    // Update Owner's User document with the new Restaurant ID
+    await UserModel.findByIdAndUpdate(ownerId, { $set: { restaurantId: restaurant._id } });
+
     return restaurant;
 };
 
