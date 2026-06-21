@@ -10,7 +10,6 @@ router.get("/plans", subscriptionControllers.getAllSubscriptionPlans);
 
 // Admin routes
 router.post("/plans", auth, authorize(["ADMIN"]), subscriptionControllers.createSubscriptionPlan);
-router.post("/coupons", auth, authorize(["ADMIN"]), subscriptionControllers.createCoupon);
 router.get("/plans/:id", auth, authorize(["ADMIN"]), subscriptionControllers.getSubscriptionPlanById);
 router.patch("/plans/:id", auth, authorize(["ADMIN"]), subscriptionControllers.updateSubscriptionPlan);
 router.delete("/plans/:id", auth, authorize(["ADMIN"]), subscriptionControllers.deleteSubscriptionPlan);

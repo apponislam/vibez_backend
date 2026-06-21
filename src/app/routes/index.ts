@@ -13,10 +13,15 @@ import { favoriteRoutes } from "../modules/favorite/favorite.routes";
 import { savedDealRoutes } from "../modules/saved-deal/saved-deal.routes";
 import { shortsRoutes } from "../modules/shorts/shorts.routes";
 import { withdrawRoutes } from "../modules/withdraw/withdraw.routes";
+import { couponRoutes } from "../modules/coupon/coupon.routes";
 
 const router = express.Router();
 
 const moduleRoutes = [
+    {
+        path: "/coupons",
+        route: couponRoutes,
+    },
     {
         path: "/withdrawals",
         route: withdrawRoutes,

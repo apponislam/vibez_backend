@@ -62,21 +62,10 @@ const deleteSubscriptionPlan = catchAsync(async (req: Request, res: Response) =>
     });
 });
 
-const createCoupon = catchAsync(async (req: Request, res: Response) => {
-    const result = await subscriptionServices.createCoupon(req.body);
-    sendResponse(res, {
-        statusCode: httpStatus.CREATED,
-        success: true,
-        message: "Coupon created successfully",
-        data: result,
-    });
-});
-
 export const subscriptionControllers = {
     createSubscriptionPlan,
     getAllSubscriptionPlans,
     getSubscriptionPlanById,
     updateSubscriptionPlan,
     deleteSubscriptionPlan,
-    createCoupon,
 };
