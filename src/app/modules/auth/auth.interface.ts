@@ -45,6 +45,7 @@ export interface User {
     referralCode?: string;
     referredBy?: Types.ObjectId | null;
     stripeConnectedAccountId?: string;
+    fcmTokens?: string[];
 
     // Password reset fields
     resetPasswordOtp?: string;

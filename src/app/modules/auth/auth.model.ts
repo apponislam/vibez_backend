@@ -145,6 +145,11 @@ const userSchemaDefinition: any = {
         type: String,
     },
 
+    fcmTokens: {
+        type: [String],
+        default: [],
+    },
+
     resetPasswordOtp: String,
     resetPasswordOtpExpiry: Date,
     resetPasswordToken: String,
