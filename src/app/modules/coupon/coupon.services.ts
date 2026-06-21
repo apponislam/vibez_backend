@@ -79,9 +79,34 @@ const deleteCoupon = async (id: string) => {
     return { message: "Coupon deleted successfully" };
 };
 
+const updateCoupon = async (id: string, data: Partial<ICoupon>) => {
+    const coupon = await CouponModel.findById(id);
+    if (!coupon) throw new ApiError(httpStatus.NOT_FOUND, "Coupon not found");
+
+    // 1. Update in Stripe (only metadata can be updated)
+    if (data.name) {
+        try {
+            await stripeServices.stripe.coupons.update(coupon.couponId, {
+                metadata: { name: data.name },
+            });
+        } catch (error: any) {
+            console.warn(`Stripe coupon update warning: ${error.message}`);
+        }
+    }
+
+    // 2. Update locally
+    const updatedCoupon = await CouponModel.findByIdAndUpdate(
+        id,
+        { $set: data },
+        { new: true, runValidators: true }
+    );
+    return updatedCoupon;
+};
+
 export const couponServices = {
     createCoupon,
     getAllCoupons,
     getCouponById,
     deleteCoupon,
+    updateCoupon,
 };

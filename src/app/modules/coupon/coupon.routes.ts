@@ -9,6 +9,7 @@ const router = Router();
 router.post("/", auth, authorize(["ADMIN"]), couponControllers.createCoupon);
 router.get("/", auth, authorize(["ADMIN"]), couponControllers.getAllCoupons);
 router.get("/:id", auth, authorize(["ADMIN"]), couponControllers.getCouponById);
+router.patch("/:id", auth, authorize(["ADMIN"]), couponControllers.updateCoupon);
 router.delete("/:id", auth, authorize(["ADMIN"]), couponControllers.deleteCoupon);
 
 export const couponRoutes = router;
