@@ -18,7 +18,6 @@ async function main() {
 
         seedAdmin();
 
-        // Start background cron jobs
         cronJobs.startSubscriptionExpiryCron();
 
         server.listen(Number(config.port), config.ip, () => {
