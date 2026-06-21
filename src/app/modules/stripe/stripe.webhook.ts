@@ -6,6 +6,7 @@ import { UserSubscriptionModel } from "../usersubscription/usersubscription.mode
 import { SubscriptionPlanModel } from "../subscription/subscription.model";
 import { UserSubscriptionStatus } from "../subscription/subscription.interface";
 import { UserModel } from "../auth/auth.model";
+import { CouponModel } from "../coupon/coupon.model";
 
 const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
     const sig = req.headers["stripe-signature"] as string;
@@ -29,6 +30,7 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                 stripePriceId: (session as any).line_items?.data[0].price.id,
             });
             const userId = (session as any).metadata?.userId;
+            const coupon = (session as any).metadata?.coupon;
             if (subscriptionPlan && userId) {
                 // Calculate end date based on plan duration
                 const startDate = new Date();
@@ -51,6 +53,7 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                     startDate,
                     endDate,
                     isTrial: false,
+                    coupon: coupon || undefined,
                 });
 
                 // Update User model with subscription info
@@ -60,6 +63,14 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                         subscriptionEndDate: endDate,
                     },
                 });
+
+                // Increment coupon redemption counter if a coupon was used
+                if (coupon) {
+                    await CouponModel.findOneAndUpdate(
+                        { couponId: coupon },
+                        { $inc: { timesRedeemed: 1 } }
+                    );
+                }
             }
             break;
         }

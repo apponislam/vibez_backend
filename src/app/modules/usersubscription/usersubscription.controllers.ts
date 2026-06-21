@@ -5,6 +5,7 @@ import { Request, Response } from "express";
 import { userSubscriptionServices } from "./usersubscription.services";
 import { stripeServices } from "../stripe/stripe.service";
 import { SubscriptionPlanModel } from "../subscription/subscription.model";
+import { CouponModel } from "../coupon/coupon.model";
 import config from "../../config";
 
 const createCheckoutSession = catchAsync(async (req: Request, res: Response) => {
@@ -20,6 +21,16 @@ const createCheckoutSession = catchAsync(async (req: Request, res: Response) => 
         throw new Error("Subscription plan has no Stripe price ID");
     }
 
+    if (coupon) {
+        const dbCoupon = await CouponModel.findOne({ couponId: coupon });
+        if (!dbCoupon) {
+            throw new Error("Invalid coupon code");
+        }
+        if (!dbCoupon.isActive) {
+            throw new Error("This coupon is no longer active");
+        }
+    }
+
     const finalSuccessUrl = successUrl || `${config.client_url}/subscription/success?session_id={CHECKOUT_SESSION_ID}`;
     const finalCancelUrl = cancelUrl || `${config.client_url}/subscription/cancel`;
 
@@ -28,7 +39,7 @@ const createCheckoutSession = catchAsync(async (req: Request, res: Response) => 
         finalSuccessUrl,
         finalCancelUrl,
         req.user.email,
-        { userId }, // Pass userId as metadata
+        { userId, ...(coupon && { coupon }) }, // Pass userId and coupon as metadata
         plan.isFreeTrial ? plan.freeTrialDays : undefined,
         coupon,
     );

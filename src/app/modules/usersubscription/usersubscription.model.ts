@@ -24,12 +24,17 @@ const UserSubscriptionSchema = new Schema<IUserSubscription>(
         startDate: { type: Date, required: true },
         endDate: { type: Date, required: true },
         isTrial: { type: Boolean, default: false },
+        coupon: { type: String },
     },
     {
         timestamps: true,
         versionKey: false,
     }
 );
+
+// Indexes for faster lookups
+UserSubscriptionSchema.index({ userId: 1 });
+UserSubscriptionSchema.index({ stripeSubscriptionId: 1 }, { unique: true, sparse: true });
 
 export const UserSubscriptionModel = mongoose.model<IUserSubscription>(
     "UserSubscription",

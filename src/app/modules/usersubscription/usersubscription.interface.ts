@@ -11,4 +11,5 @@ export interface IUserSubscription {
     startDate: Date;
     endDate: Date;
     isTrial: boolean;
+    coupon?: string;
 }
