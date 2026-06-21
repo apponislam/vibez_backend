@@ -88,6 +88,12 @@ const userSchemaDefinition: any = {
         default: false,
     },
 
+    isInfluencer: {
+        type: Boolean,
+        default: false,
+    },
+
+
     lastLogin: {
         type: Date,
     },

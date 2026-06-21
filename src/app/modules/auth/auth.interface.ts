@@ -27,6 +27,7 @@ export interface User {
     isActive: boolean;
     isEmailVerified: boolean;
     isDeleted: boolean;
+    isInfluencer?: boolean;
     lastLogin?: Date;
 
     approved: boolean;
