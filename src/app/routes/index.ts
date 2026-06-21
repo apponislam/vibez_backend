@@ -17,11 +17,16 @@ import { couponRoutes } from "../modules/coupon/coupon.routes";
 import { commissionRoutes } from "../modules/commission/commission.routes";
 import { settingsRoutes } from "../modules/settings/settings.routes";
 import { notificationRoutes } from "../modules/notification/notification.routes";
+import { userRoutes } from "../modules/user/user.routes";
 
 const router = express.Router();
 
 
 const moduleRoutes = [
+    {
+        path: "/users",
+        route: userRoutes,
+    },
     {
         path: "/notifications",
         route: notificationRoutes,
