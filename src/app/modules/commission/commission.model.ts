@@ -51,6 +51,15 @@ const CommissionSchema = new Schema<CommissionDocument>(
             ref: "User",
             required: [true, "Commission from (source user) is required"],
         },
+        startDate: {
+            type: Date,
+            required: [true, "Start date is required"],
+            default: Date.now,
+        },
+        endDate: {
+            type: Date,
+            required: [true, "End date is required"],
+        },
         totalCount: {
             type: Number,
             default: 0,
@@ -70,8 +79,7 @@ const CommissionSchema = new Schema<CommissionDocument>(
     },
 );
 
-// Index strategy for faster queries and uniqueness constraint
-CommissionSchema.index({ commissionUser: 1, commissionFrom: 1 }, { unique: true });
+// Index strategy for faster queries
 CommissionSchema.index({ isActive: 1, createdAt: -1 });
 CommissionSchema.index({ commissionUser: 1, isActive: 1 });
 CommissionSchema.index({ commissionFrom: 1 });

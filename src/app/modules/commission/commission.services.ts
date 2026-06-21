@@ -8,6 +8,43 @@ const populateOptions = [
     { path: "commissionFrom", select: "name email" },
 ];
 
+const createCommission = async (data: Partial<ICommission>) => {
+    const startDate = data.startDate ? new Date(data.startDate) : new Date();
+    data.startDate = startDate;
+
+    if (data.commissionDuration) {
+        const endDate = new Date(startDate);
+        endDate.setMonth(endDate.getMonth() + Number(data.commissionDuration));
+        data.endDate = endDate;
+    }
+
+    // Auto-generate commissionGetByMonth array and totalCount if not provided in the creation payload
+    if (!data.commissionGetByMonth && data.commissionDuration && data.maxPayout) {
+        const duration = Number(data.commissionDuration);
+        const maxPayout = Number(data.maxPayout);
+        const monthlyAmount = Number((maxPayout / duration).toFixed(2));
+        
+        const list = [];
+        let remaining = maxPayout;
+        for (let i = 1; i <= duration; i++) {
+            // Distribute precisely (putting any division roundoff in the last month)
+            const currentAmount = i === duration ? Number(remaining.toFixed(2)) : monthlyAmount;
+            remaining -= currentAmount;
+
+            list.push({
+                count: i,
+                commission: currentAmount,
+                time: new Date(new Date(startDate).setMonth(startDate.getMonth() + i - 1)),
+            });
+        }
+        data.totalCount = duration;
+        data.commissionGetByMonth = list;
+    }
+
+    const commission = await CommissionModel.create(data);
+    return commission.populate(populateOptions);
+};
+
 const getAllCommissions = async (query: any = {}) => {
     const filter: any = {};
     if (query.isActive !== undefined) {
@@ -97,6 +134,7 @@ const getMonthlyCommissionStats = async () => {
 };
 
 export const commissionServices = {
+    createCommission, // Exposing internally for programmatic creations (e.g. triggers, webhooks)
     getAllCommissions,
     getCommissionById,
     updateCommission,

@@ -13,6 +13,8 @@ export interface ICommission {
     commissionDuration: number; // in months
     commissionUser: Types.ObjectId; // User who got/earned the commission
     commissionFrom: Types.ObjectId; // User from whom the commission was generated
+    startDate: Date; // Start date of the commission period
+    endDate: Date;   // End date of the commission period
     totalCount: number; // top level total count (total number of commission payments/months)
     commissionGetByMonth: ICommissionGetByMonth[]; // single array of monthly commissions
     isActive: boolean;
