@@ -16,11 +16,16 @@ import { withdrawRoutes } from "../modules/withdraw/withdraw.routes";
 import { couponRoutes } from "../modules/coupon/coupon.routes";
 import { commissionRoutes } from "../modules/commission/commission.routes";
 import { settingsRoutes } from "../modules/settings/settings.routes";
+import { notificationRoutes } from "../modules/notification/notification.routes";
 
 const router = express.Router();
 
 
 const moduleRoutes = [
+    {
+        path: "/notifications",
+        route: notificationRoutes,
+    },
     {
         path: "/settings",
         route: settingsRoutes,
