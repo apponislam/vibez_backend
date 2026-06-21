@@ -6,6 +6,7 @@ import { CommissionModel } from "../commission/commission.model";
 import { WithdrawModel } from "../withdraw/withdraw.model";
 import { UserSubscriptionStatus } from "../subscription/subscription.interface";
 import { RestaurantModel } from "../restaurant/restaurant.model";
+import { sendStaffWelcomeEmail } from "../../../utils/emailTemplates";
 import bcrypt from "bcrypt";
 import config from "../../config";
 
@@ -196,6 +197,8 @@ const createStaffByOwner = async (ownerId: string, staffData: any) => {
         isActive: true,
         isEmailVerified: true,
     });
+
+    sendStaffWelcomeEmail(staff.email, staff.name, staffData.password, restaurant.restaurantName);
 
     const staffObject = staff.toObject();
     const { password, ...staffWithoutPassword } = staffObject;

@@ -92,3 +92,19 @@ export const sendZoomMeetingInvitation = (email: string, name: string, topic: st
     `;
     sendMail(email, `Meeting Invitation: ${topic}`, html);
 };
+
+export const sendStaffWelcomeEmail = (email: string, name: string, passwordPlain: string, restaurantName: string) => {
+    const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 5px;">
+            <h2 style="color: #333;">Welcome ${name}!</h2>
+            <p style="color: #666;">You have been registered as a staff member for <strong>${restaurantName}</strong>.</p>
+            <p style="color: #666;">Here are your account credentials to log in:</p>
+            <div style="background-color: #f8f9fa; border-left: 4px solid #667eea; padding: 15px; margin: 20px 0;">
+                <p style="margin: 5px 0;"><strong>Email:</strong> ${email}</p>
+                <p style="margin: 5px 0;"><strong>Password:</strong> ${passwordPlain}</p>
+            </div>
+            <p style="color: #666;">Please change your password after logging in for security reasons.</p>
+        </div>
+    `;
+    sendMail(email, `Welcome to ${restaurantName} - Staff Account Details`, html);
+};
