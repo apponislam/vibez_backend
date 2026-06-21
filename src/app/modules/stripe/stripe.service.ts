@@ -5,7 +5,7 @@ const stripe = new Stripe(config.stripe.secret_key as string, {
     apiVersion: "2026-05-27.dahlia",
 });
 
-const createPaymentIntent = async (amount: number, currency: string = "usd") => {
+const createPaymentIntent = async (amount: number, currency: string = "chf") => {
     const paymentIntent = await stripe.paymentIntents.create({
         amount,
         currency,
@@ -55,7 +55,7 @@ const createProduct = async (name: string) => {
     return product;
 };
 
-const createPrice = async (productId: string, amount: number, currency: string = "usd", interval: "month" | "year") => {
+const createPrice = async (productId: string, amount: number, currency: string = "chf", interval: "month" | "year") => {
     const price = await stripe.prices.create({
         product: productId,
         unit_amount: amount,
@@ -83,7 +83,7 @@ const createCoupon = async (
     id: string,
     percentOff?: number,
     amountOff?: number,
-    currency: string = "usd",
+    currency: string = "chf",
     duration: "once" | "repeating" | "forever" = "forever",
     durationInMonths?: number
 ) => {

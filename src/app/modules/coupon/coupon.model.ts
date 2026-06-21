@@ -24,7 +24,7 @@ const CouponSchema = new Schema<ICoupon>(
         },
         currency: {
             type: String,
-            default: "usd",
+            default: "chf",
         },
         duration: {
             type: String,

@@ -23,7 +23,7 @@ const createCoupon = async (data: Partial<ICoupon>) => {
         name: data.name || `${data.couponId} Coupon`,
         percentOff: data.percentOff,
         amountOff: data.amountOff,
-        currency: data.currency || "usd",
+        currency: data.currency || "chf",
         duration: data.duration || "forever",
         durationInMonths: data.durationInMonths,
         maxRedemptions: data.maxRedemptions,

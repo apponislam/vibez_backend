@@ -113,7 +113,7 @@ const approveWithdrawal = async (withdrawId: string) => {
             // Initiate transfer to the connected Stripe account
             const transfer = await stripeServices.stripe.transfers.create({
                 amount: Math.round(withdrawal.amount * 100), // Stripe expects cents
-                currency: "usd",
+                currency: "chf",
                 destination: user.stripeConnectedAccountId,
                 description: `Withdrawal payout for user ID: ${user._id}`,
             });

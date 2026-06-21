@@ -21,7 +21,7 @@ const createSubscriptionPlan = async (data: Partial<ISubscriptionPlan>) => {
         const interval = data.duration === SubscriptionDuration.MONTHLY ? "month" : data.duration === SubscriptionDuration.HALF_YEARLY ? "month" : "year";
         const amount = data.price * 100; // Stripe uses cents
 
-        const price = await stripeServices.createPrice(stripeProductId, amount, "usd", interval);
+        const price = await stripeServices.createPrice(stripeProductId, amount, "chf", interval);
         stripePriceId = price.id;
     }
 
