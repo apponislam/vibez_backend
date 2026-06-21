@@ -25,6 +25,11 @@ const UserSubscriptionSchema = new Schema<IUserSubscription>(
         endDate: { type: Date, required: true },
         isTrial: { type: Boolean, default: false },
         coupon: { type: String },
+        commissionAmount: { type: Number },
+        commissionUser: {
+            type: Schema.Types.ObjectId,
+            ref: "User",
+        },
     },
     {
         timestamps: true,
@@ -36,6 +41,7 @@ const UserSubscriptionSchema = new Schema<IUserSubscription>(
 UserSubscriptionSchema.index({ userId: 1, status: 1 });
 UserSubscriptionSchema.index({ stripeSubscriptionId: 1 }, { unique: true, sparse: true });
 UserSubscriptionSchema.index({ subscriptionPlanId: 1 });
+UserSubscriptionSchema.index({ commissionUser: 1 });
 
 export const UserSubscriptionModel = mongoose.model<IUserSubscription>(
     "UserSubscription",

@@ -7,6 +7,8 @@ import { SubscriptionDuration } from "../subscription/subscription.interface";
 import { stripeServices } from "../stripe/stripe.service";
 import { UserModel } from "../auth/auth.model";
 
+const populateOptions = ["subscriptionPlanId", { path: "commissionUser", select: "name email" }];
+
 const createUserSubscription = async (data: Partial<IUserSubscription>, userId: string) => {
     const plan = await SubscriptionPlanModel.findById(data.subscriptionPlanId);
     if (!plan) throw new ApiError(httpStatus.NOT_FOUND, "Subscription plan not found");
@@ -33,7 +35,7 @@ const createUserSubscription = async (data: Partial<IUserSubscription>, userId: 
         startDate,
         endDate,
     });
-    await userSubscription.populate("subscriptionPlanId");
+    await userSubscription.populate(populateOptions);
     // Update User model with subscription info
     await UserModel.findByIdAndUpdate(userId, {
         $set: {
@@ -45,7 +47,7 @@ const createUserSubscription = async (data: Partial<IUserSubscription>, userId: 
 };
 
 const getUserSubscriptions = async (userId: string) => {
-    const subscriptions = await UserSubscriptionModel.find({ userId }).populate("subscriptionPlanId");
+    const subscriptions = await UserSubscriptionModel.find({ userId }).populate(populateOptions);
     return subscriptions;
 };
 
@@ -53,7 +55,7 @@ const getUserSubscriptionById = async (id: string, userId: string) => {
     const subscription = await UserSubscriptionModel.findOne({
         _id: id,
         userId,
-    }).populate("subscriptionPlanId");
+    }).populate(populateOptions);
     if (!subscription) throw new ApiError(httpStatus.NOT_FOUND, "Subscription not found");
     return subscription;
 };
@@ -68,7 +70,7 @@ const cancelUserSubscription = async (id: string, userId: string) => {
     }
 
     // Update in DB
-    const updatedSubscription = await UserSubscriptionModel.findOneAndUpdate({ _id: id, userId }, { $set: { status: "CANCELLED" } }, { new: true }).populate("subscriptionPlanId");
+    const updatedSubscription = await UserSubscriptionModel.findOneAndUpdate({ _id: id, userId }, { $set: { status: "CANCELLED" } }, { new: true }).populate(populateOptions);
 
     // Clear user's subscription info if needed
     await UserModel.findByIdAndUpdate(userId, {
@@ -91,7 +93,7 @@ const resumeUserSubscription = async (id: string, userId: string) => {
     }
 
     // Update in DB
-    const updatedSubscription = await UserSubscriptionModel.findOneAndUpdate({ _id: id, userId }, { $set: { status: "ACTIVE" } }, { new: true }).populate("subscriptionPlanId");
+    const updatedSubscription = await UserSubscriptionModel.findOneAndUpdate({ _id: id, userId }, { $set: { status: "ACTIVE" } }, { new: true }).populate(populateOptions);
     return updatedSubscription;
 };
 
