@@ -14,12 +14,9 @@ const registerUser = async (data: any) => {
     const existing = await UserModel.findOne({ email: data.email });
     if (existing) throw new ApiError(httpStatus.BAD_REQUEST, "Email already registered. Please sign in.");
 
-    // Remove balance and percentage if sent in payload to prevent manual setting
+    // Remove balance if sent in payload to prevent manual setting
     if (data.balance !== undefined) {
         delete data.balance;
-    }
-    if (data.percentage !== undefined) {
-        delete data.percentage;
     }
 
     // Resolve referral/referredBy if provided
@@ -291,12 +288,9 @@ const resetPassword = async (token: string, newPassword: string) => {
 };
 
 const updateProfile = async (userId: string, data: any) => {
-    // Prevent manual balance and percentage update
+    // Prevent manual balance update
     if (data.balance !== undefined) {
         delete data.balance;
-    }
-    if (data.percentage !== undefined) {
-        delete data.percentage;
     }
 
     const user = await UserModel.findByIdAndUpdate(userId, { $set: data }, { returnDocument: "after", runValidators: true }).select("-password");
@@ -422,12 +416,9 @@ const registerRestaurant = async (data: any) => {
     const existing = await UserModel.findOne({ email: data.email });
     if (existing) throw new ApiError(httpStatus.BAD_REQUEST, "Email already registered. Please sign in.");
 
-    // Remove balance and percentage if sent in payload to prevent manual setting
+    // Remove balance if sent in payload to prevent manual setting
     if (data.balance !== undefined) {
         delete data.balance;
-    }
-    if (data.percentage !== undefined) {
-        delete data.percentage;
     }
 
     // Hash password

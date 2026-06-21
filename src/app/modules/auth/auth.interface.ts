@@ -37,8 +37,8 @@ export interface User {
     subscriptionPlanId?: Types.ObjectId | null;
     subscriptionEndDate?: Date;
 
-    percentage?: number;
     balance?: number;
+
 
     favoriteCuisines?: string[];
     dietaryPreferences?: string[];

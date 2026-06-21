@@ -118,12 +118,7 @@ const userSchemaDefinition: any = {
         min: 0,
     },
 
-    percentage: {
-        type: Number,
-        default: 20,
-        min: 0,
-        max: 100,
-    },
+
 
     favoriteCuisines: {
         type: [String],
