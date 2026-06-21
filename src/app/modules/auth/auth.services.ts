@@ -8,6 +8,7 @@ import crypto from "crypto";
 import { sendOtpEmail, sendVerificationEmail, sendWelcomeEmail, sendEmailUpdateVerification } from "../../../utils/emailTemplates";
 import mongoose from "mongoose";
 import { RestaurantModel } from "../restaurant/restaurant.model";
+import { SettingsModel } from "../settings/settings.model";
 
 const registerUser = async (data: any) => {
     // Check existing user
@@ -421,19 +422,7 @@ const updateLocation = async (userId: string, lat: number, lng: number) => {
     return user;
 };
 
-const approveUser = async (userId: string, approvedBy: string) => {
-    const user = await UserModel.findByIdAndUpdate(userId, { $set: { approved: true, approvedBy, approvedAt: new Date() } }, { returnDocument: "after", runValidators: true }).select("-password");
 
-    if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not registered");
-    return user;
-};
-
-const revokeUserApproval = async (userId: string) => {
-    const user = await UserModel.findByIdAndUpdate(userId, { $set: { approved: false, approvedBy: undefined, approvedAt: undefined } }, { returnDocument: "after", runValidators: true }).select("-password");
-
-    if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not registered");
-    return user;
-};
 
 const registerRestaurant = async (data: any) => {
     // Check existing user
@@ -513,6 +502,9 @@ const registerRestaurant = async (data: any) => {
         };
     }
 
+    const settings = await SettingsModel.findOne();
+    const autoApprove = settings ? settings.allowAutoApproveNewResturant : false;
+
     // Prepare Restaurant Data
     const restaurantData: any = {
         restaurantName: data.restaurantName,
@@ -523,6 +515,8 @@ const registerRestaurant = async (data: any) => {
         restaurantAddress: address,
         restaurantOpenHours: openHours,
         restaurantImage: data.restaurantImage,
+        approved: autoApprove,
+        approvedAt: autoApprove ? new Date() : undefined,
     };
 
     // Start a Mongoose Session for Transaction
@@ -603,6 +597,4 @@ export const authServices = {
     verifyNewEmail,
     setUserPassword,
     updateLocation,
-    approveUser,
-    revokeUserApproval,
 };

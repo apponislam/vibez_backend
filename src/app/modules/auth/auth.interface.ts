@@ -30,9 +30,7 @@ export interface User {
     isInfluencer?: boolean;
     lastLogin?: Date;
 
-    approved: boolean;
-    approvedBy?: Types.ObjectId | null;
-    approvedAt?: Date;
+
 
     subscriptionPlanId?: Types.ObjectId | null;
     subscriptionEndDate?: Date;

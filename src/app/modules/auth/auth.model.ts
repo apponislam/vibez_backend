@@ -98,19 +98,7 @@ const userSchemaDefinition: any = {
         type: Date,
     },
 
-    approved: {
-        type: Boolean,
-        default: false,
-    },
 
-    approvedBy: {
-        type: Schema.Types.ObjectId,
-        ref: "User",
-    },
-
-    approvedAt: {
-        type: Date,
-    },
 
     balance: {
         type: Number,

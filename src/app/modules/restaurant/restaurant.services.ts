@@ -80,6 +80,28 @@ const deleteRestaurant = async (id: string, ownerId: string) => {
     return { message: "Restaurant deleted successfully" };
 };
 
+const approveRestaurant = async (id: string, approvedBy: string) => {
+    const restaurant = await RestaurantModel.findByIdAndUpdate(
+        id,
+        { $set: { approved: true, approvedBy, approvedAt: new Date() } },
+        { new: true, runValidators: true }
+    ).populate("restaurantOwner", "name email phone");
+
+    if (!restaurant) throw new ApiError(httpStatus.NOT_FOUND, "Restaurant not found");
+    return restaurant;
+};
+
+const revokeRestaurantApproval = async (id: string) => {
+    const restaurant = await RestaurantModel.findByIdAndUpdate(
+        id,
+        { $set: { approved: false, approvedBy: null, approvedAt: undefined } },
+        { new: true, runValidators: true }
+    ).populate("restaurantOwner", "name email phone");
+
+    if (!restaurant) throw new ApiError(httpStatus.NOT_FOUND, "Restaurant not found");
+    return restaurant;
+};
+
 export const restaurantServices = {
     createRestaurant,
     getAllRestaurants,
@@ -87,4 +109,6 @@ export const restaurantServices = {
     getRestaurantByOwner,
     updateRestaurant,
     deleteRestaurant,
+    approveRestaurant,
+    revokeRestaurantApproval,
 };

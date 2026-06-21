@@ -29,7 +29,5 @@ router.post("/resend-email-update", auth, authControllers.resendEmailUpdate);
 
 // Admin only routes
 router.post("/set-password/:userId", auth, authControllers.setUserPassword);
-router.patch("/users/:userId/approve", auth, authControllers.approveUser);
-router.patch("/users/:userId/revoke-approval", auth, authControllers.revokeUserApproval);
 
 export const authRoutes = router;

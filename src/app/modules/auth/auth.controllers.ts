@@ -323,30 +323,7 @@ const updateLocation = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
-const approveUser = catchAsync(async (req: Request, res: Response) => {
-    const userId = req.params.userId as string;
-    const approvedBy = req.user._id;
-    const user = await authServices.approveUser(userId, approvedBy);
 
-    sendResponse(res, {
-        statusCode: httpStatus.OK,
-        success: true,
-        message: "User approved successfully",
-        data: user,
-    });
-});
-
-const revokeUserApproval = catchAsync(async (req: Request, res: Response) => {
-    const userId = req.params.userId as string;
-    const user = await authServices.revokeUserApproval(userId);
-
-    sendResponse(res, {
-        statusCode: httpStatus.OK,
-        success: true,
-        message: "User approval revoked successfully",
-        data: user,
-    });
-});
 
 const registerRestaurant = catchAsync(async (req: Request, res: Response) => {
     // Parse the body field if it's a string
@@ -433,6 +410,4 @@ export const authControllers = {
     verifyNewEmail,
     setUserPassword,
     updateLocation,
-    approveUser,
-    revokeUserApproval,
 };

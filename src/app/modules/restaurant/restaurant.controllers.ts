@@ -89,6 +89,31 @@ const deleteRestaurant = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const approveRestaurant = catchAsync(async (req: Request, res: Response) => {
+    const restaurantId = req.params.id as string;
+    const approvedBy = req.user._id;
+    const result = await restaurantServices.approveRestaurant(restaurantId, approvedBy);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Restaurant approved successfully",
+        data: result,
+    });
+});
+
+const revokeRestaurantApproval = catchAsync(async (req: Request, res: Response) => {
+    const restaurantId = req.params.id as string;
+    const result = await restaurantServices.revokeRestaurantApproval(restaurantId);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Restaurant approval revoked successfully",
+        data: result,
+    });
+});
+
 export const restaurantControllers = {
     createRestaurant,
     getAllRestaurants,
@@ -96,4 +121,6 @@ export const restaurantControllers = {
     getMyRestaurant,
     updateRestaurant,
     deleteRestaurant,
+    approveRestaurant,
+    revokeRestaurantApproval,
 };
