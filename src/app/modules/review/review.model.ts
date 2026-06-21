@@ -38,6 +38,9 @@ const ReviewSchema = new Schema<ReviewDocument>(
     },
 );
 
-ReviewSchema.index({ restaurantId: 1, isActive: 1 });
+// Indexes for faster lookups
+ReviewSchema.index({ restaurantId: 1, isDeleted: 1, isActive: 1, createdAt: -1 });
+ReviewSchema.index({ userId: 1, isDeleted: 1 });
 
 export const ReviewModel = mongoose.model<ReviewDocument>("Review", ReviewSchema);
+

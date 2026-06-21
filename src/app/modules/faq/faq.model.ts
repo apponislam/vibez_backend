@@ -22,6 +22,9 @@ const FAQSchema = new Schema<FAQDocument>(
     },
 );
 
-FAQSchema.index({ audience: 1, isActive: 1 });
+// Indexes for faster lookups
+FAQSchema.index({ audience: 1, isDeleted: 1, isActive: 1, createdAt: -1 });
+FAQSchema.index({ isDeleted: 1, isActive: 1, createdAt: -1 });
 
 export const FAQModel = mongoose.model<FAQDocument>("FAQ", FAQSchema);
+

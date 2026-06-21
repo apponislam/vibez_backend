@@ -29,9 +29,11 @@ const WithdrawSchema = new Schema<IWithdraw>(
         },
         adminFeedback: {
             type: String,
+            trim: true,
         },
         stripeTransferId: {
             type: String,
+            trim: true,
         },
     },
     {
@@ -40,4 +42,10 @@ const WithdrawSchema = new Schema<IWithdraw>(
     }
 );
 
+// Indexes for faster lookups
+WithdrawSchema.index({ userId: 1, createdAt: -1 });
+WithdrawSchema.index({ status: 1 });
+WithdrawSchema.index({ stripeTransferId: 1 }, { unique: true, sparse: true });
+
 export const WithdrawModel = mongoose.model<IWithdraw>("Withdraw", WithdrawSchema);
+

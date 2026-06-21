@@ -105,6 +105,9 @@ DealSchema.pre("save", function () {
     }
 });
 
-DealSchema.index({ restaurantId: 1, isActive: 1 });
+// Indexes for faster lookups
+DealSchema.index({ restaurantId: 1, isDeleted: 1, isActive: 1, createdAt: -1 });
+DealSchema.index({ isDeleted: 1, isActive: 1 });
 
 export const DealModel = mongoose.model<DealDocument>("Deal", DealSchema);
+

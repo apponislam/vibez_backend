@@ -33,10 +33,12 @@ const UserSubscriptionSchema = new Schema<IUserSubscription>(
 );
 
 // Indexes for faster lookups
-UserSubscriptionSchema.index({ userId: 1 });
+UserSubscriptionSchema.index({ userId: 1, status: 1 });
 UserSubscriptionSchema.index({ stripeSubscriptionId: 1 }, { unique: true, sparse: true });
+UserSubscriptionSchema.index({ subscriptionPlanId: 1 });
 
 export const UserSubscriptionModel = mongoose.model<IUserSubscription>(
     "UserSubscription",
     UserSubscriptionSchema
 );
+
