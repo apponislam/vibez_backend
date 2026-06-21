@@ -96,6 +96,7 @@ const RestaurantSchema = new Schema<IRestaurant>(
 
 // Indexes for faster lookups
 RestaurantSchema.index({ restaurantOwner: 1 }, { unique: true });
+RestaurantSchema.index({ restaurantName: 1 });
 RestaurantSchema.index({ cuisineType: 1 });
 RestaurantSchema.index({ restaurantType: 1 });
 RestaurantSchema.index({ "restaurantAddress.location": "2dsphere" });
