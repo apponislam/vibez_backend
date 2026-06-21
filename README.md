@@ -14,7 +14,8 @@ Vibez Backend is a robust, modular, and high-performance backend application bui
 - **File Processing**: Multer (file uploads) & Sharp (image optimization/resizing)
 - **Emailing**: Nodemailer (SMTP/Gmail integrations)
 - **Validation**: Zod (schema validations)
-- **Real-Time & Background**: Socket.io (real-time communication), BullMQ & ioredis (background queue processing)
+- **Notifications & Push**: Firebase Cloud Messaging (FCM via firebase-admin)
+- **Real-Time & Background**: Socket.io (real-time communication), Node-Cron (scheduled cron tasks), BullMQ & ioredis (background queue processing)
 
 ---
 
@@ -28,19 +29,25 @@ vibez_backend/
 │   ├── app/
 │   │   ├── modules/                  # Modular domain-driven folders
 │   │   │   ├── auth/                 # Users & Authentication
+│   │   │   ├── commission/           # Referral commission logic
+│   │   │   ├── coupon/               # Coupon management
 │   │   │   ├── deal/                 # Promotional Deals
 │   │   │   ├── faq/                  # Frequently Asked Questions
 │   │   │   ├── favorite/             # User Favorites
+│   │   │   ├── notification/         # FCM Push Notifications
 │   │   │   ├── promocodes/           # Coupon & Promo Codes
 │   │   │   ├── public/               # Public assets / endpoints
 │   │   │   ├── reservation/          # Restaurant table bookings
 │   │   │   ├── restaurant/           # Restaurant profiles & menus
 │   │   │   ├── review/               # Customer feedback & ratings
 │   │   │   ├── saved-deal/           # Saved/Bookmarked deals
+│   │   │   ├── settings/             # System settings & configuration
 │   │   │   ├── shorts/               # Short video reels/clips
 │   │   │   ├── stripe/               # Stripe integration & webhooks
 │   │   │   ├── subscription/         # Platform subscription tiers
-│   │   │   └── usersubscription/     # Subscribed user plans
+│   │   │   ├── user/                 # Admin User Management
+│   │   │   ├── usersubscription/     # Subscribed user plans
+│   │   │   └── withdraw/             # Commission payouts
 │   │   └── routes/                   # API Route Registry
 │   ├── errors/                       # Global error handling utilities
 │   ├── utils/                        # Helper functions (catchAsync, sendResponse, etc.)
@@ -140,11 +147,21 @@ All API routes are prefixed with `/api/v1`.
 - `POST /auth/reset-password` - Reset password with verified token
 
 ### 🍕 Restaurants (`/api/v1/restaurants`)
-- `GET /restaurants` - Retrieve restaurant list (supports search, geolocation, filter)
-- `POST /restaurants` - Create restaurant profile (Admin/Owner)
+- `GET /restaurants` - Retrieve approved restaurant list (supports search, geolocation, filters)
+- `GET /restaurants/admin/all` - Retrieve all restaurants (Admin only, includes unapproved ones)
+- `POST /restaurants` - Create restaurant profile (Admin/Owner; auto-approves if allowed by settings)
 - `GET /restaurants/:id` - Fetch details of a specific restaurant
 - `PATCH /restaurants/:id` - Update restaurant info
-- `DELETE /restaurants/:id` - Soft-delete restaurant (Admin)
+- `DELETE /restaurants/:id` - Soft-delete restaurant (Admin/Owner)
+- `PATCH /restaurants/:id/approve` - Approve a restaurant profile (Admin only)
+- `PATCH /restaurants/:id/revoke-approval` - Revoke restaurant approval (Admin only)
+
+### 👥 User Administration (`/api/v1/users`)
+- `GET /users` - Paginated user listing with support for search and filtering by role/influencer/active status (Admin only)
+- `GET /users/stats` - Fetch platform usage statistics: total, regular, influencer, and premium users (Admin only)
+- `GET /users/:id/activity` - Detailed chronological view of referrals, subscriptions, commissions, and withdrawals (Admin only)
+- `PATCH /users/:id/edit` - Modify user's influencer status and customized commission terms (Admin only)
+- `PATCH /users/:id/toggle-status` - Toggle a user's active/banned status (Admin only)
 
 ### 🏷️ Deals & Promotions (`/api/v1/deals`)
 - `GET /deals` - Retrieve all active deals (pass `?restaurantId=ID` to filter by restaurant)
