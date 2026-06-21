@@ -30,13 +30,13 @@ export interface User {
     isInfluencer?: boolean;
     lastLogin?: Date;
 
-
-
     subscriptionPlanId?: Types.ObjectId | null;
     subscriptionEndDate?: Date;
 
     balance?: number;
-
+    commissionPercentage?: number;
+    maxPayout?: number;
+    commissionDuration?: number;
 
     favoriteCuisines?: string[];
     dietaryPreferences?: string[];

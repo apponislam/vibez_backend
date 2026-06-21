@@ -106,6 +106,21 @@ const userSchemaDefinition: any = {
         min: 0,
     },
 
+    commissionPercentage: {
+        type: Number,
+        default: 0,
+    },
+
+    maxPayout: {
+        type: Number,
+        default: 0,
+    },
+
+    commissionDuration: {
+        type: Number,
+        default: 0,
+    },
+
 
 
     favoriteCuisines: {

@@ -45,6 +45,12 @@ const registerUser = async (data: any) => {
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
     const verificationExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
+    // Fetch Settings for defaults
+    const settings = await SettingsModel.findOne();
+    const defaultCommisionPercentage = settings ? settings.defaultCommisionPercentage : 10;
+    const defaultMaxPayout = settings ? settings.defaultMaxPayout : 100;
+    const defaultCommissionDuration = settings ? settings.defaultCommissionDuration : 12;
+
     // Create user
     const userData = {
         ...data,
@@ -56,6 +62,9 @@ const registerUser = async (data: any) => {
         verificationToken,
         verificationCode,
         verificationExpiry,
+        commissionPercentage: data.commissionPercentage !== undefined ? data.commissionPercentage : defaultCommisionPercentage,
+        maxPayout: data.maxPayout !== undefined ? data.maxPayout : defaultMaxPayout,
+        commissionDuration: data.commissionDuration !== undefined ? data.commissionDuration : defaultCommissionDuration,
     };
 
     const createdUser = await UserModel.create(userData);
@@ -454,6 +463,13 @@ const registerRestaurant = async (data: any) => {
         }
     }
 
+    // Fetch settings for defaults
+    const settings = await SettingsModel.findOne();
+    const defaultCommisionPercentage = settings ? settings.defaultCommisionPercentage : 10;
+    const defaultMaxPayout = settings ? settings.defaultMaxPayout : 100;
+    const defaultCommissionDuration = settings ? settings.defaultCommissionDuration : 12;
+    const autoApprove = settings ? settings.allowAutoApproveNewResturant : false;
+
     // Prepare User Data
     const userData = {
         name: data.name,
@@ -471,6 +487,9 @@ const registerRestaurant = async (data: any) => {
         verificationToken,
         verificationCode,
         verificationExpiry,
+        commissionPercentage: data.commissionPercentage !== undefined ? data.commissionPercentage : defaultCommisionPercentage,
+        maxPayout: data.maxPayout !== undefined ? data.maxPayout : defaultMaxPayout,
+        commissionDuration: data.commissionDuration !== undefined ? data.commissionDuration : defaultCommissionDuration,
     };
 
     // Parse Address and Open Hours if they are strings
@@ -501,9 +520,6 @@ const registerRestaurant = async (data: any) => {
             coordinates: [lng, lat],
         };
     }
-
-    const settings = await SettingsModel.findOne();
-    const autoApprove = settings ? settings.allowAutoApproveNewResturant : false;
 
     // Prepare Restaurant Data
     const restaurantData: any = {
