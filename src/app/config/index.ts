@@ -36,4 +36,5 @@ export default {
 
     superAdminPassword: process.env.SUPERADMINPASSWORD,
     superAdminEmail: process.env.SUPERADMINEMAIL,
+    maps_api_key: process.env.MAPS_API_KEY,
 };
