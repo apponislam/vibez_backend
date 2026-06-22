@@ -9,6 +9,7 @@ import { sendOtpEmail, sendVerificationEmail, sendWelcomeEmail, sendEmailUpdateV
 import mongoose from "mongoose";
 import { RestaurantModel } from "../restaurant/restaurant.model";
 import { SettingsModel } from "../settings/settings.model";
+import { resolveRestaurantAddress } from "../../../utils/googleMaps";
 
 const registerUser = async (data: any) => {
     // Check existing user
@@ -517,15 +518,9 @@ const registerRestaurant = async (data: any) => {
         }
     }
 
-    // Parse lat/lng to GeoJSON if provided in address
-    if (address && address.lat !== undefined && address.lng !== undefined) {
-        const lat = parseFloat(address.lat);
-        const lng = parseFloat(address.lng);
-        address.location = {
-            type: "Point",
-            coordinates: [lng, lat],
-        };
-    }
+    // Resolve lat/lng and fill missing address components using Google Maps API
+    address = await resolveRestaurantAddress(address);
+
 
     // Prepare Restaurant Data
     const restaurantData: any = {
