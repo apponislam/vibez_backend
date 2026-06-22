@@ -14,7 +14,7 @@ export interface GeocodeResult {
     country: string;
     location: {
         type: "Point";
-        coordinates: [number, number]; // [lng, lat]
+        coordinates: [number, number];
     };
 }
 
@@ -28,7 +28,7 @@ export interface ReverseGeocodeResult {
     country: string;
     location: {
         type: "Point";
-        coordinates: [number, number]; // [lng, lat]
+        coordinates: [number, number];
     };
 }
 
@@ -86,9 +86,7 @@ export const extractAddressComponents = (components: any[]) => {
  * Geocode an address (string or object) to get location coordinates and parsed address details.
  * @param address The address string or object with address properties to geocode
  */
-export const geocodeAddress = async (
-    address: string | { street?: string; city?: string; state?: string; zipCode?: string; country?: string }
-): Promise<GeocodeResult> => {
+export const geocodeAddress = async (address: string | { street?: string; city?: string; state?: string; zipCode?: string; country?: string }): Promise<GeocodeResult> => {
     const apiKey = config.maps_api_key;
     if (!apiKey) {
         throw new Error("Maps API Key is not configured. Please set MAPS_API_KEY in your environment variables.");
