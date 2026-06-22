@@ -4,12 +4,13 @@ import { UserModel } from "../auth/auth.model";
 import { WithdrawModel } from "./withdraw.model";
 import { IWithdraw, WithdrawStatus, WithdrawPaymentMethod } from "./withdraw.interface";
 import { stripeServices } from "../stripe/stripe.service";
-import config from "../../config";
 
 // Create or retrieve onboarding link for Stripe Connected Account
-const createConnectAccount = async (userId: string) => {
+const createConnectAccount = async (userId: string, serverUrl: string) => {
     const user = await UserModel.findById(userId);
     if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+
+    console.log("serverUrl", serverUrl);
 
     let accountId = user.stripeConnectedAccountId;
 
@@ -33,8 +34,8 @@ const createConnectAccount = async (userId: string) => {
     // Create onboarding link
     const accountLink = await stripeServices.stripe.accountLinks.create({
         account: accountId,
-        refresh_url: "vibez://withdraw/onboarding-refresh",
-        return_url: "vibez://withdraw/onboarding-complete",
+        refresh_url: `${serverUrl}/api/v1/withdrawals/onboarding-refresh`,
+        return_url: `${serverUrl}/api/v1/withdrawals/onboarding-complete`,
         type: "account_onboarding",
     });
 
@@ -42,6 +43,38 @@ const createConnectAccount = async (userId: string) => {
         stripeConnectedAccountId: accountId,
         url: accountLink.url,
     };
+};
+
+// Retrieve onboarding status from Stripe
+const getConnectAccountStatus = async (userId: string) => {
+    const user = await UserModel.findById(userId);
+    if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+
+    if (!user.stripeConnectedAccountId) {
+        return {
+            stripeConnectedAccountId: null,
+            isConnected: false,
+            detailsSubmitted: false,
+        };
+    }
+
+    try {
+        const account = await stripeServices.stripe.accounts.retrieve(user.stripeConnectedAccountId);
+        return {
+            stripeConnectedAccountId: user.stripeConnectedAccountId,
+            isConnected: true,
+            detailsSubmitted: account.details_submitted,
+            chargesEnabled: account.charges_enabled,
+            payoutsEnabled: account.payouts_enabled,
+        };
+    } catch (error: any) {
+        return {
+            stripeConnectedAccountId: user.stripeConnectedAccountId,
+            isConnected: false,
+            detailsSubmitted: false,
+            error: error.message || "Failed to retrieve account details from Stripe",
+        };
+    }
 };
 
 // Request a withdrawal (holds the balance)
@@ -64,6 +97,15 @@ const requestWithdrawal = async (userId: string, data: Partial<IWithdraw>) => {
     if (data.paymentMethod === WithdrawPaymentMethod.STRIPE) {
         if (!user.stripeConnectedAccountId) {
             throw new ApiError(httpStatus.BAD_REQUEST, "Please connect your Stripe account before requesting a withdrawal");
+        }
+
+        try {
+            const stripeAccount = await stripeServices.stripe.accounts.retrieve(user.stripeConnectedAccountId);
+            if (!stripeAccount.details_submitted) {
+                throw new ApiError(httpStatus.BAD_REQUEST, "Your Stripe account onboarding is incomplete. Please complete setup first.");
+            }
+        } catch (error: any) {
+            throw new ApiError(httpStatus.BAD_REQUEST, `Stripe verification failed: ${error.message || error}`);
         }
     }
 
@@ -207,6 +249,7 @@ const getAllWithdrawals = async (query: Record<string, any> = {}) => {
 
 export const withdrawServices = {
     createConnectAccount,
+    getConnectAccountStatus,
     requestWithdrawal,
     approveWithdrawal,
     rejectWithdrawal,

@@ -6,7 +6,10 @@ import { withdrawServices } from "./withdraw.services";
 
 const createConnectAccount = catchAsync(async (req: Request, res: Response) => {
     const userId = req.user._id.toString();
-    const result = await withdrawServices.createConnectAccount(userId);
+    const protocol = req.protocol;
+    const host = req.get("host");
+    const serverUrl = `${protocol}://${host}`;
+    const result = await withdrawServices.createConnectAccount(userId, serverUrl);
 
     sendResponse(res, {
         statusCode: httpStatus.OK,
@@ -14,6 +17,26 @@ const createConnectAccount = catchAsync(async (req: Request, res: Response) => {
         message: "Stripe Connect onboarding link generated successfully",
         data: result,
     });
+});
+
+const getConnectAccountStatus = catchAsync(async (req: Request, res: Response) => {
+    const userId = req.user._id.toString();
+    const result = await withdrawServices.getConnectAccountStatus(userId);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Stripe Connect account status retrieved successfully",
+        data: result,
+    });
+});
+
+const onboardingCompleteRedirect = catchAsync(async (req: Request, res: Response) => {
+    res.redirect("vibez://withdraw/onboarding-complete");
+});
+
+const onboardingRefreshRedirect = catchAsync(async (req: Request, res: Response) => {
+    res.redirect("vibez://withdraw/onboarding-refresh");
 });
 
 const requestWithdrawal = catchAsync(async (req: Request, res: Response) => {
@@ -78,6 +101,9 @@ const getAllWithdrawals = catchAsync(async (req: Request, res: Response) => {
 
 export const withdrawControllers = {
     createConnectAccount,
+    getConnectAccountStatus,
+    onboardingCompleteRedirect,
+    onboardingRefreshRedirect,
     requestWithdrawal,
     approveWithdrawal,
     rejectWithdrawal,
