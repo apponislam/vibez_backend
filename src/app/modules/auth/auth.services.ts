@@ -9,7 +9,7 @@ import { sendOtpEmail, sendVerificationEmail, sendWelcomeEmail, sendEmailUpdateV
 import mongoose from "mongoose";
 import { RestaurantModel } from "../restaurant/restaurant.model";
 import { SettingsModel } from "../settings/settings.model";
-import { resolveRestaurantAddress } from "../../../utils/googleMaps";
+import { getLatLngFromAddress } from "../../../utils/googleMaps";
 
 const registerUser = async (data: any) => {
     // Check existing user
@@ -518,8 +518,32 @@ const registerRestaurant = async (data: any) => {
         }
     }
 
-    // Resolve lat/lng and fill missing address components using Google Maps API
-    address = await resolveRestaurantAddress(address);
+    // Resolve lat/lng from address components using Google Maps API
+    if (address) {
+        const coords = await getLatLngFromAddress(address);
+        if (coords) {
+            address.lat = coords.lat.toString();
+            address.lng = coords.lng.toString();
+            address.location = {
+                type: "Point",
+                coordinates: [coords.lng, coords.lat],
+            };
+        } else {
+            // Fallback: If geocoding fails, check if lat/lng (or lan) are manually provided in input address
+            const latVal = address.lat;
+            const lngVal = address.lng !== undefined ? address.lng : address.lan;
+            if (latVal !== undefined && lngVal !== undefined) {
+                const lat = parseFloat(latVal);
+                const lng = parseFloat(lngVal);
+                address.lat = lat.toString();
+                address.lng = lng.toString();
+                address.location = {
+                    type: "Point",
+                    coordinates: [lng, lat],
+                };
+            }
+        }
+    }
 
 
     // Prepare Restaurant Data

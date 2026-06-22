@@ -3,8 +3,45 @@ import ApiError from "../../../errors/ApiError";
 import { RestaurantModel } from "./restaurant.model";
 import { IRestaurant } from "./resturant.interface";
 import { UserModel } from "../auth/auth.model";
+import { getLatLngFromAddress } from "../../../utils/googleMaps";
 
-const createRestaurant = async (data: Partial<IRestaurant>, ownerId: string) => {
+const createRestaurant = async (data: any, ownerId: string) => {
+    let address = data.restaurantAddress;
+    if (address) {
+        if (typeof address === "string") {
+            try {
+                address = JSON.parse(address);
+            } catch (error) {
+                throw new ApiError(httpStatus.BAD_REQUEST, "Invalid restaurant address format");
+            }
+        }
+
+        const coords = await getLatLngFromAddress(address);
+        if (coords) {
+            address.lat = coords.lat.toString();
+            address.lng = coords.lng.toString();
+            address.location = {
+                type: "Point",
+                coordinates: [coords.lng, coords.lat],
+            };
+        } else {
+            // Fallback: If geocoding fails, check if lat/lng (or lan) are manually provided in input address
+            const latVal = address.lat;
+            const lngVal = address.lng !== undefined ? address.lng : address.lan;
+            if (latVal !== undefined && lngVal !== undefined) {
+                const lat = parseFloat(latVal);
+                const lng = parseFloat(lngVal);
+                address.lat = lat.toString();
+                address.lng = lng.toString();
+                address.location = {
+                    type: "Point",
+                    coordinates: [lng, lat],
+                };
+            }
+        }
+        data.restaurantAddress = address;
+    }
+
     const restaurantData = { ...data, restaurantOwner: ownerId };
     const restaurant = await RestaurantModel.create(restaurantData);
 
@@ -122,10 +159,54 @@ const getRestaurantByOwner = async (ownerId: string) => {
     return restaurant;
 };
 
-const updateRestaurant = async (id: string, data: Partial<IRestaurant>, ownerId: string) => {
+const updateRestaurant = async (id: string, data: any, ownerId: string) => {
+    const existingRestaurant = await RestaurantModel.findOne({ _id: id, restaurantOwner: ownerId });
+    if (!existingRestaurant) throw new ApiError(httpStatus.NOT_FOUND, "Restaurant not found or not authorized");
+
+    let address = data.restaurantAddress;
+    if (address) {
+        if (typeof address === "string") {
+            try {
+                address = JSON.parse(address);
+            } catch (error) {
+                throw new ApiError(httpStatus.BAD_REQUEST, "Invalid restaurant address format");
+            }
+        }
+
+        // Merge updated address components with existing address components
+        const mergedAddress = {
+            ...existingRestaurant.restaurantAddress,
+            ...address,
+        };
+
+        const coords = await getLatLngFromAddress(mergedAddress);
+        if (coords) {
+            mergedAddress.lat = coords.lat.toString();
+            mergedAddress.lng = coords.lng.toString();
+            mergedAddress.location = {
+                type: "Point",
+                coordinates: [coords.lng, coords.lat],
+            };
+        } else {
+            // Fallback: If geocoding fails, check if lat/lng (or lan) are manually provided in input address
+            const latVal = address.lat;
+            const lngVal = address.lng !== undefined ? address.lng : address.lan;
+            if (latVal !== undefined && lngVal !== undefined) {
+                const lat = parseFloat(latVal);
+                const lng = parseFloat(lngVal);
+                mergedAddress.lat = lat.toString();
+                mergedAddress.lng = lng.toString();
+                mergedAddress.location = {
+                    type: "Point",
+                    coordinates: [lng, lat],
+                };
+            }
+        }
+        data.restaurantAddress = mergedAddress;
+    }
+
     const restaurant = await RestaurantModel.findOneAndUpdate({ _id: id, restaurantOwner: ownerId }, { $set: data }, { new: true, runValidators: true }).populate("restaurantOwner", "name email phone");
 
-    if (!restaurant) throw new ApiError(httpStatus.NOT_FOUND, "Restaurant not found or not authorized");
     return restaurant;
 };
 
