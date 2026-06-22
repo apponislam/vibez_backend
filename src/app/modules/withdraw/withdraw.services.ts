@@ -33,8 +33,8 @@ const createConnectAccount = async (userId: string) => {
     // Create onboarding link
     const accountLink = await stripeServices.stripe.accountLinks.create({
         account: accountId,
-        refresh_url: `${config.client_url}/withdraw/onboarding-refresh`,
-        return_url: `${config.client_url}/withdraw/onboarding-complete`,
+        refresh_url: "vibez://withdraw/onboarding-refresh",
+        return_url: "vibez://withdraw/onboarding-complete",
         type: "account_onboarding",
     });
 
