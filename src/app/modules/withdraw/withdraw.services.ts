@@ -160,17 +160,71 @@ const rejectWithdrawal = async (withdrawId: string, adminFeedback: string) => {
 };
 
 // Get withdrawals for a specific user
-const getUserWithdrawals = async (userId: string) => {
-    const withdrawals = await WithdrawModel.find({ userId }).sort({ createdAt: -1 });
-    return withdrawals;
+const getUserWithdrawals = async (userId: string, query: Record<string, any> = {}) => {
+    const page = parseInt(query.page as string) || 1;
+    const limit = parseInt(query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    const [withdrawals, total] = await Promise.all([
+        WithdrawModel.find({ userId })
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit),
+        WithdrawModel.countDocuments({ userId }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+    const hasNext = page < totalPages;
+    const hasPrev = page > 1;
+
+    return {
+        data: withdrawals,
+        meta: {
+            page,
+            limit,
+            total,
+            totalPages,
+            hasNext,
+            hasPrev,
+        },
+    };
 };
 
 // Get all withdrawals (Admin view)
-const getAllWithdrawals = async (filter: Record<string, any> = {}) => {
-    const withdrawals = await WithdrawModel.find(filter)
-        .populate("userId", "name email role image balance")
-        .sort({ createdAt: -1 });
-    return withdrawals;
+const getAllWithdrawals = async (query: Record<string, any> = {}) => {
+    const filter: Record<string, any> = {};
+    if (query.status) {
+        filter.status = query.status;
+    }
+
+    const page = parseInt(query.page as string) || 1;
+    const limit = parseInt(query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    const [withdrawals, total] = await Promise.all([
+        WithdrawModel.find(filter)
+            .populate("userId", "name email role image balance")
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit),
+        WithdrawModel.countDocuments(filter),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+    const hasNext = page < totalPages;
+    const hasPrev = page > 1;
+
+    return {
+        data: withdrawals,
+        meta: {
+            page,
+            limit,
+            total,
+            totalPages,
+            hasNext,
+            hasPrev,
+        },
+    };
 };
 
 export const withdrawServices = {

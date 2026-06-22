@@ -53,28 +53,26 @@ const rejectWithdrawal = catchAsync(async (req: Request, res: Response) => {
 
 const getUserWithdrawals = catchAsync(async (req: Request, res: Response) => {
     const userId = req.user._id.toString();
-    const result = await withdrawServices.getUserWithdrawals(userId);
+    const result = await withdrawServices.getUserWithdrawals(userId, req.query);
 
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
         message: "User withdrawals retrieved successfully",
-        data: result,
+        data: result.data,
+        meta: result.meta,
     });
 });
 
 const getAllWithdrawals = catchAsync(async (req: Request, res: Response) => {
-    const filter: Record<string, any> = {};
-    if (req.query.status) {
-        filter.status = req.query.status;
-    }
-    const result = await withdrawServices.getAllWithdrawals(filter);
+    const result = await withdrawServices.getAllWithdrawals(req.query);
 
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
         message: "All withdrawals retrieved successfully",
-        data: result,
+        data: result.data,
+        meta: result.meta,
     });
 });
 
