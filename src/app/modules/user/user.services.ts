@@ -259,6 +259,26 @@ const toggleStaffLoginStatus = async (ownerId: string, staffId: string) => {
     return staffWithoutPassword;
 };
 
+const toggleAllStaffLoginStatus = async (ownerId: string, enable?: boolean) => {
+    const restaurant = await RestaurantModel.findOne({ restaurantOwner: ownerId });
+    if (!restaurant) {
+        throw new ApiError(httpStatus.NOT_FOUND, "Restaurant not found.");
+    }
+
+    let targetStatus = enable;
+    if (targetStatus === undefined) {
+        const activeStaff = await UserModel.findOne({ restaurantId: restaurant._id, role: "STAFF", enableStaffLogin: true, isDeleted: false });
+        targetStatus = !activeStaff;
+    }
+
+    await UserModel.updateMany(
+        { restaurantId: restaurant._id, role: "STAFF", isDeleted: false },
+        { $set: { enableStaffLogin: targetStatus } }
+    );
+
+    return { enableStaffLogin: targetStatus };
+};
+
 export const userServices = {
     getAllUsers,
     getUserActivity,
@@ -268,4 +288,5 @@ export const userServices = {
     createStaffByOwner,
     getStaffByOwner,
     toggleStaffLoginStatus,
+    toggleAllStaffLoginStatus,
 };

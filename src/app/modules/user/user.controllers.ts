@@ -104,7 +104,19 @@ const toggleStaffLoginStatus = catchAsync(async (req: Request, res: Response) =>
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
-        message: result.enableStaffLogin ? "Staff login enabled" : "Staff login disabled",
+        message: `Staff login ${result.enableStaffLogin ? "enabled" : "disabled"} successfully`,
+        data: result,
+    });
+});
+
+const toggleAllStaffLoginStatus = catchAsync(async (req: Request, res: Response) => {
+    const ownerId = req.user._id as string;
+    const { enable } = req.body;
+    const result = await userServices.toggleAllStaffLoginStatus(ownerId, enable);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: `All staff login ${result.enableStaffLogin ? "enabled" : "disabled"} successfully`,
         data: result,
     });
 });
@@ -118,4 +130,5 @@ export const userControllers = {
     createStaffByOwner,
     getStaffByOwner,
     toggleStaffLoginStatus,
+    toggleAllStaffLoginStatus,
 };

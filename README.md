@@ -156,12 +156,16 @@ All API routes are prefixed with `/api/v1`.
 - `PATCH /restaurants/:id/approve` - Approve a restaurant profile (Admin only)
 - `PATCH /restaurants/:id/revoke-approval` - Revoke restaurant approval (Admin only)
 
-### 👥 User Administration (`/api/v1/users`)
+### 👥 User & Staff Administration (`/api/v1/users`)
 - `GET /users` - Paginated user listing with support for search and filtering by role/influencer/active status (Admin only)
 - `GET /users/stats` - Fetch platform usage statistics: total, regular, influencer, and premium users (Admin only)
 - `GET /users/:id/activity` - Detailed chronological view of referrals, subscriptions, commissions, and withdrawals (Admin only)
 - `PATCH /users/:id/edit` - Modify user's influencer status and customized commission terms (Admin only)
 - `PATCH /users/:id/toggle-status` - Toggle a user's active/banned status (Admin only)
+- `POST /users/staff` - Create a new staff account (Manager/Cashier/Waiter) with optional profile image upload (Owner/Admin)
+- `GET /users/staff` - Paginated listing of all staff members registered under the owner's restaurant (Owner/Admin)
+- `PATCH /users/staff/:staffId/toggle-login` - Enable or disable login permission for a specific staff member (Owner/Admin)
+- `PATCH /users/staff/toggle-all-login` - Enable or disable login permission for all staff members of the restaurant simultaneously (Owner/Admin)
 
 ### 🏷️ Deals & Promotions (`/api/v1/deals`)
 - `GET /deals` - Retrieve all active deals (pass `?restaurantId=ID` to filter by restaurant)
