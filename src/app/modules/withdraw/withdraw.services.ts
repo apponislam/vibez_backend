@@ -63,10 +63,7 @@ const requestWithdrawal = async (userId: string, data: Partial<IWithdraw>) => {
     // If using Stripe, make sure the user has onboarded their connected account
     if (data.paymentMethod === WithdrawPaymentMethod.STRIPE) {
         if (!user.stripeConnectedAccountId) {
-            throw new ApiError(
-                httpStatus.BAD_REQUEST,
-                "Please connect your Stripe account before requesting a withdrawal"
-            );
+            throw new ApiError(httpStatus.BAD_REQUEST, "Please connect your Stripe account before requesting a withdrawal");
         }
     }
 
@@ -103,10 +100,7 @@ const approveWithdrawal = async (withdrawId: string) => {
 
     if (withdrawal.paymentMethod === WithdrawPaymentMethod.STRIPE) {
         if (!user.stripeConnectedAccountId) {
-            throw new ApiError(
-                httpStatus.BAD_REQUEST,
-                "User has not set up a Stripe Connected Account"
-            );
+            throw new ApiError(httpStatus.BAD_REQUEST, "User has not set up a Stripe Connected Account");
         }
 
         try {
@@ -121,10 +115,7 @@ const approveWithdrawal = async (withdrawId: string) => {
         } catch (error: any) {
             // If transfer fails, log and throw API Error
             console.error("Stripe transfer failed:", error);
-            throw new ApiError(
-                httpStatus.INTERNAL_SERVER_ERROR,
-                `Stripe transfer failed: ${error.message}`
-            );
+            throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, `Stripe transfer failed: ${error.message}`);
         }
     }
 
@@ -165,13 +156,7 @@ const getUserWithdrawals = async (userId: string, query: Record<string, any> = {
     const limit = parseInt(query.limit as string) || 10;
     const skip = (page - 1) * limit;
 
-    const [withdrawals, total] = await Promise.all([
-        WithdrawModel.find({ userId })
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit),
-        WithdrawModel.countDocuments({ userId }),
-    ]);
+    const [withdrawals, total] = await Promise.all([WithdrawModel.find({ userId }).sort({ createdAt: -1 }).skip(skip).limit(limit), WithdrawModel.countDocuments({ userId })]);
 
     const totalPages = Math.ceil(total / limit);
     const hasNext = page < totalPages;
@@ -201,14 +186,7 @@ const getAllWithdrawals = async (query: Record<string, any> = {}) => {
     const limit = parseInt(query.limit as string) || 10;
     const skip = (page - 1) * limit;
 
-    const [withdrawals, total] = await Promise.all([
-        WithdrawModel.find(filter)
-            .populate("userId", "name email role image balance")
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit),
-        WithdrawModel.countDocuments(filter),
-    ]);
+    const [withdrawals, total] = await Promise.all([WithdrawModel.find(filter).populate("userId", "name email role image balance").sort({ createdAt: -1 }).skip(skip).limit(limit), WithdrawModel.countDocuments(filter)]);
 
     const totalPages = Math.ceil(total / limit);
     const hasNext = page < totalPages;
