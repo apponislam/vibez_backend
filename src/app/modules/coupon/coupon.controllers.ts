@@ -54,10 +54,22 @@ const updateCoupon = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const verifyReferralCode = catchAsync(async (req: Request, res: Response) => {
+    const referralCode = req.body.referralCode || req.query.referralCode || req.body.code || req.query.code;
+    const result = await couponServices.verifyReferralCodeAndGetCoupon(referralCode);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Referral code verified and default coupon retrieved successfully",
+        data: result,
+    });
+});
+
 export const couponControllers = {
     createCoupon,
     getAllCoupons,
     getCouponById,
     deleteCoupon,
     updateCoupon,
+    verifyReferralCode,
 };

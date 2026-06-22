@@ -4,6 +4,8 @@ import { CouponModel } from "./coupon.model";
 import { ICoupon } from "./coupon.interface";
 import { stripeServices } from "../stripe/stripe.service";
 
+import { UserModel } from "../auth/auth.model";
+
 // Create coupon on Stripe and save locally
 const createCoupon = async (data: Partial<ICoupon>) => {
     if (!data.couponId) {
@@ -100,10 +102,31 @@ const updateCoupon = async (id: string, data: Partial<ICoupon>) => {
     return updatedCoupon;
 };
 
+const verifyReferralCodeAndGetCoupon = async (referralCode: string) => {
+    if (!referralCode) {
+        throw new ApiError(httpStatus.BAD_REQUEST, "Referral code is required");
+    }
+
+    // Check if referrer exists
+    const referrer = await UserModel.findOne({ referralCode });
+    if (!referrer) {
+        throw new ApiError(httpStatus.NOT_FOUND, "Invalid referral code");
+    }
+
+    // Get active default coupon
+    const defaultCoupon = await CouponModel.findOne({ isDefault: true, isActive: true });
+    if (!defaultCoupon) {
+        throw new ApiError(httpStatus.NOT_FOUND, "Default coupon not configured or inactive");
+    }
+
+    return defaultCoupon;
+};
+
 export const couponServices = {
     createCoupon,
     getAllCoupons,
     getCouponById,
     deleteCoupon,
     updateCoupon,
+    verifyReferralCodeAndGetCoupon,
 };

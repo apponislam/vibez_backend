@@ -5,6 +5,9 @@ import authorize from "../../middlewares/authorized";
 
 const router = Router();
 
+// Public routes
+router.post("/verify-referral", couponControllers.verifyReferralCode);
+
 // Admin routes (require ADMIN role)
 router.post("/", auth, authorize(["ADMIN"]), couponControllers.createCoupon);
 router.get("/", auth, authorize(["ADMIN"]), couponControllers.getAllCoupons);
