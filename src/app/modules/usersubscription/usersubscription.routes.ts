@@ -5,12 +5,11 @@ import auth from "../../middlewares/auth";
 const router = Router();
 
 // Protected routes (user)
-router.use(auth);
-router.post("/checkout", userSubscriptionControllers.createCheckoutSession);
-router.post("/", userSubscriptionControllers.createUserSubscription);
-router.get("/", userSubscriptionControllers.getUserSubscriptions);
-router.get("/:id", userSubscriptionControllers.getUserSubscriptionById);
-router.patch("/:id/cancel", userSubscriptionControllers.cancelUserSubscription);
-router.patch("/:id/resume", userSubscriptionControllers.resumeUserSubscription);
+router.post("/checkout", auth, userSubscriptionControllers.createCheckoutSession);
+router.post("/", auth, userSubscriptionControllers.createUserSubscription);
+router.get("/", auth, userSubscriptionControllers.getUserSubscriptions);
+router.get("/:id", auth, userSubscriptionControllers.getUserSubscriptionById);
+router.patch("/:id/cancel", auth, userSubscriptionControllers.cancelUserSubscription);
+router.patch("/:id/resume", auth, userSubscriptionControllers.resumeUserSubscription);
 
 export const userSubscriptionRoutes = router;

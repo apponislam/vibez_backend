@@ -193,7 +193,7 @@ const resendVerificationEmail = async (email: string) => {
 };
 
 const getUserById = async (userId: string) => {
-    const user = await UserModel.findById(userId).select("-password");
+    const user = await UserModel.findById(userId).select("-password").populate("subscriptionPlanId");
     if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not registered");
     return user;
 };
@@ -335,7 +335,7 @@ const updateProfile = async (userId: string, data: any) => {
     delete data.referredByCode;
     delete data.referralCode;
 
-    const user = await UserModel.findByIdAndUpdate(userId, { $set: data }, { returnDocument: "after", runValidators: true }).select("-password");
+    const user = await UserModel.findByIdAndUpdate(userId, { $set: data }, { returnDocument: "after", runValidators: true }).select("-password").populate("subscriptionPlanId");
 
     if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not registered");
     return user;
