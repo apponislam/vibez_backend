@@ -41,6 +41,7 @@ const createUserSubscription = async (data: Partial<IUserSubscription>, userId: 
         $set: {
             subscriptionPlanId: plan._id,
             subscriptionEndDate: endDate,
+            isNewUser: false,
         },
     });
     return userSubscription;

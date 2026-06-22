@@ -103,6 +103,11 @@ const userSchemaDefinition: any = {
         default: false,
     },
 
+    isNewUser: {
+        type: Boolean,
+        default: true,
+    },
+
 
     lastLogin: {
         type: Date,

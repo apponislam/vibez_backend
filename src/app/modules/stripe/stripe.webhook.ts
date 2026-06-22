@@ -61,6 +61,7 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                     $set: {
                         subscriptionPlanId: subscriptionPlan._id,
                         subscriptionEndDate: endDate,
+                        isNewUser: false,
                     },
                 });
 

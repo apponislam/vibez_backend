@@ -3,6 +3,7 @@ import catchAsync from "../../../utils/catchAsync";
 import sendResponse from "../../../utils/sendResponse";
 import { Request, Response } from "express";
 import { couponServices } from "./coupon.services";
+import ApiError from "../../../errors/ApiError";
 
 const createCoupon = catchAsync(async (req: Request, res: Response) => {
     const result = await couponServices.createCoupon(req.body);
@@ -55,6 +56,11 @@ const updateCoupon = catchAsync(async (req: Request, res: Response) => {
 });
 
 const verifyReferralCode = catchAsync(async (req: Request, res: Response) => {
+    const user = req.user;
+    if (!user || !user.isNewUser) {
+        throw new ApiError(httpStatus.BAD_REQUEST, "Referral codes can only be verified for new users");
+    }
+
     const referralCode = req.body.referralCode || req.query.referralCode || req.body.code || req.query.code;
     const result = await couponServices.verifyReferralCodeAndGetCoupon(referralCode);
     sendResponse(res, {

@@ -3100,6 +3100,23 @@
               ]
             }
           }
+        },
+        {
+          "name": "POST Verify-referral",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/coupons/verify-referral",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \n}"
+            }
+          }
         }
       ]
     },

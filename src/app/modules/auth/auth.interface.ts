@@ -30,6 +30,7 @@ export interface User {
     isDeleted: boolean;
     isInfluencer?: boolean;
     lastLogin?: Date;
+    isNewUser?: boolean;
 
     subscriptionPlanId?: Types.ObjectId | null;
     subscriptionEndDate?: Date;
