@@ -29,8 +29,17 @@ const createUserSubscription = async (data: Partial<IUserSubscription>, userId: 
         throw new ApiError(httpStatus.BAD_REQUEST, "Invalid subscription duration");
     }
 
+    const subscriptionData = data as any;
+    if (subscriptionData.referralCode) {
+        const referrer = await UserModel.findOne({ referralCode: subscriptionData.referralCode });
+        if (referrer && referrer._id.toString() !== userId) {
+            subscriptionData.commissionUser = referrer._id;
+        }
+        delete subscriptionData.referralCode;
+    }
+
     const userSubscription = await UserSubscriptionModel.create({
-        ...data,
+        ...subscriptionData,
         userId,
         startDate,
         endDate,

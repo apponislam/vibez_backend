@@ -10,6 +10,7 @@ import config from "../../config";
 
 const createCheckoutSession = catchAsync(async (req: Request, res: Response) => {
     const { planId, subscriptionPlanId, successUrl, cancelUrl, coupon } = req.body;
+    const referralCode = req.body.referralCode || req.body.referredByCode || req.body.reffalCode || req.body.referral;
     const targetPlanId = planId || subscriptionPlanId;
     const userId = req.user._id.toString();
 
@@ -39,7 +40,7 @@ const createCheckoutSession = catchAsync(async (req: Request, res: Response) => 
         finalSuccessUrl,
         finalCancelUrl,
         req.user.email,
-        { userId, ...(coupon && { coupon }) }, // Pass userId and coupon as metadata
+        { userId, ...(coupon && { coupon }), ...(referralCode && { referralCode }) }, // Pass userId, coupon, and referralCode as metadata
         plan.isFreeTrial ? plan.freeTrialDays : undefined,
         coupon,
     );

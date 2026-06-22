@@ -31,6 +31,7 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
             });
             const userId = (session as any).metadata?.userId;
             const coupon = (session as any).metadata?.coupon;
+            const referralCode = (session as any).metadata?.referralCode;
             if (subscriptionPlan && userId) {
                 // Calculate end date based on plan duration
                 const startDate = new Date();
@@ -41,6 +42,15 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                     endDate.setMonth(endDate.getMonth() + 6);
                 } else if (subscriptionPlan.duration === "YEARLY") {
                     endDate.setFullYear(endDate.getFullYear() + 1);
+                }
+
+                // Resolve referrer from metadata if provided
+                let referredBy = undefined;
+                if (referralCode) {
+                    const referrer = await UserModel.findOne({ referralCode });
+                    if (referrer && referrer._id.toString() !== userId) {
+                        referredBy = referrer._id;
+                    }
                 }
 
                 // Create user subscription
@@ -54,6 +64,7 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                     endDate,
                     isTrial: false,
                     coupon: coupon || undefined,
+                    commissionUser: referredBy || undefined,
                 });
 
                 // Update User model with subscription info
