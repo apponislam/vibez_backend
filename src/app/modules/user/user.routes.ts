@@ -2,11 +2,12 @@ import { Router } from "express";
 import { userControllers } from "./user.controllers";
 import auth from "../../middlewares/auth";
 import authorize from "../../middlewares/authorized";
+import { uploadProfileImage } from "../../middlewares/multer";
 
 const router = Router();
 
 // Staff management routes (Accessible by RESTAURANT_OWNER and ADMIN)
-router.post("/staff", auth, authorize(["RESTAURANT_OWNER", "ADMIN"]), userControllers.createStaffByOwner);
+router.post("/staff", auth, authorize(["RESTAURANT_OWNER", "ADMIN"]), uploadProfileImage, userControllers.createStaffByOwner);
 router.get("/staff", auth, authorize(["RESTAURANT_OWNER", "ADMIN"]), userControllers.getStaffByOwner);
 
 // Admin-only dashboard endpoints

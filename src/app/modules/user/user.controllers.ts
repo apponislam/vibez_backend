@@ -3,6 +3,7 @@ import httpStatus from "http-status";
 import catchAsync from "../../../utils/catchAsync";
 import sendResponse from "../../../utils/sendResponse";
 import { userServices } from "./user.services";
+import ApiError from "../../../errors/ApiError";
 
 const getAllUsers = catchAsync(async (req: Request, res: Response) => {
     const result = await userServices.getAllUsers(req.query);
@@ -56,8 +57,26 @@ const getUserStats = catchAsync(async (req: Request, res: Response) => {
 });
 
 const createStaffByOwner = catchAsync(async (req: Request, res: Response) => {
+    let profileImageUrl = undefined;
+    if (req.file) {
+        profileImageUrl = `/uploads/profile-images/${req.file.filename}`;
+    }
+
+    let data = req.body;
+    if (req.body.body && typeof req.body.body === "string") {
+        try {
+            data = JSON.parse(req.body.body);
+        } catch (error) {
+            throw new ApiError(httpStatus.BAD_REQUEST, "Invalid JSON data in body field");
+        }
+    }
+
+    if (profileImageUrl) {
+        data.profileImage = profileImageUrl;
+    }
+
     const ownerId = req.user._id as string;
-    const result = await userServices.createStaffByOwner(ownerId, req.body);
+    const result = await userServices.createStaffByOwner(ownerId, data);
     sendResponse(res, {
         statusCode: httpStatus.CREATED,
         success: true,

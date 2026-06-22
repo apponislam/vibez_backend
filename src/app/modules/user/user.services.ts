@@ -194,6 +194,7 @@ const createStaffByOwner = async (ownerId: string, staffData: any) => {
         staffRole: staffData.staffRole,
         restaurantId: restaurant._id,
         phone: staffData.phone,
+        profileImage: staffData.profileImage,
         isActive: true,
         isEmailVerified: true,
     });
