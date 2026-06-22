@@ -32,6 +32,7 @@ const getConnectAccountStatus = catchAsync(async (req: Request, res: Response) =
 });
 
 const onboardingCompleteRedirect = catchAsync(async (req: Request, res: Response) => {
+    // res.redirect("djarna://signup");
     res.redirect("vibez://withdraw/onboarding-complete");
 });
 
