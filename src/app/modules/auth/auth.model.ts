@@ -50,6 +50,11 @@ const userSchemaDefinition: any = {
         ref: "Restaurant",
     },
 
+    enableStaffLogin: {
+        type: Boolean,
+        default: true,
+    },
+
     phone: {
         type: String,
     },

@@ -240,6 +240,25 @@ const getStaffByOwner = async (ownerId: string, query: any) => {
     };
 };
 
+const toggleStaffLoginStatus = async (ownerId: string, staffId: string) => {
+    const restaurant = await RestaurantModel.findOne({ restaurantOwner: ownerId });
+    if (!restaurant) {
+        throw new ApiError(httpStatus.NOT_FOUND, "Restaurant not found.");
+    }
+
+    const staff = await UserModel.findOne({ _id: staffId, restaurantId: restaurant._id, role: "STAFF" });
+    if (!staff) {
+        throw new ApiError(httpStatus.NOT_FOUND, "Staff member not found under your restaurant.");
+    }
+
+    staff.enableStaffLogin = !staff.enableStaffLogin;
+    await staff.save();
+
+    const staffObject = staff.toObject();
+    const { password, ...staffWithoutPassword } = staffObject;
+    return staffWithoutPassword;
+};
+
 export const userServices = {
     getAllUsers,
     getUserActivity,
@@ -248,4 +267,5 @@ export const userServices = {
     getUserStats,
     createStaffByOwner,
     getStaffByOwner,
+    toggleStaffLoginStatus,
 };

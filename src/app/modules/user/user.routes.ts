@@ -9,6 +9,7 @@ const router = Router();
 // Staff management routes (Accessible by RESTAURANT_OWNER and ADMIN)
 router.post("/staff", auth, authorize(["RESTAURANT_OWNER", "ADMIN"]), uploadProfileImage, userControllers.createStaffByOwner);
 router.get("/staff", auth, authorize(["RESTAURANT_OWNER", "ADMIN"]), userControllers.getStaffByOwner);
+router.patch("/staff/:staffId/toggle-login", auth, authorize(["RESTAURANT_OWNER", "ADMIN"]), userControllers.toggleStaffLoginStatus);
 
 // Admin-only dashboard endpoints
 router.get("/stats", auth, authorize(["ADMIN"]), userControllers.getUserStats);

@@ -97,6 +97,18 @@ const getStaffByOwner = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const toggleStaffLoginStatus = catchAsync(async (req: Request, res: Response) => {
+    const ownerId = req.user._id as string;
+    const { staffId } = req.params;
+    const result = await userServices.toggleStaffLoginStatus(ownerId, staffId as string);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: result.enableStaffLogin ? "Staff login enabled" : "Staff login disabled",
+        data: result,
+    });
+});
+
 export const userControllers = {
     getAllUsers,
     getUserActivity,
@@ -105,4 +117,5 @@ export const userControllers = {
     getUserStats,
     createStaffByOwner,
     getStaffByOwner,
+    toggleStaffLoginStatus,
 };
