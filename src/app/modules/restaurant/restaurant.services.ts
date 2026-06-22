@@ -1,9 +1,9 @@
 import httpStatus from "http-status";
 import ApiError from "../../../errors/ApiError";
 import { RestaurantModel } from "./restaurant.model";
-import { IRestaurant } from "./resturant.interface";
 import { UserModel } from "../auth/auth.model";
 import { getLatLngFromAddress } from "../../../utils/googleMaps";
+import { FavoriteModel } from "../favorite/favorite.model";
 
 const createRestaurant = async (data: any, ownerId: string) => {
     let address = data.restaurantAddress;
@@ -51,7 +51,7 @@ const createRestaurant = async (data: any, ownerId: string) => {
     return restaurant;
 };
 
-const getAllRestaurants = async (filters: any = {}) => {
+const getAllRestaurants = async (filters: any = {}, userId?: string) => {
     let query: any = { approved: true };
 
     if (filters.cuisineType) {
@@ -80,11 +80,8 @@ const getAllRestaurants = async (filters: any = {}) => {
         const radiusInRadians = parseFloat(filters.maxDistance) / 6378.1;
         countQuery["restaurantAddress.location"] = {
             $geoWithin: {
-                $centerSphere: [
-                    [parseFloat(filters.lng), parseFloat(filters.lat)],
-                    radiusInRadians
-                ]
-            }
+                $centerSphere: [[parseFloat(filters.lng), parseFloat(filters.lat)], radiusInRadians],
+            },
         };
     }
 
@@ -92,17 +89,35 @@ const getAllRestaurants = async (filters: any = {}) => {
     const limit = parseInt(filters.limit as string) || 10;
     const skip = (page - 1) * limit;
 
-    const [restaurants, total] = await Promise.all([
-        RestaurantModel.find(query).populate("restaurantOwner", "name email phone").skip(skip).limit(limit),
-        RestaurantModel.countDocuments(countQuery)
-    ]);
+    const [restaurants, total] = await Promise.all([RestaurantModel.find(query).populate("restaurantOwner", "name email phone").skip(skip).limit(limit), RestaurantModel.countDocuments(countQuery)]);
+
+    let resultData = restaurants;
+    if (userId) {
+        const favorites = await FavoriteModel.find({ userId });
+        const favoriteRestaurantIds = new Set(favorites.map((f) => f.restaurantId.toString()));
+        resultData = restaurants.map((restaurant: any) => {
+            const restaurantObj = restaurant.toObject ? restaurant.toObject() : restaurant;
+            return {
+                ...restaurantObj,
+                isFavorite: favoriteRestaurantIds.has(restaurantObj._id.toString()),
+            };
+        });
+    } else {
+        resultData = restaurants.map((restaurant: any) => {
+            const restaurantObj = restaurant.toObject ? restaurant.toObject() : restaurant;
+            return {
+                ...restaurantObj,
+                isFavorite: false,
+            };
+        });
+    }
 
     const totalPages = Math.ceil(total / limit);
     const hasNext = page < totalPages;
     const hasPrev = page > 1;
 
     return {
-        data: restaurants,
+        data: resultData,
         meta: {
             page,
             limit,
@@ -146,11 +161,8 @@ const getAllRestaurantsForAdmin = async (filters: any = {}) => {
         const radiusInRadians = parseFloat(filters.maxDistance) / 6378.1;
         countQuery["restaurantAddress.location"] = {
             $geoWithin: {
-                $centerSphere: [
-                    [parseFloat(filters.lng), parseFloat(filters.lat)],
-                    radiusInRadians
-                ]
-            }
+                $centerSphere: [[parseFloat(filters.lng), parseFloat(filters.lat)], radiusInRadians],
+            },
         };
     }
 
@@ -158,10 +170,7 @@ const getAllRestaurantsForAdmin = async (filters: any = {}) => {
     const limit = parseInt(filters.limit as string) || 10;
     const skip = (page - 1) * limit;
 
-    const [restaurants, total] = await Promise.all([
-        RestaurantModel.find(query).populate("restaurantOwner", "name email phone").skip(skip).limit(limit),
-        RestaurantModel.countDocuments(countQuery)
-    ]);
+    const [restaurants, total] = await Promise.all([RestaurantModel.find(query).populate("restaurantOwner", "name email phone").skip(skip).limit(limit), RestaurantModel.countDocuments(countQuery)]);
 
     const totalPages = Math.ceil(total / limit);
     const hasNext = page < totalPages;
@@ -180,10 +189,24 @@ const getAllRestaurantsForAdmin = async (filters: any = {}) => {
     };
 };
 
-const getRestaurantById = async (id: string) => {
+const getRestaurantById = async (id: string, userId?: string) => {
     const restaurant = await RestaurantModel.findById(id).populate("restaurantOwner", "name email phone");
     if (!restaurant) throw new ApiError(httpStatus.NOT_FOUND, "Restaurant not found");
-    return restaurant;
+
+    const restaurantObj = restaurant.toObject ? restaurant.toObject() : restaurant;
+    let isFavorite = false;
+
+    if (userId) {
+        const favorite = await FavoriteModel.findOne({ userId, restaurantId: restaurantObj._id });
+        if (favorite) {
+            isFavorite = true;
+        }
+    }
+
+    return {
+        ...restaurantObj,
+        isFavorite,
+    };
 };
 
 const getRestaurantByOwner = async (ownerId: string) => {
@@ -249,22 +272,14 @@ const deleteRestaurant = async (id: string, ownerId: string) => {
 };
 
 const approveRestaurant = async (id: string, approvedBy: string) => {
-    const restaurant = await RestaurantModel.findByIdAndUpdate(
-        id,
-        { $set: { approved: true, approvedBy, approvedAt: new Date() } },
-        { new: true, runValidators: true }
-    ).populate("restaurantOwner", "name email phone");
+    const restaurant = await RestaurantModel.findByIdAndUpdate(id, { $set: { approved: true, approvedBy, approvedAt: new Date() } }, { new: true, runValidators: true }).populate("restaurantOwner", "name email phone");
 
     if (!restaurant) throw new ApiError(httpStatus.NOT_FOUND, "Restaurant not found");
     return restaurant;
 };
 
 const revokeRestaurantApproval = async (id: string) => {
-    const restaurant = await RestaurantModel.findByIdAndUpdate(
-        id,
-        { $set: { approved: false, approvedBy: null, approvedAt: undefined } },
-        { new: true, runValidators: true }
-    ).populate("restaurantOwner", "name email phone");
+    const restaurant = await RestaurantModel.findByIdAndUpdate(id, { $set: { approved: false, approvedBy: null, approvedAt: undefined } }, { new: true, runValidators: true }).populate("restaurantOwner", "name email phone");
 
     if (!restaurant) throw new ApiError(httpStatus.NOT_FOUND, "Restaurant not found");
     return restaurant;

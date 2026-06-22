@@ -38,7 +38,8 @@ const createRestaurant = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllRestaurants = catchAsync(async (req: Request, res: Response) => {
-    const result = await restaurantServices.getAllRestaurants(req.query);
+    const userId = req.user?._id?.toString();
+    const result = await restaurantServices.getAllRestaurants(req.query, userId);
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
@@ -49,7 +50,8 @@ const getAllRestaurants = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getRestaurantById = catchAsync(async (req: Request, res: Response) => {
-    const result = await restaurantServices.getRestaurantById(req.params.id as string);
+    const userId = req.user?._id?.toString();
+    const result = await restaurantServices.getRestaurantById(req.params.id as string, userId);
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,

@@ -2,14 +2,15 @@ import { Router } from "express";
 import { restaurantControllers } from "./restaurant.controllers";
 import auth from "../../middlewares/auth";
 import authorize from "../../middlewares/authorized";
+import checkAuth from "../../middlewares/checkAuth";
 import { uploadRestaurantImage } from "../../middlewares/multer";
 
 const router = Router();
 
 // Public routes
-router.get("/", restaurantControllers.getAllRestaurants);
+router.get("/", checkAuth, restaurantControllers.getAllRestaurants);
 router.get("/admin/all", auth, authorize(["ADMIN"]), restaurantControllers.getAllRestaurantsForAdmin);
-router.get("/:id", restaurantControllers.getRestaurantById);
+router.get("/:id", checkAuth, restaurantControllers.getRestaurantById);
 
 // Protected routes (require auth)
 router.get("/my/restaurant", auth, restaurantControllers.getMyRestaurant);
