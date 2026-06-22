@@ -63,6 +63,9 @@ const getAllRestaurants = async (filters: any = {}) => {
     if (filters.search) {
         query.$or = [{ restaurantName: { $regex: filters.search, $options: "i" } }, { restaurantDescription: { $regex: filters.search, $options: "i" } }];
     }
+
+    let countQuery = { ...query };
+
     if (filters.lat && filters.lng && filters.maxDistance) {
         query["restaurantAddress.location"] = {
             $near: {
@@ -73,13 +76,26 @@ const getAllRestaurants = async (filters: any = {}) => {
                 $maxDistance: parseFloat(filters.maxDistance) * 1000, // Convert km to meters
             },
         };
+
+        const radiusInRadians = parseFloat(filters.maxDistance) / 6378.1;
+        countQuery["restaurantAddress.location"] = {
+            $geoWithin: {
+                $centerSphere: [
+                    [parseFloat(filters.lng), parseFloat(filters.lat)],
+                    radiusInRadians
+                ]
+            }
+        };
     }
 
     const page = parseInt(filters.page as string) || 1;
     const limit = parseInt(filters.limit as string) || 10;
     const skip = (page - 1) * limit;
 
-    const [restaurants, total] = await Promise.all([RestaurantModel.find(query).populate("restaurantOwner", "name email phone").skip(skip).limit(limit), RestaurantModel.countDocuments(query)]);
+    const [restaurants, total] = await Promise.all([
+        RestaurantModel.find(query).populate("restaurantOwner", "name email phone").skip(skip).limit(limit),
+        RestaurantModel.countDocuments(countQuery)
+    ]);
 
     const totalPages = Math.ceil(total / limit);
     const hasNext = page < totalPages;
@@ -113,6 +129,9 @@ const getAllRestaurantsForAdmin = async (filters: any = {}) => {
     if (filters.search) {
         query.$or = [{ restaurantName: { $regex: filters.search, $options: "i" } }, { restaurantDescription: { $regex: filters.search, $options: "i" } }];
     }
+
+    let countQuery = { ...query };
+
     if (filters.lat && filters.lng && filters.maxDistance) {
         query["restaurantAddress.location"] = {
             $near: {
@@ -123,13 +142,26 @@ const getAllRestaurantsForAdmin = async (filters: any = {}) => {
                 $maxDistance: parseFloat(filters.maxDistance) * 1000,
             },
         };
+
+        const radiusInRadians = parseFloat(filters.maxDistance) / 6378.1;
+        countQuery["restaurantAddress.location"] = {
+            $geoWithin: {
+                $centerSphere: [
+                    [parseFloat(filters.lng), parseFloat(filters.lat)],
+                    radiusInRadians
+                ]
+            }
+        };
     }
 
     const page = parseInt(filters.page as string) || 1;
     const limit = parseInt(filters.limit as string) || 10;
     const skip = (page - 1) * limit;
 
-    const [restaurants, total] = await Promise.all([RestaurantModel.find(query).populate("restaurantOwner", "name email phone").skip(skip).limit(limit), RestaurantModel.countDocuments(query)]);
+    const [restaurants, total] = await Promise.all([
+        RestaurantModel.find(query).populate("restaurantOwner", "name email phone").skip(skip).limit(limit),
+        RestaurantModel.countDocuments(countQuery)
+    ]);
 
     const totalPages = Math.ceil(total / limit);
     const hasNext = page < totalPages;
