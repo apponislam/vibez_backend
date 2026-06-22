@@ -323,8 +323,6 @@ const updateLocation = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
-
-
 const registerRestaurant = catchAsync(async (req: Request, res: Response) => {
     // Parse the body field if it's a string
     let data: any = {};
