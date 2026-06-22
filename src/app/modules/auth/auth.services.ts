@@ -312,6 +312,29 @@ const updateProfile = async (userId: string, data: any) => {
         delete data.balance;
     }
 
+    // Resolve referral/referredBy if provided and not already referred
+    const referralCodeInput = data.referredByCode || data.referralCode;
+    if (referralCodeInput || data.referredBy) {
+        const currentUser = await UserModel.findById(userId);
+        if (currentUser && !currentUser.referredBy) {
+            if (data.referredBy && mongoose.Types.ObjectId.isValid(data.referredBy)) {
+                // Keep data.referredBy if valid
+            } else if (referralCodeInput) {
+                const referrer = await UserModel.findOne({ referralCode: referralCodeInput });
+                if (referrer && referrer._id.toString() !== userId) {
+                    data.referredBy = referrer._id;
+                } else {
+                    delete data.referredBy;
+                }
+            }
+        } else {
+            // Already has a referrer, do not allow changing it
+            delete data.referredBy;
+        }
+    }
+    delete data.referredByCode;
+    delete data.referralCode;
+
     const user = await UserModel.findByIdAndUpdate(userId, { $set: data }, { returnDocument: "after", runValidators: true }).select("-password");
 
     if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not registered");
