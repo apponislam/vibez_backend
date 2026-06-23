@@ -3,23 +3,22 @@ import { Types } from "mongoose";
 import ApiError from "../../../errors/ApiError";
 import { FavoriteModel } from "./favorite.model";
 
-// Add restaurant to favorites
-const addFavorite = async (userId: string, restaurantId: string) => {
-    const favorite = await FavoriteModel.create({
+// Toggle restaurant favorite status (add if not exists, remove if exists)
+const toggleFavorite = async (userId: string, restaurantId: string) => {
+    const filter = {
         userId: new Types.ObjectId(userId),
         restaurantId: new Types.ObjectId(restaurantId),
-    });
-    return favorite;
-};
+    };
 
-// Remove restaurant from favorites
-const removeFavorite = async (userId: string, restaurantId: string) => {
-    const favorite = await FavoriteModel.findOneAndDelete({
-        userId: new Types.ObjectId(userId),
-        restaurantId: new Types.ObjectId(restaurantId),
-    });
-    if (!favorite) throw new ApiError(httpStatus.NOT_FOUND, "Favorite not found");
-    return favorite;
+    const exists = await FavoriteModel.findOne(filter);
+
+    if (exists) {
+        await FavoriteModel.deleteOne(filter);
+        return { isFavorited: false, message: "Restaurant removed from favorites" };
+    } else {
+        await FavoriteModel.create(filter);
+        return { isFavorited: true, message: "Restaurant added to favorites" };
+    }
 };
 
 // Get user's favorite restaurants
@@ -30,18 +29,7 @@ const getUserFavorites = async (userId: string) => {
     return favorites;
 };
 
-// Check if a restaurant is favorited by user
-const checkIsFavorite = async (userId: string, restaurantId: string) => {
-    const exists = await FavoriteModel.exists({
-        userId: new Types.ObjectId(userId),
-        restaurantId: new Types.ObjectId(restaurantId),
-    });
-    return { isFavorite: !!exists };
-};
-
 export const favoriteServices = {
-    addFavorite,
-    removeFavorite,
+    toggleFavorite,
     getUserFavorites,
-    checkIsFavorite,
 };

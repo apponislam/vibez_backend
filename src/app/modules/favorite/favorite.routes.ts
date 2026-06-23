@@ -6,8 +6,6 @@ const router = Router();
 
 // All favorite routes are authenticated
 router.get("/", auth, favoriteControllers.getUserFavorites);
-router.get("/check/:restaurantId", auth, favoriteControllers.checkIsFavorite);
-router.post("/", auth, favoriteControllers.addFavorite);
-router.delete("/:restaurantId", auth, favoriteControllers.removeFavorite);
+router.post("/toggle", auth, favoriteControllers.toggleFavorite);
 
 export const favoriteRoutes = router;

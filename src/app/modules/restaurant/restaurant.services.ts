@@ -4,6 +4,7 @@ import { RestaurantModel } from "./restaurant.model";
 import { UserModel } from "../auth/auth.model";
 import { getLatLngFromAddress } from "../../../utils/googleMaps";
 import { FavoriteModel } from "../favorite/favorite.model";
+import { DealModel } from "../deal/deal.model";
 
 const createRestaurant = async (data: any, ownerId: string) => {
     let address = data.restaurantAddress;
@@ -91,7 +92,7 @@ const getAllRestaurants = async (filters: any = {}, userId?: string) => {
 
     const [restaurants, total] = await Promise.all([RestaurantModel.find(query).populate("restaurantOwner", "name email phone").skip(skip).limit(limit), RestaurantModel.countDocuments(countQuery)]);
 
-    let resultData = restaurants;
+    let resultData: any[] = [];
     if (userId) {
         const favorites = await FavoriteModel.find({ userId });
         const favoriteRestaurantIds = new Set(favorites.map((f) => f.restaurantId.toString()));
@@ -111,6 +112,24 @@ const getAllRestaurants = async (filters: any = {}, userId?: string) => {
             };
         });
     }
+
+    // Fetch and attach 2 recent active deals for each restaurant
+    resultData = await Promise.all(
+        resultData.map(async (restaurantObj: any) => {
+            const recentDeals = await DealModel.find({
+                restaurantId: restaurantObj._id,
+                isActive: true,
+                isDeleted: false,
+            })
+                .sort({ createdAt: -1 })
+                .limit(2);
+
+            return {
+                ...restaurantObj,
+                recentDeals,
+            };
+        })
+    );
 
     const totalPages = Math.ceil(total / limit);
     const hasNext = page < totalPages;
@@ -172,12 +191,30 @@ const getAllRestaurantsForAdmin = async (filters: any = {}) => {
 
     const [restaurants, total] = await Promise.all([RestaurantModel.find(query).populate("restaurantOwner", "name email phone").skip(skip).limit(limit), RestaurantModel.countDocuments(countQuery)]);
 
+    const formattedRestaurants = await Promise.all(
+        restaurants.map(async (restaurant) => {
+            const restaurantObj = restaurant.toObject ? restaurant.toObject() : restaurant;
+            const recentDeals = await DealModel.find({
+                restaurantId: restaurantObj._id,
+                isActive: true,
+                isDeleted: false,
+            })
+                .sort({ createdAt: -1 })
+                .limit(2);
+
+            return {
+                ...restaurantObj,
+                recentDeals,
+            };
+        })
+    );
+
     const totalPages = Math.ceil(total / limit);
     const hasNext = page < totalPages;
     const hasPrev = page > 1;
 
     return {
-        data: restaurants,
+        data: formattedRestaurants,
         meta: {
             page,
             limit,
@@ -203,15 +240,38 @@ const getRestaurantById = async (id: string, userId?: string) => {
         }
     }
 
+    const recentDeals = await DealModel.find({
+        restaurantId: restaurantObj._id,
+        isActive: true,
+        isDeleted: false,
+    })
+        .sort({ createdAt: -1 })
+        .limit(2);
+
     return {
         ...restaurantObj,
         isFavorite,
+        recentDeals,
     };
 };
 
 const getRestaurantByOwner = async (ownerId: string) => {
     const restaurant = await RestaurantModel.findOne({ restaurantOwner: ownerId });
-    return restaurant;
+    if (!restaurant) return null;
+
+    const restaurantObj = restaurant.toObject ? restaurant.toObject() : restaurant;
+    const recentDeals = await DealModel.find({
+        restaurantId: restaurantObj._id,
+        isActive: true,
+        isDeleted: false,
+    })
+        .sort({ createdAt: -1 })
+        .limit(2);
+
+    return {
+        ...restaurantObj,
+        recentDeals,
+    };
 };
 
 const updateRestaurant = async (id: string, data: any, ownerId: string) => {
