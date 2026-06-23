@@ -19,7 +19,7 @@ const createDeal = async (userId: string, payload: any) => {
             throw new ApiError(httpStatus.NOT_FOUND, "You don't have a restaurant registered yet.");
         }
         payload.restaurantId = restaurant._id.toString();
-    } else if (userRole === "ADMIN" || userRole === "SUPER_ADMIN") {
+    } else if (userRole === "ADMIN") {
         if (!payload.restaurantId) {
             throw new ApiError(httpStatus.BAD_REQUEST, "restaurantId is required for admins");
         }
@@ -62,13 +62,36 @@ const getAllDeals = async (filters: any = {}) => {
     };
 };
 
-const getActiveDeals = async (restaurantId?: string) => {
-    const filter: any = { isActive: true, isDeleted: false };
-    if (restaurantId) {
-        filter.restaurantId = restaurantId;
+const getActiveDeals = async (filters: any = {}) => {
+    const query: any = { isActive: true, isDeleted: false };
+    if (filters.restaurantId) {
+        query.restaurantId = filters.restaurantId;
     }
-    const deals = await DealModel.find(filter).populate("restaurantId").sort({ createdAt: -1 });
-    return deals;
+
+    const page = parseInt(filters.page as string) || 1;
+    const limit = parseInt(filters.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    const [deals, total] = await Promise.all([
+        DealModel.find(query).populate("restaurantId").sort({ createdAt: -1 }).skip(skip).limit(limit),
+        DealModel.countDocuments(query),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+    const hasNext = page < totalPages;
+    const hasPrev = page > 1;
+
+    return {
+        data: deals,
+        meta: {
+            page,
+            limit,
+            total,
+            totalPages,
+            hasNext,
+            hasPrev,
+        },
+    };
 };
 
 const getDealById = async (dealId: string) => {
@@ -77,24 +100,71 @@ const getDealById = async (dealId: string) => {
     return deal;
 };
 
-const updateDeal = async (dealId: string, payload: any) => {
+const updateDeal = async (dealId: string, payload: any, userId: string, userRole: string) => {
+    if (userRole !== "ADMIN") {
+        const restaurant = await RestaurantModel.findOne({ restaurantOwner: userId });
+        if (!restaurant) {
+            throw new ApiError(httpStatus.NOT_FOUND, "You don't have a restaurant registered yet.");
+        }
+        const deal = await DealModel.findOne({ _id: dealId, isDeleted: false });
+        if (!deal) {
+            throw new ApiError(httpStatus.NOT_FOUND, "Deal not found");
+        }
+        if (deal.restaurantId.toString() !== restaurant._id.toString()) {
+            throw new ApiError(httpStatus.FORBIDDEN, "You do not have permission to modify this deal.");
+        }
+    }
+
     const deal = await DealModel.findOneAndUpdate({ _id: dealId, isDeleted: false }, { $set: payload }, { returnDocument: "after", runValidators: true });
     if (!deal) throw new ApiError(httpStatus.NOT_FOUND, "Deal not found");
     return deal;
 };
 
-const toggleDealStatus = async (dealId: string) => {
+const toggleDealStatus = async (dealId: string, userId: string, userRole: string) => {
     const deal = await DealModel.findOne({ _id: dealId, isDeleted: false });
     if (!deal) throw new ApiError(httpStatus.NOT_FOUND, "Deal not found");
+
+    if (userRole !== "ADMIN") {
+        const restaurant = await RestaurantModel.findOne({ restaurantOwner: userId });
+        if (!restaurant) {
+            throw new ApiError(httpStatus.NOT_FOUND, "You don't have a restaurant registered yet.");
+        }
+        if (deal.restaurantId.toString() !== restaurant._id.toString()) {
+            throw new ApiError(httpStatus.FORBIDDEN, "You do not have permission to modify this deal.");
+        }
+    }
+
     deal.isActive = !deal.isActive;
     await deal.save();
     return deal;
 };
 
-const deleteDeal = async (dealId: string) => {
-    const deal = await DealModel.findOneAndUpdate({ _id: dealId, isDeleted: false }, { $set: { isDeleted: true, isActive: false } }, { returnDocument: "after" });
+const deleteDeal = async (dealId: string, userId: string, userRole: string) => {
+    const deal = await DealModel.findOne({ _id: dealId, isDeleted: false });
     if (!deal) throw new ApiError(httpStatus.NOT_FOUND, "Deal not found");
+
+    if (userRole !== "ADMIN") {
+        const restaurant = await RestaurantModel.findOne({ restaurantOwner: userId });
+        if (!restaurant) {
+            throw new ApiError(httpStatus.NOT_FOUND, "You don't have a restaurant registered yet.");
+        }
+        if (deal.restaurantId.toString() !== restaurant._id.toString()) {
+            throw new ApiError(httpStatus.FORBIDDEN, "You do not have permission to modify this deal.");
+        }
+    }
+
+    deal.isDeleted = true;
+    deal.isActive = false;
+    await deal.save();
     return deal;
+};
+
+const getMyDeals = async (userId: string, query: any) => {
+    const restaurant = await RestaurantModel.findOne({ restaurantOwner: userId });
+    if (!restaurant) {
+        throw new ApiError(httpStatus.NOT_FOUND, "You don't have a restaurant registered yet.");
+    }
+    return await getAllDeals({ ...query, restaurantId: restaurant._id.toString() });
 };
 
 export const dealServices = {
@@ -105,4 +175,5 @@ export const dealServices = {
     updateDeal,
     toggleDealStatus,
     deleteDeal,
+    getMyDeals,
 };

@@ -28,14 +28,14 @@ const getAllDeals = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getActiveDeals = catchAsync(async (req: Request, res: Response) => {
-    const restaurantId = req.query.restaurantId as string | undefined;
-    const result = await dealServices.getActiveDeals(restaurantId);
+    const result = await dealServices.getActiveDeals(req.query);
 
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
         message: "Deals retrieved successfully",
-        data: result,
+        data: result.data,
+        meta: result.meta,
     });
 });
 
@@ -51,7 +51,7 @@ const getDealById = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateDeal = catchAsync(async (req: Request, res: Response) => {
-    const result = await dealServices.updateDeal(req.params.dealId as string, req.body);
+    const result = await dealServices.updateDeal(req.params.dealId as string, req.body, req.user._id, req.user.role);
 
     sendResponse(res, {
         statusCode: httpStatus.OK,
@@ -62,7 +62,7 @@ const updateDeal = catchAsync(async (req: Request, res: Response) => {
 });
 
 const toggleDealStatus = catchAsync(async (req: Request, res: Response) => {
-    const result = await dealServices.toggleDealStatus(req.params.dealId as string);
+    const result = await dealServices.toggleDealStatus(req.params.dealId as string, req.user._id, req.user.role);
 
     sendResponse(res, {
         statusCode: httpStatus.OK,
@@ -73,13 +73,38 @@ const toggleDealStatus = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteDeal = catchAsync(async (req: Request, res: Response) => {
-    await dealServices.deleteDeal(req.params.dealId as string);
+    await dealServices.deleteDeal(req.params.dealId as string, req.user._id, req.user.role);
 
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
         message: "Deal deleted successfully",
         data: null,
+    });
+});
+
+const getDealsByRestaurant = catchAsync(async (req: Request, res: Response) => {
+    const { restaurantId } = req.params;
+    const result = await dealServices.getActiveDeals({ ...req.query, restaurantId: restaurantId as string });
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Deals retrieved successfully",
+        data: result.data,
+        meta: result.meta,
+    });
+});
+
+const getMyDeals = catchAsync(async (req: Request, res: Response) => {
+    const result = await dealServices.getMyDeals(req.user._id, req.query);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "My deals retrieved successfully",
+        data: result.data,
+        meta: result.meta,
     });
 });
 
@@ -91,4 +116,6 @@ export const dealControllers = {
     updateDeal,
     toggleDealStatus,
     deleteDeal,
+    getDealsByRestaurant,
+    getMyDeals,
 };
