@@ -279,6 +279,69 @@ const toggleAllStaffLoginStatus = async (ownerId: string, enable?: boolean) => {
     return { enableStaffLogin: targetStatus };
 };
 
+const changeStaffPasswordByOwner = async (callerId: string, callerRole: string, staffId: string, newPassword: string) => {
+    let staff;
+    
+    if (callerRole === "ADMIN") {
+        staff = await UserModel.findOne({ _id: staffId, role: "STAFF" });
+    } else {
+        const restaurant = await RestaurantModel.findOne({ restaurantOwner: callerId });
+        if (!restaurant) {
+            throw new ApiError(httpStatus.NOT_FOUND, "Restaurant not found.");
+        }
+        staff = await UserModel.findOne({ _id: staffId, restaurantId: restaurant._id, role: "STAFF" });
+    }
+
+    if (!staff) {
+        throw new ApiError(httpStatus.NOT_FOUND, "Staff member not found.");
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, Number(config.bcrypt_salt_rounds));
+    staff.password = hashedPassword;
+    await staff.save();
+
+    const staffObject = staff.toObject();
+    const { password, ...staffWithoutPassword } = staffObject;
+    return staffWithoutPassword;
+};
+
+const updateStaffDetailsByOwner = async (callerId: string, callerRole: string, staffId: string, updateData: any) => {
+    let staff;
+    
+    if (callerRole === "ADMIN") {
+        staff = await UserModel.findOne({ _id: staffId, role: "STAFF" });
+    } else {
+        const restaurant = await RestaurantModel.findOne({ restaurantOwner: callerId });
+        if (!restaurant) {
+            throw new ApiError(httpStatus.NOT_FOUND, "Restaurant not found.");
+        }
+        staff = await UserModel.findOne({ _id: staffId, restaurantId: restaurant._id, role: "STAFF" });
+    }
+
+    if (!staff) {
+        throw new ApiError(httpStatus.NOT_FOUND, "Staff member not found.");
+    }
+
+    const allowedUpdates = ["name", "phone", "staffRole", "profileImage", "email"];
+    for (const key of allowedUpdates) {
+        if (updateData[key] !== undefined) {
+            if (key === "email" && updateData.email !== staff.email) {
+                const existingUser = await UserModel.findOne({ email: updateData.email });
+                if (existingUser) {
+                    throw new ApiError(httpStatus.BAD_REQUEST, "Email already registered");
+                }
+            }
+            (staff as any)[key] = updateData[key];
+        }
+    }
+
+    await staff.save();
+
+    const staffObject = staff.toObject();
+    const { password, ...staffWithoutPassword } = staffObject;
+    return staffWithoutPassword;
+};
+
 export const userServices = {
     getAllUsers,
     getUserActivity,
@@ -289,4 +352,6 @@ export const userServices = {
     getStaffByOwner,
     toggleStaffLoginStatus,
     toggleAllStaffLoginStatus,
+    changeStaffPasswordByOwner,
+    updateStaffDetailsByOwner,
 };

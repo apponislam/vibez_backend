@@ -121,6 +121,57 @@ const toggleAllStaffLoginStatus = catchAsync(async (req: Request, res: Response)
     });
 });
 
+const changeStaffPasswordByOwner = catchAsync(async (req: Request, res: Response) => {
+    const callerId = req.user._id as string;
+    const callerRole = req.user.role as string;
+    const { staffId } = req.params;
+    const { password } = req.body;
+
+    if (!password) {
+        throw new ApiError(httpStatus.BAD_REQUEST, "Password is required");
+    }
+
+    const result = await userServices.changeStaffPasswordByOwner(callerId, callerRole, staffId as string, password);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Staff password changed successfully",
+        data: result,
+    });
+});
+
+const updateStaffDetailsByOwner = catchAsync(async (req: Request, res: Response) => {
+    const callerId = req.user._id as string;
+    const callerRole = req.user.role as string;
+    const { staffId } = req.params;
+
+    let profileImageUrl = undefined;
+    if (req.file) {
+        profileImageUrl = `/uploads/profile-images/${req.file.filename}`;
+    }
+
+    let data = req.body;
+    if (req.body.body && typeof req.body.body === "string") {
+        try {
+            data = JSON.parse(req.body.body);
+        } catch (error) {
+            throw new ApiError(httpStatus.BAD_REQUEST, "Invalid JSON data in body field");
+        }
+    }
+
+    if (profileImageUrl) {
+        data.profileImage = profileImageUrl;
+    }
+
+    const result = await userServices.updateStaffDetailsByOwner(callerId, callerRole, staffId as string, data);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Staff details updated successfully",
+        data: result,
+    });
+});
+
 export const userControllers = {
     getAllUsers,
     getUserActivity,
@@ -131,4 +182,6 @@ export const userControllers = {
     getStaffByOwner,
     toggleStaffLoginStatus,
     toggleAllStaffLoginStatus,
+    changeStaffPasswordByOwner,
+    updateStaffDetailsByOwner,
 };

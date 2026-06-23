@@ -11,6 +11,8 @@ router.post("/staff", auth, authorize(["RESTAURANT_OWNER", "ADMIN"]), uploadProf
 router.get("/staff", auth, authorize(["RESTAURANT_OWNER", "ADMIN"]), userControllers.getStaffByOwner);
 router.patch("/staff/toggle-all-login", auth, authorize(["RESTAURANT_OWNER", "ADMIN"]), userControllers.toggleAllStaffLoginStatus);
 router.patch("/staff/:staffId/toggle-login", auth, authorize(["RESTAURANT_OWNER", "ADMIN"]), userControllers.toggleStaffLoginStatus);
+router.patch("/staff/:staffId/password", auth, authorize(["RESTAURANT_OWNER", "ADMIN"]), userControllers.changeStaffPasswordByOwner);
+router.patch("/staff/:staffId", auth, authorize(["RESTAURANT_OWNER", "ADMIN"]), uploadProfileImage, userControllers.updateStaffDetailsByOwner);
 
 // Admin-only dashboard endpoints
 router.get("/stats", auth, authorize(["ADMIN"]), userControllers.getUserStats);
