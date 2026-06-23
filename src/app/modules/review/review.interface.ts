@@ -4,9 +4,9 @@ export interface IReview {
     _id?: string | Types.ObjectId;
     restaurantId: Types.ObjectId;
     userId: Types.ObjectId;
-    rating: number; // 1-5
+    rating: number;
     comment?: string;
-    images?: string[]; // Array of image filenames
+    images?: string[];
     isActive: boolean;
     isDeleted: boolean;
     createdAt?: Date;
