@@ -9,7 +9,7 @@ import { CouponModel } from "../coupon/coupon.model";
 import config from "../../config";
 
 const createCheckoutSession = catchAsync(async (req: Request, res: Response) => {
-    const { planId, subscriptionPlanId, successUrl, cancelUrl, coupon } = req.body;
+    const { planId, subscriptionPlanId, successUrl, cancelUrl, coupon, uiMode } = req.body;
     const referralCode = req.body.referralCode || req.body.referredByCode || req.body.reffalCode || req.body.referral;
     const targetPlanId = planId || subscriptionPlanId;
     const userId = req.user._id.toString();
@@ -43,13 +43,18 @@ const createCheckoutSession = catchAsync(async (req: Request, res: Response) => 
         { userId, ...(coupon && { coupon }), ...(referralCode && { referralCode }) }, // Pass userId, coupon, and referralCode as metadata
         plan.isFreeTrial ? plan.freeTrialDays : undefined,
         coupon,
+        uiMode,
     );
 
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
         message: "Checkout session created successfully",
-        data: { sessionId: session.id, url: session.url },
+        data: {
+            sessionId: session.id,
+            url: session.url,
+            clientSecret: session.client_secret,
+        },
     });
 });
 

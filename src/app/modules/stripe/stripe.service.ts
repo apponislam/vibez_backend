@@ -21,8 +21,11 @@ const createCheckoutSession = async (
     customerEmail?: string,
     metadata?: Record<string, string>,
     trialPeriodDays?: number,
-    coupon?: string
+    coupon?: string,
+    uiMode: "hosted" | "embedded" = "hosted"
 ) => {
+    const isEmbedded = uiMode === "embedded";
+    const mappedUiMode = isEmbedded ? "embedded_page" : "hosted_page";
     const session = await stripe.checkout.sessions.create({
         payment_method_types: ["card"],
         line_items: [
@@ -32,8 +35,13 @@ const createCheckoutSession = async (
             },
         ],
         mode: "subscription",
-        success_url: successUrl,
-        cancel_url: cancelUrl,
+        ui_mode: mappedUiMode as any,
+        ...(isEmbedded ? {
+            return_url: successUrl,
+        } : {
+            success_url: successUrl,
+            cancel_url: cancelUrl,
+        }),
         customer_email: customerEmail,
         metadata,
         ...(coupon ? {
