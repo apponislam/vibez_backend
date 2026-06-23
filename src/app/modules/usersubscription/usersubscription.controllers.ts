@@ -35,26 +35,46 @@ const createCheckoutSession = catchAsync(async (req: Request, res: Response) => 
     const finalSuccessUrl = successUrl || `${config.client_url}/subscription/success?session_id={CHECKOUT_SESSION_ID}`;
     const finalCancelUrl = cancelUrl || `${config.client_url}/subscription/cancel`;
 
-    const session = await stripeServices.createCheckoutSession(
-        plan.stripePriceId,
-        finalSuccessUrl,
-        finalCancelUrl,
-        req.user.email,
-        { userId, ...(coupon && { coupon }), ...(referralCode && { referralCode }) }, // Pass userId, coupon, and referralCode as metadata
-        plan.isFreeTrial ? plan.freeTrialDays : undefined,
-        coupon,
-        uiMode,
-    );
+    let sessionData: any = {};
+
+    if (uiMode === "embedded") {
+        const paymentSheet = await stripeServices.createSubscriptionPaymentSheet(
+            plan.stripePriceId,
+            req.user.email,
+            { userId, ...(coupon && { coupon }), ...(referralCode && { referralCode }) },
+            plan.isFreeTrial ? plan.freeTrialDays : undefined,
+            coupon
+        );
+        sessionData = {
+            sessionId: paymentSheet.subscriptionId,
+            url: null,
+            clientSecret: paymentSheet.clientSecret,
+            customerId: paymentSheet.customerId,
+            ephemeralKeySecret: paymentSheet.ephemeralKeySecret,
+        };
+    } else {
+        const session = await stripeServices.createCheckoutSession(
+            plan.stripePriceId,
+            finalSuccessUrl,
+            finalCancelUrl,
+            req.user.email,
+            { userId, ...(coupon && { coupon }), ...(referralCode && { referralCode }) }, // Pass userId, coupon, and referralCode as metadata
+            plan.isFreeTrial ? plan.freeTrialDays : undefined,
+            coupon,
+            uiMode,
+        );
+        sessionData = {
+            sessionId: session.id,
+            url: session.url,
+            clientSecret: session.client_secret,
+        };
+    }
 
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
         message: "Checkout session created successfully",
-        data: {
-            sessionId: session.id,
-            url: session.url,
-            clientSecret: session.client_secret,
-        },
+        data: sessionData,
     });
 });
 

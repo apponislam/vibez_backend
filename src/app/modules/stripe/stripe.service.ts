@@ -105,9 +105,64 @@ const createCoupon = async (
     return coupon;
 };
 
+const createSubscriptionPaymentSheet = async (
+    priceId: string,
+    customerEmail: string,
+    metadata?: Record<string, string>,
+    trialPeriodDays?: number,
+    coupon?: string
+) => {
+    // 1. Get or create Stripe customer
+    let customer;
+    const customers = await stripe.customers.list({ email: customerEmail, limit: 1 });
+    if (customers.data.length > 0) {
+        customer = customers.data[0];
+    } else {
+        customer = await stripe.customers.create({ email: customerEmail, metadata });
+    }
+
+    // 2. Create Ephemeral Key (required for saving cards / Stripe SDK mobile)
+    const ephemeralKey = await stripe.ephemeralKeys.create(
+        { customer: customer.id },
+        { apiVersion: "2026-05-27.dahlia" }
+    );
+
+    // 3. Create Stripe Subscription with default_incomplete
+    const subscription = await stripe.subscriptions.create({
+        customer: customer.id,
+        items: [{ price: priceId }],
+        payment_behavior: "default_incomplete",
+        payment_settings: { save_default_payment_method: "on_subscription" },
+        expand: ["latest_invoice.confirmation_secret", "pending_setup_intent"],
+        metadata,
+        ...(coupon && {
+            discounts: [{ coupon }],
+        }),
+        ...(trialPeriodDays && {
+            trial_period_days: trialPeriodDays,
+        }),
+    });
+
+    let clientSecret = "";
+    const latestInvoice = subscription.latest_invoice as any;
+    if (latestInvoice && latestInvoice.confirmation_secret) {
+        clientSecret = latestInvoice.confirmation_secret.client_secret;
+    } else if (subscription.pending_setup_intent) {
+        clientSecret = (subscription.pending_setup_intent as any).client_secret;
+    }
+
+    return {
+        subscriptionId: subscription.id,
+        clientSecret,
+        customerId: customer.id,
+        ephemeralKeySecret: ephemeralKey.secret,
+    };
+};
+
 export const stripeServices = {
     createPaymentIntent,
     createCheckoutSession,
+    createSubscriptionPaymentSheet,
     createProduct,
     createPrice,
     cancelSubscription,

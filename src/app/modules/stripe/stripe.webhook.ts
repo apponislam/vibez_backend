@@ -90,35 +90,99 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
             const invoice = event.data.object;
             console.log("Invoice paid:", invoice);
 
-            // Find and update user subscription
-            const userSubscription = await UserSubscriptionModel.findOne({
-                stripeSubscriptionId: (invoice as any).subscription,
-            });
-            if (userSubscription) {
-                // Extend end date
-                let newEndDate = new Date(userSubscription.endDate);
-                // Get plan to know duration
-                const plan = await SubscriptionPlanModel.findById(userSubscription.subscriptionPlanId);
-                if (plan) {
-                    if (plan.duration === "MONTHLY") {
-                        newEndDate.setMonth(newEndDate.getMonth() + 1);
-                    } else if (plan.duration === "HALF_YEARLY") {
-                        newEndDate.setMonth(newEndDate.getMonth() + 6);
-                    } else if (plan.duration === "YEARLY") {
-                        newEndDate.setFullYear(newEndDate.getFullYear() + 1);
+            const subscriptionId = (invoice as any).subscription;
+            if (subscriptionId) {
+                let userSubscription = await UserSubscriptionModel.findOne({
+                    stripeSubscriptionId: subscriptionId,
+                });
+
+                if (!userSubscription) {
+                    // Retrieve subscription from Stripe to get metadata
+                    const stripeSub = await stripeServices.stripe.subscriptions.retrieve(subscriptionId);
+                    const userId = stripeSub.metadata?.userId;
+                    const coupon = stripeSub.metadata?.coupon;
+                    const referralCode = stripeSub.metadata?.referralCode;
+
+                    if (userId) {
+                        const stripePriceId = stripeSub.items.data[0].price.id;
+                        const subscriptionPlan = await SubscriptionPlanModel.findOne({
+                            stripePriceId: stripePriceId,
+                        });
+
+                        if (subscriptionPlan) {
+                            const startDate = new Date();
+                            let endDate = new Date(startDate);
+                            if (subscriptionPlan.duration === "MONTHLY") {
+                                endDate.setMonth(endDate.getMonth() + 1);
+                            } else if (subscriptionPlan.duration === "HALF_YEARLY") {
+                                endDate.setMonth(endDate.getMonth() + 6);
+                            } else if (subscriptionPlan.duration === "YEARLY") {
+                                endDate.setFullYear(endDate.getFullYear() + 1);
+                            }
+
+                            let referredBy = undefined;
+                            if (referralCode) {
+                                const referrer = await UserModel.findOne({ referralCode });
+                                if (referrer && referrer._id.toString() !== userId) {
+                                    referredBy = referrer._id;
+                                }
+                            }
+
+                            userSubscription = await UserSubscriptionModel.create({
+                                userId,
+                                subscriptionPlanId: subscriptionPlan._id,
+                                stripeSubscriptionId: subscriptionId,
+                                stripeCustomerId: stripeSub.customer as string,
+                                status: UserSubscriptionStatus.ACTIVE,
+                                startDate,
+                                endDate,
+                                isTrial: false,
+                                coupon: coupon || undefined,
+                                commissionUser: referredBy || undefined,
+                            });
+
+                            await UserModel.findByIdAndUpdate(userId, {
+                                $set: {
+                                    subscriptionPlanId: subscriptionPlan._id,
+                                    subscriptionEndDate: endDate,
+                                    isNewUser: false,
+                                },
+                            });
+
+                            if (coupon) {
+                                await CouponModel.findOneAndUpdate(
+                                    { couponId: coupon },
+                                    { $inc: { timesRedeemed: 1 } }
+                                );
+                            }
+                        }
                     }
-                    await UserSubscriptionModel.findByIdAndUpdate(userSubscription._id, {
-                        $set: {
-                            endDate: newEndDate,
-                            status: UserSubscriptionStatus.ACTIVE,
-                        },
-                    });
-                    // Update User model as well
-                    await UserModel.findByIdAndUpdate(userSubscription.userId, {
-                        $set: {
-                            subscriptionEndDate: newEndDate,
-                        },
-                    });
+                } else {
+                    // Extend end date
+                    let newEndDate = new Date(userSubscription.endDate);
+                    // Get plan to know duration
+                    const plan = await SubscriptionPlanModel.findById(userSubscription.subscriptionPlanId);
+                    if (plan) {
+                        if (plan.duration === "MONTHLY") {
+                            newEndDate.setMonth(newEndDate.getMonth() + 1);
+                        } else if (plan.duration === "HALF_YEARLY") {
+                            newEndDate.setMonth(newEndDate.getMonth() + 6);
+                        } else if (plan.duration === "YEARLY") {
+                            newEndDate.setFullYear(newEndDate.getFullYear() + 1);
+                        }
+                        await UserSubscriptionModel.findByIdAndUpdate(userSubscription._id, {
+                            $set: {
+                                endDate: newEndDate,
+                                status: UserSubscriptionStatus.ACTIVE,
+                            },
+                        });
+                        // Update User model as well
+                        await UserModel.findByIdAndUpdate(userSubscription.userId, {
+                            $set: {
+                                subscriptionEndDate: newEndDate,
+                            },
+                        });
+                    }
                 }
             }
             break;

@@ -93,7 +93,7 @@ const registerUser = async (data: any) => {
 
 const loginUser = async (data: { email: string; password: string }) => {
     // Find user
-    const user = await UserModel.findOne({ email: data.email });
+    const user = await UserModel.findOne({ email: data.email }).populate("subscriptionPlanId");
     if (!user) throw new ApiError(httpStatus.UNAUTHORIZED, "Incorrect email or password");
 
     // Check password
@@ -204,7 +204,7 @@ const refreshAccessToken = async (refreshToken: string) => {
     try {
         const decoded = jwtHelper.verifyToken(refreshToken, config.jwt_refresh_secret as string);
 
-        const user = await UserModel.findById(decoded._id).select("-password");
+        const user = await UserModel.findById(decoded._id).select("-password").populate("subscriptionPlanId");
         if (!user) throw new ApiError(httpStatus.UNAUTHORIZED, "User not registered");
 
         const jwtPayload = {
