@@ -28,7 +28,7 @@ const getAllDeals = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getActiveDeals = catchAsync(async (req: Request, res: Response) => {
-    const result = await dealServices.getActiveDeals(req.query);
+    const result = await dealServices.getActiveDeals(req.query, req.user?._id?.toString());
 
     sendResponse(res, {
         statusCode: httpStatus.OK,
@@ -40,7 +40,7 @@ const getActiveDeals = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getDealById = catchAsync(async (req: Request, res: Response) => {
-    const result = await dealServices.getDealById(req.params.dealId as string);
+    const result = await dealServices.getDealById(req.params.dealId as string, req.user?._id?.toString());
 
     sendResponse(res, {
         statusCode: httpStatus.OK,
@@ -85,7 +85,7 @@ const deleteDeal = catchAsync(async (req: Request, res: Response) => {
 
 const getDealsByRestaurant = catchAsync(async (req: Request, res: Response) => {
     const { restaurantId } = req.params;
-    const result = await dealServices.getActiveDeals({ ...req.query, restaurantId: restaurantId as string });
+    const result = await dealServices.getActiveDeals({ ...req.query, restaurantId: restaurantId as string }, req.user?._id?.toString());
 
     sendResponse(res, {
         statusCode: httpStatus.OK,

@@ -5,6 +5,7 @@ import { DealModel } from "./deal.model";
 
 import { UserModel } from "../auth/auth.model";
 import { RestaurantModel } from "../restaurant/restaurant.model";
+import { SavedDealModel } from "../saved-deal/saved-deal.model";
 
 const createDeal = async (userId: string, payload: any) => {
     const user = await UserModel.findById(userId);
@@ -62,7 +63,7 @@ const getAllDeals = async (filters: any = {}) => {
     };
 };
 
-const getActiveDeals = async (filters: any = {}) => {
+const getActiveDeals = async (filters: any = {}, userId?: string) => {
     const query: any = { isActive: true, isDeleted: false };
     if (filters.restaurantId) {
         query.restaurantId = filters.restaurantId;
@@ -77,12 +78,28 @@ const getActiveDeals = async (filters: any = {}) => {
         DealModel.countDocuments(query),
     ]);
 
+    let formattedDeals = deals.map((deal) => (deal.toObject ? deal.toObject() : deal));
+
+    if (userId) {
+        const savedDeals = await SavedDealModel.find({ userId });
+        const savedDealIds = new Set(savedDeals.map((sd) => sd.dealId.toString()));
+        formattedDeals = formattedDeals.map((deal: any) => ({
+            ...deal,
+            isSaved: savedDealIds.has(deal._id.toString()),
+        }));
+    } else {
+        formattedDeals = formattedDeals.map((deal: any) => ({
+            ...deal,
+            isSaved: false,
+        }));
+    }
+
     const totalPages = Math.ceil(total / limit);
     const hasNext = page < totalPages;
     const hasPrev = page > 1;
 
     return {
-        data: deals,
+        data: formattedDeals,
         meta: {
             page,
             limit,
@@ -94,10 +111,24 @@ const getActiveDeals = async (filters: any = {}) => {
     };
 };
 
-const getDealById = async (dealId: string) => {
+const getDealById = async (dealId: string, userId?: string) => {
     const deal = await DealModel.findOne({ _id: dealId, isDeleted: false }).populate("restaurantId");
     if (!deal) throw new ApiError(httpStatus.NOT_FOUND, "Deal not found");
-    return deal;
+
+    const dealObj = deal.toObject ? deal.toObject() : deal;
+    let isSaved = false;
+
+    if (userId) {
+        const saved = await SavedDealModel.findOne({ userId, dealId: dealObj._id });
+        if (saved) {
+            isSaved = true;
+        }
+    }
+
+    return {
+        ...dealObj,
+        isSaved,
+    };
 };
 
 const updateDeal = async (dealId: string, payload: any, userId: string, userRole: string) => {

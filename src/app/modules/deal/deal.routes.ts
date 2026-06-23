@@ -1,19 +1,20 @@
 import { Router } from "express";
 import auth from "../../middlewares/auth";
 import authorize from "../../middlewares/authorized";
+import checkAuth from "../../middlewares/checkAuth";
 import { dealControllers } from "./deal.controllers";
 
 const router = Router();
 
 // Public routes
-router.get("/", dealControllers.getActiveDeals);
-router.get("/restaurant/:restaurantId", dealControllers.getDealsByRestaurant);
+router.get("/", checkAuth, dealControllers.getActiveDeals);
+router.get("/restaurant/:restaurantId", checkAuth, dealControllers.getDealsByRestaurant);
 
 // Restaurant Owner routes
 router.get("/my-deals", auth, authorize(["RESTAURANT_OWNER"]), dealControllers.getMyDeals);
 
 // Public route with parameter (must be after specific paths like /my-deals)
-router.get("/:dealId", dealControllers.getDealById);
+router.get("/:dealId", checkAuth, dealControllers.getDealById);
 
 // Admin & Restaurant Owner routes
 router.post("/", auth, authorize(["ADMIN", "RESTAURANT_OWNER"]), dealControllers.createDeal);
