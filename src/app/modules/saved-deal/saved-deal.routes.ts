@@ -6,8 +6,7 @@ const router = Router();
 
 // All saved deal routes are authenticated
 router.get("/", auth, savedDealControllers.getUserSavedDeals);
-router.get("/check/:dealId", auth, savedDealControllers.checkIsSaved);
-router.post("/", auth, savedDealControllers.saveDeal);
-router.delete("/:dealId", auth, savedDealControllers.unsaveDeal);
+router.get("/count", auth, savedDealControllers.getSavedDealsCount);
+router.post("/toggle", auth, savedDealControllers.toggleSavedDeal);
 
 export const savedDealRoutes = router;

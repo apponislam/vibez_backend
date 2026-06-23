@@ -4,27 +4,15 @@ import sendResponse from "../../../utils/sendResponse";
 import { Request, Response } from "express";
 import { savedDealServices } from "./saved-deal.services";
 
-const saveDeal = catchAsync(async (req: Request, res: Response) => {
+const toggleSavedDeal = catchAsync(async (req: Request, res: Response) => {
     const { dealId } = req.body;
-    const result = await savedDealServices.saveDeal(req.user._id, dealId as string);
-
-    sendResponse(res, {
-        statusCode: httpStatus.CREATED,
-        success: true,
-        message: "Deal saved successfully",
-        data: result,
-    });
-});
-
-const unsaveDeal = catchAsync(async (req: Request, res: Response) => {
-    const { dealId } = req.params;
-    await savedDealServices.unsaveDeal(req.user._id, dealId as string);
+    const result = await savedDealServices.toggleSavedDeal(req.user._id, dealId as string);
 
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
-        message: "Deal removed from saved successfully",
-        data: null,
+        message: result.message,
+        data: result,
     });
 });
 
@@ -39,21 +27,19 @@ const getUserSavedDeals = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
-const checkIsSaved = catchAsync(async (req: Request, res: Response) => {
-    const { dealId } = req.params;
-    const result = await savedDealServices.checkIsSaved(req.user._id, dealId as string);
+const getSavedDealsCount = catchAsync(async (req: Request, res: Response) => {
+    const result = await savedDealServices.getSavedDealsCount(req.user._id);
 
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
-        message: "Saved status checked successfully",
+        message: "Saved deals count retrieved successfully",
         data: result,
     });
 });
 
 export const savedDealControllers = {
-    saveDeal,
-    unsaveDeal,
+    toggleSavedDeal,
     getUserSavedDeals,
-    checkIsSaved,
+    getSavedDealsCount,
 };

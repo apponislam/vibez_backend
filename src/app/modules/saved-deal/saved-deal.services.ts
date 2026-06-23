@@ -3,23 +3,22 @@ import { Types } from "mongoose";
 import ApiError from "../../../errors/ApiError";
 import { SavedDealModel } from "./saved-deal.model";
 
-// Add deal to saved deals
-const saveDeal = async (userId: string, dealId: string) => {
-    const savedDeal = await SavedDealModel.create({
+// Toggle saved deal status (save if not exists, unsave if exists)
+const toggleSavedDeal = async (userId: string, dealId: string) => {
+    const filter = {
         userId: new Types.ObjectId(userId),
         dealId: new Types.ObjectId(dealId),
-    });
-    return savedDeal;
-};
+    };
 
-// Remove deal from saved deals
-const unsaveDeal = async (userId: string, dealId: string) => {
-    const savedDeal = await SavedDealModel.findOneAndDelete({
-        userId: new Types.ObjectId(userId),
-        dealId: new Types.ObjectId(dealId),
-    });
-    if (!savedDeal) throw new ApiError(httpStatus.NOT_FOUND, "Saved deal not found");
-    return savedDeal;
+    const exists = await SavedDealModel.findOne(filter);
+
+    if (exists) {
+        await SavedDealModel.deleteOne(filter);
+        return { isSaved: false, message: "Deal removed from saved successfully" };
+    } else {
+        await SavedDealModel.create(filter);
+        return { isSaved: true, message: "Deal saved successfully" };
+    }
 };
 
 // Get user's saved deals
@@ -30,18 +29,14 @@ const getUserSavedDeals = async (userId: string) => {
     return savedDeals;
 };
 
-// Check if a deal is saved by user
-const checkIsSaved = async (userId: string, dealId: string) => {
-    const exists = await SavedDealModel.exists({
-        userId: new Types.ObjectId(userId),
-        dealId: new Types.ObjectId(dealId),
-    });
-    return { isSaved: !!exists };
+// Count user's saved deals
+const getSavedDealsCount = async (userId: string) => {
+    const count = await SavedDealModel.countDocuments({ userId: new Types.ObjectId(userId) });
+    return { count };
 };
 
 export const savedDealServices = {
-    saveDeal,
-    unsaveDeal,
+    toggleSavedDeal,
     getUserSavedDeals,
-    checkIsSaved,
+    getSavedDealsCount,
 };
