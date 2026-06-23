@@ -5,6 +5,7 @@ import { ReservationModel } from "./reservation.model";
 import { IReservation, ReservationStatus } from "./reservation.interface";
 import { DealModel } from "../deal/deal.model";
 import { DayOfWeek, MealTimeType } from "../deal/deal.interface";
+import { restaurantServices } from "../restaurant/restaurant.services";
 
 const createReservation = async (data: Partial<IReservation>, userId: string) => {
     const today = new Date();
@@ -201,6 +202,85 @@ const deleteReservation = async (id: string, userId: string) => {
     return { message: "Reservation cancelled successfully" };
 };
 
+const getReservationStats = async (user: { _id: string; role: string }, queryParams: any) => {
+    let restaurantId = queryParams.restaurantId;
+
+    if (user.role === "RESTAURANT_OWNER" || user.role === "MANAGER") {
+        const restaurant = await restaurantServices.getRestaurantByOwner(user._id);
+        if (!restaurant) {
+            throw new ApiError(httpStatus.NOT_FOUND, "Restaurant not found for this user");
+        }
+        restaurantId = restaurant._id.toString();
+    }
+
+    if (!restaurantId) {
+        throw new ApiError(httpStatus.BAD_REQUEST, "Restaurant ID is required");
+    }
+
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const matchQuery: any = {
+        restaurantId: new Types.ObjectId(restaurantId),
+        reservationDate: { $gte: startOfDay, $lte: endOfDay },
+    };
+
+    // 1. Total Bookings Today (excluding cancelled)
+    const totalBookingsToday = await ReservationModel.countDocuments({
+        ...matchQuery,
+        status: { $ne: ReservationStatus.CANCELLED },
+    });
+
+    // 2. Total Guests Expected (sum partySize excluding cancelled)
+    const guestsExpectedResult = await ReservationModel.aggregate([
+        {
+            $match: {
+                ...matchQuery,
+                status: { $ne: ReservationStatus.CANCELLED },
+            },
+        },
+        {
+            $group: {
+                _id: null,
+                totalGuests: { $sum: "$partySize" },
+            },
+        },
+    ]);
+    const totalGuestsExpected = guestsExpectedResult[0]?.totalGuests || 0;
+
+    // 3. Guests Served Today (sum partySize for COMPLETED status)
+    const guestsServedResult = await ReservationModel.aggregate([
+        {
+            $match: {
+                ...matchQuery,
+                status: ReservationStatus.COMPLETED,
+            },
+        },
+        {
+            $group: {
+                _id: null,
+                totalServed: { $sum: "$partySize" },
+            },
+        },
+    ]);
+    const guestsServedToday = guestsServedResult[0]?.totalServed || 0;
+
+    // 4. Pending Arrivals (count UPCOMING status)
+    const pendingArrivals = await ReservationModel.countDocuments({
+        ...matchQuery,
+        status: ReservationStatus.UPCOMING,
+    });
+
+    return {
+        totalBookingsToday,
+        totalGuestsExpected,
+        guestsServedToday,
+        pendingArrivals,
+    };
+};
+
 export const reservationServices = {
     createReservation,
     getAllReservations,
@@ -209,4 +289,5 @@ export const reservationServices = {
     updateReservation,
     updateReservationStatus,
     deleteReservation,
+    getReservationStats,
 };

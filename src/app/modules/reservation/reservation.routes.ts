@@ -8,6 +8,7 @@ const router = Router();
 // Protected routes (require auth)
 router.post("/", auth, reservationControllers.createReservation);
 router.get("/my", auth, reservationControllers.getMyReservations);
+router.get("/stats", auth, authorize(["ADMIN", "RESTAURANT_OWNER", "MANAGER"]), reservationControllers.getReservationStats);
 router.get("/:id", auth, reservationControllers.getReservationById);
 router.patch("/:id", auth, reservationControllers.updateReservation);
 router.delete("/:id", auth, reservationControllers.deleteReservation);

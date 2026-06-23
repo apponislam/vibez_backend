@@ -80,6 +80,20 @@ const deleteReservation = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const getReservationStats = catchAsync(async (req: Request, res: Response) => {
+    const result = await reservationServices.getReservationStats(
+        { _id: req.user._id, role: req.user.role },
+        req.query
+    );
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Reservation statistics retrieved successfully",
+        data: result,
+    });
+});
+
 export const reservationControllers = {
     createReservation,
     getAllReservations,
@@ -88,4 +102,5 @@ export const reservationControllers = {
     updateReservation,
     updateReservationStatus,
     deleteReservation,
+    getReservationStats,
 };
