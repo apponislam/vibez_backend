@@ -6,7 +6,7 @@ import { CommissionModel } from "../commission/commission.model";
 import { WithdrawModel } from "../withdraw/withdraw.model";
 import { UserSubscriptionStatus } from "../subscription/subscription.interface";
 import { RestaurantModel } from "../restaurant/restaurant.model";
-import { sendStaffWelcomeEmail } from "../../../utils/emailTemplates";
+import { sendStaffWelcomeEmail, sendStaffPasswordResetEmail } from "../../../utils/emailTemplates";
 import bcrypt from "bcrypt";
 import config from "../../config";
 
@@ -299,6 +299,18 @@ const changeStaffPasswordByOwner = async (callerId: string, callerRole: string, 
     const hashedPassword = await bcrypt.hash(newPassword, Number(config.bcrypt_salt_rounds));
     staff.password = hashedPassword;
     await staff.save();
+
+    // Fetch restaurant name if possible
+    let restaurantName = "";
+    if (staff.restaurantId) {
+        const restaurant = await RestaurantModel.findById(staff.restaurantId);
+        if (restaurant) {
+            restaurantName = restaurant.restaurantName;
+        }
+    }
+
+    // Send email to staff with new password
+    sendStaffPasswordResetEmail(staff.email as string, staff.name as string, newPassword, restaurantName);
 
     const staffObject = staff.toObject();
     const { password, ...staffWithoutPassword } = staffObject;
