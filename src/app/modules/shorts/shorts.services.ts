@@ -97,11 +97,6 @@ const getRandomShorts = async (filters: any = {}) => {
                 },
             },
             { $unwind: "$restaurantId" },
-            {
-                $addFields: {
-                    restaurant: "$restaurantId",
-                },
-            },
         ]),
         ShortsModel.countDocuments({ isActive: true }),
     ]);
