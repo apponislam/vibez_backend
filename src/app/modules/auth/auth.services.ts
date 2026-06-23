@@ -543,26 +543,26 @@ const registerRestaurant = async (data: any) => {
 
     // Resolve lat/lng from address components using Google Maps API
     if (address) {
-        const coords = await getLatLngFromAddress(address);
-        if (coords) {
-            address.lat = coords.lat.toString();
-            address.lng = coords.lng.toString();
+        const latVal = address.lat;
+        const lngVal = address.lng !== undefined ? address.lng : address.lan;
+
+        if (latVal !== undefined && lngVal !== undefined && latVal !== "" && lngVal !== "") {
+            const lat = parseFloat(latVal);
+            const lng = parseFloat(lngVal);
+            address.lat = lat.toString();
+            address.lng = lng.toString();
             address.location = {
                 type: "Point",
-                coordinates: [coords.lng, coords.lat],
+                coordinates: [lng, lat],
             };
         } else {
-            // Fallback: If geocoding fails, check if lat/lng (or lan) are manually provided in input address
-            const latVal = address.lat;
-            const lngVal = address.lng !== undefined ? address.lng : address.lan;
-            if (latVal !== undefined && lngVal !== undefined) {
-                const lat = parseFloat(latVal);
-                const lng = parseFloat(lngVal);
-                address.lat = lat.toString();
-                address.lng = lng.toString();
+            const coords = await getLatLngFromAddress(address, data.restaurantName);
+            if (coords) {
+                address.lat = coords.lat.toString();
+                address.lng = coords.lng.toString();
                 address.location = {
                     type: "Point",
-                    coordinates: [lng, lat],
+                    coordinates: [coords.lng, coords.lat],
                 };
             }
         }

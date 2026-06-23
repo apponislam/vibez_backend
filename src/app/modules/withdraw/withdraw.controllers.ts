@@ -37,7 +37,8 @@ const onboardingCompleteRedirect = catchAsync(async (req: Request, res: Response
 });
 
 const onboardingRefreshRedirect = catchAsync(async (req: Request, res: Response) => {
-    res.redirect("vibez://withdraw/onboarding-refresh");
+    res.redirect("djarna://signup");
+    // res.redirect("vibez://withdraw/onboarding-refresh");
 });
 
 const requestWithdrawal = catchAsync(async (req: Request, res: Response) => {
