@@ -3,7 +3,30 @@ import { Types } from "mongoose";
 import ApiError from "../../../errors/ApiError";
 import { DealModel } from "./deal.model";
 
+import { UserModel } from "../auth/auth.model";
+import { RestaurantModel } from "../restaurant/restaurant.model";
+
 const createDeal = async (userId: string, payload: any) => {
+    const user = await UserModel.findById(userId);
+    if (!user) {
+        throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+    }
+
+    const userRole = user.role as string;
+    if (userRole === "RESTAURANT_OWNER") {
+        const restaurant = await RestaurantModel.findOne({ restaurantOwner: userId });
+        if (!restaurant) {
+            throw new ApiError(httpStatus.NOT_FOUND, "You don't have a restaurant registered yet.");
+        }
+        payload.restaurantId = restaurant._id.toString();
+    } else if (userRole === "ADMIN" || userRole === "SUPER_ADMIN") {
+        if (!payload.restaurantId) {
+            throw new ApiError(httpStatus.BAD_REQUEST, "restaurantId is required for admins");
+        }
+    } else {
+        throw new ApiError(httpStatus.FORBIDDEN, "Only restaurant owners and admins can create deals.");
+    }
+
     const deal = await DealModel.create({
         ...payload,
         createdBy: new Types.ObjectId(userId),
