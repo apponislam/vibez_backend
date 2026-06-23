@@ -1,0 +1,20 @@
+[2026-06-23T23:14:35.677Z] Webhook event received | Data: {"type":"payment_intent.created","id":"evt_3TldWaBAT7h26Lyd1OYWK1Bj"}
+[2026-06-23T23:14:35.802Z] Webhook event received | Data: {"type":"invoice.created","id":"evt_1TldWbBAT7h26LydxZfKxXkM"}
+[2026-06-23T23:14:35.907Z] Webhook event received | Data: {"type":"invoice.finalized","id":"evt_1TldWbBAT7h26LydrI4rsM84"}
+[2026-06-23T23:14:35.988Z] Webhook event received | Data: {"type":"customer.subscription.created","id":"evt_1TldWbBAT7h26Lyd2SszcaMp"}
+[2026-06-23T23:15:02.454Z] Webhook event received | Data: {"type":"charge.succeeded","id":"evt_3TldWaBAT7h26Lyd11DXhf3E"}
+[2026-06-23T23:15:02.512Z] Webhook event received | Data: {"type":"invoice.paid","id":"evt_1TldX2BAT7h26LydhFaV8pWL"}
+[2026-06-23T23:15:02.515Z] invoice.paid case entered | Data: {"invoiceId":"in_1TldWZBAT7h26LyddIbIjORO","subscriptionId":"sub_1TldWZBAT7h26Lyd2308p7mJ"}
+[2026-06-23T23:15:02.562Z] Found userSubscription in DB | Data: {"found":false}
+[2026-06-23T23:15:02.583Z] Webhook event received | Data: {"type":"payment_method.attached","id":"evt_1TldX2BAT7h26Lyd0oN7phfZ"}
+[2026-06-23T23:15:02.914Z] Retrieved stripeSub details | Data: {"stripeSubId":"sub_1TldWZBAT7h26Lyd2308p7mJ","userId":"6a39a3c1c8a185924e5785d8"}
+[2026-06-23T23:15:02.959Z] Found subscriptionPlan in DB | Data: {"found":true,"stripePriceId":"price_1TkWqRBAT7h26LydF8u53RRz"}
+[2026-06-23T23:15:02.959Z] Creating UserSubscription record in DB...
+[2026-06-23T23:15:03.009Z] UserSubscription created successfully | Data: {"docId":"6a3b13765808f2efab2aa428"}
+[2026-06-23T23:15:03.010Z] Updating UserModel in DB... | Data: {"userId":"6a39a3c1c8a185924e5785d8"}
+[2026-06-23T23:15:03.058Z] UserModel updated successfully | Data: {"userFound":true}
+[2026-06-23T23:15:03.126Z] Webhook event received | Data: {"type":"customer.subscription.updated","id":"evt_1TldX2BAT7h26LyduAVzIHSY"}
+[2026-06-23T23:15:03.135Z] Webhook event received | Data: {"type":"payment_intent.succeeded","id":"evt_3TldWaBAT7h26Lyd1uwLFdsN"}
+[2026-06-23T23:15:03.174Z] Webhook event received | Data: {"type":"invoice.updated","id":"evt_1TldX2BAT7h26Lydp1TW3TkG"}
+[2026-06-23T23:15:03.209Z] Webhook event received | Data: {"type":"invoice.payment_succeeded","id":"evt_1TldX2BAT7h26LydM1Kv0D8C"}
+[2026-06-23T23:15:38.723Z] Webhook event received | Data: {"type":"invoice_payment.paid","id":"evt_1TldXcBAT7h26Lyd4imvmJEm"}
