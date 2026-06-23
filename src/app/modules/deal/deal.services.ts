@@ -44,7 +44,13 @@ const getAllDeals = async (filters: any = {}) => {
     const limit = parseInt(filters.limit as string) || 10;
     const skip = (page - 1) * limit;
 
-    const [deals, total] = await Promise.all([DealModel.find(query).populate("restaurantId").skip(skip).limit(limit), DealModel.countDocuments(query)]);
+    const [deals, total] = await Promise.all([
+        DealModel.find(query)
+            .populate("restaurantId", "restaurantName restaurantImage restaurantDescription")
+            .skip(skip)
+            .limit(limit),
+        DealModel.countDocuments(query),
+    ]);
 
     const totalPages = Math.ceil(total / limit);
     const hasNext = page < totalPages;
@@ -74,7 +80,11 @@ const getActiveDeals = async (filters: any = {}, userId?: string) => {
     const skip = (page - 1) * limit;
 
     const [deals, total] = await Promise.all([
-        DealModel.find(query).populate("restaurantId").sort({ createdAt: -1 }).skip(skip).limit(limit),
+        DealModel.find(query)
+            .populate("restaurantId", "restaurantName restaurantImage restaurantDescription")
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit),
         DealModel.countDocuments(query),
     ]);
 
@@ -112,7 +122,7 @@ const getActiveDeals = async (filters: any = {}, userId?: string) => {
 };
 
 const getDealById = async (dealId: string, userId?: string) => {
-    const deal = await DealModel.findOne({ _id: dealId, isDeleted: false }).populate("restaurantId");
+    const deal = await DealModel.findOne({ _id: dealId, isDeleted: false }).populate("restaurantId", "restaurantName restaurantImage restaurantDescription");
     if (!deal) throw new ApiError(httpStatus.NOT_FOUND, "Deal not found");
 
     const dealObj = deal.toObject ? deal.toObject() : deal;
