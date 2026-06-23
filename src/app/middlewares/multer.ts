@@ -143,7 +143,7 @@ export const uploadShorts = (req: Request, res: Response, next: NextFunction) =>
                 file.path = outputPath;
 
                 // Add short URL to request body
-                req.body.shortUrl = newName;
+                req.body.shortUrl = `/uploads/shorts/${newName}`;
             } catch (error) {
                 return next(error);
             }

@@ -1,0 +1,113 @@
+{
+    "success": true,
+    "message": "Random shorts retrieved successfully",
+    "data": [
+        {
+            "_id": "6a39d1602085268e1379cb4f",
+            "restaurantId": {
+                "_id": "6a39cc57030cac4021dd65f3",
+                "restaurantName": "Sultan's Dine",
+                "restaurantDescription": "Fine Dining Experience",
+                "restaurantType": "RESTAURANT",
+                "cuisineType": "ITALIAN",
+                "restaurantOwner": "6a39cc57030cac4021dd65f2",
+                "restaurantWebsite": "https://gourmet.com",
+                "restaurantAddress": {
+                    "street": "House 22, Road 134, Gulshan 1",
+                    "city": "Dhaka",
+                    "state": "Dhaka",
+                    "zipCode": "1212",
+                    "country": "Bangladesh",
+                    "location": {
+                        "type": "Point",
+                        "coordinates": [
+                            90.4133531,
+                            23.7948391
+                        ]
+                    }
+                },
+                "restaurantOpenHours": [
+                    {
+                        "day": "MONDAY",
+                        "isOpen": true,
+                        "openTime": "09:00",
+                        "closeTime": "22:00",
+                        "slots": [
+                            {
+                                "type": "LUNCH",
+                                "openTime": "12:00",
+                                "closeTime": "15:00",
+                                "_id": "6a39cc57030cac4021dd65f5"
+                            }
+                        ],
+                        "_id": "6a39cc57030cac4021dd65f4"
+                    }
+                ],
+                "restaurantImage": "/uploads/restaurant-images/restaurant-758121-9239.webp",
+                "approved": true,
+                "createdAt": "2026-06-22T23:59:19.413Z",
+                "updatedAt": "2026-06-23T00:15:16.982Z",
+                "approvedAt": "2026-06-23T00:15:16.982Z",
+                "approvedBy": "6a0a55dfd35fab0d24da72f3"
+            },
+            "shortUrl": "/uploads/shorts/shorts-048684-2589.mp4",
+            "isActive": true,
+            "createdAt": "2026-06-23T00:20:48.795Z",
+            "updatedAt": "2026-06-23T00:20:48.795Z",
+            "restaurant": {
+                "_id": "6a39cc57030cac4021dd65f3",
+                "restaurantName": "Sultan's Dine",
+                "restaurantDescription": "Fine Dining Experience",
+                "restaurantType": "RESTAURANT",
+                "cuisineType": "ITALIAN",
+                "restaurantOwner": "6a39cc57030cac4021dd65f2",
+                "restaurantWebsite": "https://gourmet.com",
+                "restaurantAddress": {
+                    "street": "House 22, Road 134, Gulshan 1",
+                    "city": "Dhaka",
+                    "state": "Dhaka",
+                    "zipCode": "1212",
+                    "country": "Bangladesh",
+                    "location": {
+                        "type": "Point",
+                        "coordinates": [
+                            90.4133531,
+                            23.7948391
+                        ]
+                    }
+                },
+                "restaurantOpenHours": [
+                    {
+                        "day": "MONDAY",
+                        "isOpen": true,
+                        "openTime": "09:00",
+                        "closeTime": "22:00",
+                        "slots": [
+                            {
+                                "type": "LUNCH",
+                                "openTime": "12:00",
+                                "closeTime": "15:00",
+                                "_id": "6a39cc57030cac4021dd65f5"
+                            }
+                        ],
+                        "_id": "6a39cc57030cac4021dd65f4"
+                    }
+                ],
+                "restaurantImage": "/uploads/restaurant-images/restaurant-758121-9239.webp",
+                "approved": true,
+                "createdAt": "2026-06-22T23:59:19.413Z",
+                "updatedAt": "2026-06-23T00:15:16.982Z",
+                "approvedAt": "2026-06-23T00:15:16.982Z",
+                "approvedBy": "6a0a55dfd35fab0d24da72f3"
+            }
+        }
+    ],
+    "meta": {
+        "page": 1,
+        "limit": 10,
+        "total": 1,
+        "totalPages": 1,
+        "hasNext": false,
+        "hasPrev": false
+    }
+}

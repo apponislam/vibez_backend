@@ -13,21 +13,23 @@ const uploadShorts = async (userId: string, shortUrl: string) => {
     }
 
     // Check if there's already a short for this restaurant
-    const existingShort = await ShortsModel.findOne({ restaurantId: restaurant._id });
+    let short = await ShortsModel.findOne({ restaurantId: restaurant._id });
 
-    if (existingShort) {
+    if (short) {
         // Update existing short
-        existingShort.shortUrl = shortUrl;
-        await existingShort.save();
-        return existingShort;
+        short.shortUrl = shortUrl;
+        await short.save();
     } else {
         // Create new short
-        const newShort = await ShortsModel.create({
+        short = await ShortsModel.create({
             restaurantId: restaurant._id,
             shortUrl: shortUrl,
         });
-        return newShort;
     }
+
+    // Populate only simple restaurant details before returning
+    await short.populate("restaurantId", "restaurantName restaurantImage restaurantDescription");
+    return short;
 };
 
 // Get restaurant short by restaurant ID (public route)
@@ -35,7 +37,7 @@ const getShortsByRestaurant = async (restaurantId: string) => {
     const short = await ShortsModel.findOne({
         restaurantId: new Types.ObjectId(restaurantId),
         isActive: true,
-    });
+    }).populate("restaurantId", "restaurantName restaurantImage restaurantDescription");
     return short;
 };
 
@@ -46,7 +48,7 @@ const getMyShorts = async (userId: string) => {
         throw new ApiError(httpStatus.NOT_FOUND, "You don't have a restaurant");
     }
 
-    const short = await ShortsModel.findOne({ restaurantId: restaurant._id });
+    const short = await ShortsModel.findOne({ restaurantId: restaurant._id }).populate("restaurantId", "restaurantName restaurantImage restaurantDescription");
     return short;
 };
 
@@ -57,7 +59,7 @@ const deleteShorts = async (userId: string) => {
         throw new ApiError(httpStatus.NOT_FOUND, "You don't have a restaurant");
     }
 
-    const short = await ShortsModel.findOneAndDelete({ restaurantId: restaurant._id });
+    const short = await ShortsModel.findOneAndDelete({ restaurantId: restaurant._id }).populate("restaurantId", "restaurantName restaurantImage restaurantDescription");
     if (!short) {
         throw new ApiError(httpStatus.NOT_FOUND, "Restaurant short not found");
     }
@@ -82,10 +84,24 @@ const getRandomShorts = async (filters: any = {}) => {
                     from: "restaurants",
                     localField: "restaurantId",
                     foreignField: "_id",
-                    as: "restaurant",
+                    pipeline: [
+                        {
+                            $project: {
+                                restaurantName: 1,
+                                restaurantImage: 1,
+                                restaurantDescription: 1,
+                            },
+                        },
+                    ],
+                    as: "restaurantId",
                 },
             },
-            { $unwind: "$restaurant" },
+            { $unwind: "$restaurantId" },
+            {
+                $addFields: {
+                    restaurant: "$restaurantId",
+                },
+            },
         ]),
         ShortsModel.countDocuments({ isActive: true }),
     ]);
