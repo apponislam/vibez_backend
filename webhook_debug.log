@@ -18,3 +18,6 @@
 [2026-06-23T23:15:03.174Z] Webhook event received | Data: {"type":"invoice.updated","id":"evt_1TldX2BAT7h26Lydp1TW3TkG"}
 [2026-06-23T23:15:03.209Z] Webhook event received | Data: {"type":"invoice.payment_succeeded","id":"evt_1TldX2BAT7h26LydM1Kv0D8C"}
 [2026-06-23T23:15:38.723Z] Webhook event received | Data: {"type":"invoice_payment.paid","id":"evt_1TldXcBAT7h26Lyd4imvmJEm"}
+[2026-06-24T18:46:33.454Z] Webhook event received | Data: {"type":"coupon.created","id":"evt_1TlvolBAT7h26LydbYVBbsiS"}
+[2026-06-24T18:46:45.360Z] Webhook event received | Data: {"type":"coupon.updated","id":"evt_1TlvoxBAT7h26LydLPiH3jvs"}
+[2026-06-24T18:46:52.842Z] Webhook event received | Data: {"type":"coupon.deleted","id":"evt_1Tlvp4BAT7h26LydQFbJXymZ"}

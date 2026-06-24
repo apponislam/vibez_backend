@@ -6,6 +6,7 @@ import { IReservation, ReservationStatus } from "./reservation.interface";
 import { DealModel } from "../deal/deal.model";
 import { DayOfWeek, MealTimeType } from "../deal/deal.interface";
 import { restaurantServices } from "../restaurant/restaurant.services";
+import { SavedDealModel } from "../saved-deal/saved-deal.model";
 
 const createReservation = async (data: Partial<IReservation>, userId: string) => {
     const today = new Date();
@@ -84,6 +85,15 @@ const createReservation = async (data: Partial<IReservation>, userId: string) =>
 
     const reservationData = { ...data, userId };
     const reservation = await ReservationModel.create(reservationData);
+
+    // Remove from saved deals if a deal was associated with the reservation
+    if (data.dealId) {
+        await SavedDealModel.deleteOne({
+            userId: new Types.ObjectId(userId),
+            dealId: new Types.ObjectId(data.dealId as any),
+        });
+    }
+
     await reservation.populate("restaurantId userId dealId");
     return reservation;
 };
