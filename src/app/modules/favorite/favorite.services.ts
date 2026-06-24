@@ -3,6 +3,7 @@ import { Types } from "mongoose";
 import ApiError from "../../../errors/ApiError";
 import { FavoriteModel } from "./favorite.model";
 import { DealModel } from "../deal/deal.model";
+import { SavedDealModel } from "../saved-deal/saved-deal.model";
 
 // Toggle restaurant favorite status (add if not exists, remove if exists)
 const toggleFavorite = async (userId: string, restaurantId: string) => {
@@ -28,6 +29,10 @@ const getUserFavorites = async (userId: string) => {
         .populate("restaurantId")
         .sort({ createdAt: -1 });
 
+    let savedDealIds = new Set<string>();
+    const savedDeals = await SavedDealModel.find({ userId: new Types.ObjectId(userId) });
+    savedDealIds = new Set(savedDeals.map((sd) => sd.dealId.toString()));
+
     const formattedFavorites = await Promise.all(
         favorites.map(async (favorite) => {
             const favObj = (favorite.toObject ? favorite.toObject() : favorite) as any;
@@ -41,7 +46,15 @@ const getUserFavorites = async (userId: string) => {
                     .sort({ createdAt: -1 })
                     .limit(2);
 
-                favObj.recentDeals = recentDeals;
+                const formattedDeals = recentDeals.map((deal) => {
+                    const dealObj = deal.toObject ? deal.toObject() : deal;
+                    return {
+                        ...dealObj,
+                        isSaved: savedDealIds.has(dealObj._id.toString()),
+                    };
+                });
+
+                favObj.recentDeals = formattedDeals;
             }
             return favObj;
         })

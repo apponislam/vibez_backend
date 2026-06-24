@@ -5,6 +5,7 @@ import { UserModel } from "../auth/auth.model";
 import { getLatLngFromAddress } from "../../../utils/googleMaps";
 import { FavoriteModel } from "../favorite/favorite.model";
 import { DealModel } from "../deal/deal.model";
+import { SavedDealModel } from "../saved-deal/saved-deal.model";
 
 const createRestaurant = async (data: any, ownerId: string) => {
     let address = data.restaurantAddress;
@@ -113,6 +114,13 @@ const getAllRestaurants = async (filters: any = {}, userId?: string) => {
         });
     }
 
+    // Get user's saved deals if userId is present
+    let savedDealIds = new Set<string>();
+    if (userId) {
+        const savedDeals = await SavedDealModel.find({ userId });
+        savedDealIds = new Set(savedDeals.map((sd) => sd.dealId.toString()));
+    }
+
     // Fetch and attach 2 recent active deals for each restaurant
     resultData = await Promise.all(
         resultData.map(async (restaurantObj: any) => {
@@ -124,9 +132,17 @@ const getAllRestaurants = async (filters: any = {}, userId?: string) => {
                 .sort({ createdAt: -1 })
                 .limit(2);
 
+            const formattedDeals = recentDeals.map((deal) => {
+                const dealObj = deal.toObject ? deal.toObject() : deal;
+                return {
+                    ...dealObj,
+                    isSaved: userId ? savedDealIds.has(dealObj._id.toString()) : false,
+                };
+            });
+
             return {
                 ...restaurantObj,
-                recentDeals,
+                recentDeals: formattedDeals,
             };
         })
     );
@@ -202,9 +218,17 @@ const getAllRestaurantsForAdmin = async (filters: any = {}) => {
                 .sort({ createdAt: -1 })
                 .limit(2);
 
+            const formattedDeals = recentDeals.map((deal) => {
+                const dealObj = deal.toObject ? deal.toObject() : deal;
+                return {
+                    ...dealObj,
+                    isSaved: false,
+                };
+            });
+
             return {
                 ...restaurantObj,
-                recentDeals,
+                recentDeals: formattedDeals,
             };
         })
     );
@@ -248,10 +272,24 @@ const getRestaurantById = async (id: string, userId?: string) => {
         .sort({ createdAt: -1 })
         .limit(2);
 
+    let savedDealIds = new Set<string>();
+    if (userId) {
+        const savedDeals = await SavedDealModel.find({ userId });
+        savedDealIds = new Set(savedDeals.map((sd) => sd.dealId.toString()));
+    }
+
+    const formattedDeals = recentDeals.map((deal) => {
+        const dealObj = deal.toObject ? deal.toObject() : deal;
+        return {
+            ...dealObj,
+            isSaved: userId ? savedDealIds.has(dealObj._id.toString()) : false,
+        };
+    });
+
     return {
         ...restaurantObj,
         isFavorite,
-        recentDeals,
+        recentDeals: formattedDeals,
     };
 };
 
@@ -268,9 +306,17 @@ const getRestaurantByOwner = async (ownerId: string) => {
         .sort({ createdAt: -1 })
         .limit(2);
 
+    const formattedDeals = recentDeals.map((deal) => {
+        const dealObj = deal.toObject ? deal.toObject() : deal;
+        return {
+            ...dealObj,
+            isSaved: false,
+        };
+    });
+
     return {
         ...restaurantObj,
-        recentDeals,
+        recentDeals: formattedDeals,
     };
 };
 
