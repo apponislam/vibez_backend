@@ -49,7 +49,8 @@ const deleteShorts = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getRandomShorts = catchAsync(async (req: Request, res: Response) => {
-    const result = await shortsServices.getRandomShorts(req.query);
+    const userId = req.user?._id?.toString();
+    const result = await shortsServices.getRandomShorts(req.query, userId);
 
     sendResponse(res, {
         statusCode: httpStatus.OK,

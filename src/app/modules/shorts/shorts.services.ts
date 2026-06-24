@@ -3,6 +3,7 @@ import { Types } from "mongoose";
 import ApiError from "../../../errors/ApiError";
 import { ShortsModel } from "./shorts.model";
 import { restaurantServices } from "../restaurant/restaurant.services";
+import { FavoriteModel } from "../favorite/favorite.model";
 
 // Upload or update restaurant short
 const uploadShorts = async (userId: string, shortUrl: string) => {
@@ -67,7 +68,7 @@ const deleteShorts = async (userId: string) => {
 };
 
 // Get random shorts with pagination (for scroll system)
-const getRandomShorts = async (filters: any = {}) => {
+const getRandomShorts = async (filters: any = {}, userId?: string) => {
     const page = parseInt(filters.page as string) || 1;
     const limit = parseInt(filters.limit as string) || 10;
     const skip = (page - 1) * limit;
@@ -101,12 +102,26 @@ const getRandomShorts = async (filters: any = {}) => {
         ShortsModel.countDocuments({ isActive: true }),
     ]);
 
+    // Check favorites if userId is provided
+    const favoriteRestaurantIds = new Set<string>();
+    if (userId) {
+        const favorites = await FavoriteModel.find({ userId });
+        favorites.forEach((fav) => {
+            favoriteRestaurantIds.add(fav.restaurantId.toString());
+        });
+    }
+
+    const formattedShorts = shorts.map((short: any) => ({
+        ...short,
+        isSaved: favoriteRestaurantIds.has(short.restaurantId._id.toString()),
+    }));
+
     const totalPages = Math.ceil(total / limit);
     const hasNext = page < totalPages;
     const hasPrev = page > 1;
 
     return {
-        data: shorts,
+        data: formattedShorts,
         meta: {
             page,
             limit,

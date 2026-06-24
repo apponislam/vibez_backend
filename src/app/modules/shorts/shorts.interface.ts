@@ -5,6 +5,8 @@ export interface IShorts {
     restaurantId: Types.ObjectId;
     shortUrl: string;
     isActive: boolean;
+    shareCount: number;
+    saveCount: number;
     createdAt?: Date;
     updatedAt?: Date;
 }

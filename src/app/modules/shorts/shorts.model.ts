@@ -16,6 +16,8 @@ const ShortsSchema = new Schema<ShortsDocument>(
             required: true,
         },
         isActive: { type: Boolean, default: true },
+        shareCount: { type: Number, default: 0 },
+        saveCount: { type: Number, default: 0 },
     },
     {
         timestamps: true,
