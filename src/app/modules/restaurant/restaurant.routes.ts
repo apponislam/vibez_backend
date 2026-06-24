@@ -15,7 +15,7 @@ router.get("/:id", checkAuth, restaurantControllers.getRestaurantById);
 // Protected routes (require auth)
 router.get("/my/restaurant", auth, restaurantControllers.getMyRestaurant);
 router.post("/", auth, authorize(["ADMIN", "RESTAURANT_OWNER"]), uploadRestaurantImage, restaurantControllers.createRestaurant);
-router.patch("/:id", auth, authorize(["ADMIN", "RESTAURANT_OWNER"]), uploadRestaurantImage, restaurantControllers.updateRestaurant);
+router.patch("/my/restaurant", auth, authorize(["RESTAURANT_OWNER"]), uploadRestaurantImage, restaurantControllers.updateRestaurant);
 router.delete("/:id", auth, authorize(["ADMIN", "RESTAURANT_OWNER"]), restaurantControllers.deleteRestaurant);
 
 // Admin only routes for restaurant approval

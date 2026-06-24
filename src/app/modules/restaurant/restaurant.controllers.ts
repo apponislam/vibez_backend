@@ -1,4 +1,5 @@
 import httpStatus from "http-status";
+import ApiError from "../../../errors/ApiError";
 import catchAsync from "../../../utils/catchAsync";
 import sendResponse from "../../../utils/sendResponse";
 import { Request, Response } from "express";
@@ -72,7 +73,11 @@ const getMyRestaurant = catchAsync(async (req: Request, res: Response) => {
 
 const updateRestaurant = catchAsync(async (req: Request, res: Response) => {
     const data = parseRequestBody(req);
-    const result = await restaurantServices.updateRestaurant(req.params.id as string, data, req.user._id as string);
+    const restaurantId = (req.user as any).restaurantId?.toString();
+    if (!restaurantId) {
+        throw new ApiError(httpStatus.NOT_FOUND, "No restaurant associated with this user");
+    }
+    const result = await restaurantServices.updateRestaurant(restaurantId, data, req.user._id as string);
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
