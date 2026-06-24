@@ -144,7 +144,7 @@ const getAllRestaurants = async (filters: any = {}, userId?: string) => {
                 ...restaurantObj,
                 recentDeals: formattedDeals,
             };
-        })
+        }),
     );
 
     const totalPages = Math.ceil(total / limit);
@@ -230,7 +230,7 @@ const getAllRestaurantsForAdmin = async (filters: any = {}) => {
                 ...restaurantObj,
                 recentDeals: formattedDeals,
             };
-        })
+        }),
     );
 
     const totalPages = Math.ceil(total / limit);

@@ -44,13 +44,7 @@ const getAllDeals = async (filters: any = {}) => {
     const limit = parseInt(filters.limit as string) || 10;
     const skip = (page - 1) * limit;
 
-    const [deals, total] = await Promise.all([
-        DealModel.find(query)
-            .populate("restaurantId", "restaurantName restaurantImage restaurantDescription")
-            .skip(skip)
-            .limit(limit),
-        DealModel.countDocuments(query),
-    ]);
+    const [deals, total] = await Promise.all([DealModel.find(query).populate("restaurantId", "restaurantName restaurantImage restaurantDescription").skip(skip).limit(limit), DealModel.countDocuments(query)]);
 
     const totalPages = Math.ceil(total / limit);
     const hasNext = page < totalPages;
@@ -79,14 +73,7 @@ const getActiveDeals = async (filters: any = {}, userId?: string) => {
     const limit = parseInt(filters.limit as string) || 10;
     const skip = (page - 1) * limit;
 
-    const [deals, total] = await Promise.all([
-        DealModel.find(query)
-            .populate("restaurantId", "restaurantName restaurantImage restaurantDescription")
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit),
-        DealModel.countDocuments(query),
-    ]);
+    const [deals, total] = await Promise.all([DealModel.find(query).populate("restaurantId", "restaurantName restaurantImage restaurantDescription").sort({ createdAt: -1 }).skip(skip).limit(limit), DealModel.countDocuments(query)]);
 
     let formattedDeals = deals.map((deal) => (deal.toObject ? deal.toObject() : deal));
 
