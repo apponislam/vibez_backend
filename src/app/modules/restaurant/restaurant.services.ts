@@ -366,6 +366,24 @@ const updateRestaurant = async (id: string, data: any, ownerId: string) => {
         data.restaurantAddress = mergedAddress;
     }
 
+    // Auto-derive openTime / closeTime from slots
+    if (Array.isArray(data.restaurantOpenHours)) {
+        data.restaurantOpenHours = data.restaurantOpenHours.map((hour: any) => {
+            if (!hour.isOpen || !Array.isArray(hour.slots) || hour.slots.length === 0) {
+                return hour;
+            }
+            const lunch = hour.slots.find((s: any) => s.type === "LUNCH");
+            const dinner = hour.slots.find((s: any) => s.type === "DINNER");
+
+            // openTime = lunch start (or first slot start)
+            hour.openTime = lunch ? lunch.openTime : hour.slots[0].openTime;
+            // closeTime = dinner end if exists, otherwise lunch end
+            hour.closeTime = dinner ? dinner.closeTime : lunch ? lunch.closeTime : hour.slots[hour.slots.length - 1].closeTime;
+
+            return hour;
+        });
+    }
+
     const restaurant = await RestaurantModel.findOneAndUpdate({ _id: id, restaurantOwner: ownerId }, { $set: data }, { new: true, runValidators: true }).populate("restaurantOwner", "name email phone");
 
     return restaurant;
