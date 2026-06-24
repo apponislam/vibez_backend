@@ -61,10 +61,34 @@ const getRandomShorts = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const toggleSaveShorts = catchAsync(async (req: Request, res: Response) => {
+    const result = await shortsServices.toggleSaveShorts(req.user._id as string, req.params.shortId as string);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: result.message,
+        data: result,
+    });
+});
+
+const incrementShareCount = catchAsync(async (req: Request, res: Response) => {
+    const result = await shortsServices.incrementShareCount(req.params.shortId as string);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Share count updated successfully",
+        data: result,
+    });
+});
+
 export const shortsControllers = {
     uploadShorts,
     getShortsByRestaurant,
     getMyShorts,
     deleteShorts,
     getRandomShorts,
+    toggleSaveShorts,
+    incrementShareCount,
 };

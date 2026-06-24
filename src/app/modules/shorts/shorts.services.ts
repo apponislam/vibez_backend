@@ -133,10 +133,58 @@ const getRandomShorts = async (filters: any = {}, userId?: string) => {
     };
 };
 
+const toggleSaveShorts = async (userId: string, shortId: string) => {
+    const short = await ShortsModel.findById(shortId);
+    if (!short) {
+        throw new ApiError(httpStatus.NOT_FOUND, "Short not found");
+    }
+
+    const filter = {
+        userId: new Types.ObjectId(userId),
+        restaurantId: short.restaurantId,
+    };
+
+    const exists = await FavoriteModel.findOne(filter);
+
+    if (exists) {
+        // Remove from favorites
+        await FavoriteModel.deleteOne(filter);
+
+        // Decrement saveCount
+        short.saveCount = Math.max(0, (short.saveCount || 0) - 1);
+        await short.save();
+
+        return { isSaved: false, saveCount: short.saveCount, message: "Short unsaved successfully" };
+    } else {
+        // Add to favorites
+        await FavoriteModel.create(filter);
+
+        // Increment saveCount
+        short.saveCount = (short.saveCount || 0) + 1;
+        await short.save();
+
+        return { isSaved: true, saveCount: short.saveCount, message: "Short saved successfully" };
+    }
+};
+
+const incrementShareCount = async (shortId: string) => {
+    const short = await ShortsModel.findByIdAndUpdate(
+        shortId,
+        { $inc: { shareCount: 1 } },
+        { new: true }
+    );
+    if (!short) {
+        throw new ApiError(httpStatus.NOT_FOUND, "Short not found");
+    }
+    return { shareCount: short.shareCount };
+};
+
 export const shortsServices = {
     uploadShorts,
     getShortsByRestaurant,
     getMyShorts,
     deleteShorts,
     getRandomShorts,
+    toggleSaveShorts,
+    incrementShareCount,
 };
