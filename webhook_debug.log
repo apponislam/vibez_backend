@@ -21,3 +21,4 @@
 [2026-06-24T18:46:33.454Z] Webhook event received | Data: {"type":"coupon.created","id":"evt_1TlvolBAT7h26LydbYVBbsiS"}
 [2026-06-24T18:46:45.360Z] Webhook event received | Data: {"type":"coupon.updated","id":"evt_1TlvoxBAT7h26LydLPiH3jvs"}
 [2026-06-24T18:46:52.842Z] Webhook event received | Data: {"type":"coupon.deleted","id":"evt_1Tlvp4BAT7h26LydQFbJXymZ"}
+[2026-06-24T20:55:01.347Z] Webhook event received | Data: {"type":"checkout.session.expired","id":"evt_1Tlxp4BAT7h26LydQUXJxY3H"}

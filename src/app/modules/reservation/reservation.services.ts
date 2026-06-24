@@ -7,6 +7,7 @@ import { DealModel } from "../deal/deal.model";
 import { DayOfWeek, MealTimeType } from "../deal/deal.interface";
 import { restaurantServices } from "../restaurant/restaurant.services";
 import { SavedDealModel } from "../saved-deal/saved-deal.model";
+import { ReviewModel } from "../review/review.model";
 
 const createReservation = async (data: Partial<IReservation>, userId: string) => {
     const today = new Date();
@@ -150,7 +151,12 @@ const getReservationById = async (id: string) => {
         .populate("userId", "name email phone profileImage")
         .populate("dealId");
     if (!reservation) throw new ApiError(httpStatus.NOT_FOUND, "Reservation not found");
-    return reservation;
+
+    const review = await ReviewModel.exists({ reservationId: reservation._id, isDeleted: false });
+    const reservationObj = reservation.toObject() as any;
+    reservationObj.isReviewed = !!review;
+
+    return reservationObj;
 };
 
 const getMyReservations = async (userId: string, filters: any = {}) => {
@@ -166,12 +172,23 @@ const getMyReservations = async (userId: string, filters: any = {}) => {
 
     const [reservations, total] = await Promise.all([ReservationModel.find(query).populate("restaurantId dealId").sort({ reservationDate: -1, reservationTime: -1 }).skip(skip).limit(limit), ReservationModel.countDocuments(query)]);
 
+    // Attach isReviewed flag to each reservation
+    const reservationIds = reservations.map((r) => r._id);
+    const reviews = await ReviewModel.find({ reservationId: { $in: reservationIds }, isDeleted: false }).select("reservationId");
+    const reviewedIds = new Set(reviews.map((r) => r.reservationId?.toString()));
+
+    const formattedReservations = reservations.map((r) => {
+        const obj = r.toObject() as any;
+        obj.isReviewed = reviewedIds.has(r._id.toString());
+        return obj;
+    });
+
     const totalPages = Math.ceil(total / limit);
     const hasNext = page < totalPages;
     const hasPrev = page > 1;
 
     return {
-        data: reservations,
+        data: formattedReservations,
         meta: {
             page,
             limit,

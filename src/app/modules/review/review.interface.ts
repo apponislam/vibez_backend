@@ -6,6 +6,7 @@ export interface IReview {
     userId: Types.ObjectId;
     rating: number;
     comment?: string;
+    reservationId?: Types.ObjectId;
     images?: string[];
     isActive: boolean;
     isDeleted: boolean;

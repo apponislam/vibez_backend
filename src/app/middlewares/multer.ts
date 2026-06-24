@@ -35,14 +35,14 @@ const videoFileFilter = (_req: Request, file: Express.Multer.File, cb: FileFilte
 const imageUpload = multer({
     storage,
     fileFilter: imageFileFilter,
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit per image
+    limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit per image (compressed to WebP on save)
 });
 
 // Multer setup for videos
 const videoUpload = multer({
     storage,
     fileFilter: videoFileFilter,
-    limits: { fileSize: 100 * 1024 * 1024 }, // 100MB limit per video
+    limits: { fileSize: 500 * 1024 * 1024 }, // 500MB limit per video
 });
 
 // Helper to generate unique filename for images

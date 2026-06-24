@@ -31,6 +31,11 @@ const ReviewSchema = new Schema<ReviewDocument>(
         },
         isActive: { type: Boolean, default: true },
         isDeleted: { type: Boolean, default: false },
+        reservationId: {
+            type: Schema.Types.ObjectId,
+            ref: "Reservation",
+            default: null,
+        },
     },
     {
         timestamps: true,
