@@ -6,6 +6,7 @@ import { getLatLngFromAddress } from "../../../utils/googleMaps";
 import { FavoriteModel } from "../favorite/favorite.model";
 import { DealModel } from "../deal/deal.model";
 import { SavedDealModel } from "../saved-deal/saved-deal.model";
+import { ReviewModel } from "../review/review.model";
 
 const createRestaurant = async (data: any, ownerId: string) => {
     let address = data.restaurantAddress;
@@ -147,6 +148,20 @@ const getAllRestaurants = async (filters: any = {}, userId?: string) => {
         }),
     );
 
+    // Batch fetch average ratings for all restaurants
+    const restaurantIds = resultData.map((r: any) => r._id);
+    const ratingAggregates = await ReviewModel.aggregate([
+        { $match: { restaurantId: { $in: restaurantIds }, isActive: true, isDeleted: false } },
+        { $group: { _id: "$restaurantId", averageRating: { $avg: "$rating" }, totalReviews: { $sum: 1 } } },
+    ]);
+    const ratingMap = new Map(ratingAggregates.map((r: any) => [r._id.toString(), r]));
+
+    resultData = resultData.map((restaurantObj: any) => ({
+        ...restaurantObj,
+        averageRating: parseFloat((ratingMap.get(restaurantObj._id.toString())?.averageRating || 0).toFixed(1)),
+        totalReviews: ratingMap.get(restaurantObj._id.toString())?.totalReviews || 0,
+    }));
+
     const totalPages = Math.ceil(total / limit);
     const hasNext = page < totalPages;
     const hasPrev = page > 1;
@@ -286,9 +301,18 @@ const getRestaurantById = async (id: string, userId?: string) => {
         };
     });
 
+    const ratingAggregate = await ReviewModel.aggregate([
+        { $match: { restaurantId: restaurant._id, isActive: true, isDeleted: false } },
+        { $group: { _id: null, averageRating: { $avg: "$rating" }, totalReviews: { $sum: 1 } } },
+    ]);
+    const averageRating = parseFloat((ratingAggregate[0]?.averageRating || 0).toFixed(1));
+    const totalReviews = ratingAggregate[0]?.totalReviews || 0;
+
     return {
         ...restaurantObj,
         isFavorite,
+        averageRating,
+        totalReviews,
         recentDeals: formattedDeals,
     };
 };

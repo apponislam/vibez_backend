@@ -21,7 +21,7 @@ const getAllReviews = async (filters: any = {}) => {
     const skip = (page - 1) * limit;
 
     const [reviews, total] = await Promise.all([
-        ReviewModel.find(query).populate("restaurantId").populate("userId", "name email").skip(skip).limit(limit),
+        ReviewModel.find(query).populate("restaurantId", "restaurantName restaurantImage").populate("userId", "name email profileImage").skip(skip).limit(limit),
         ReviewModel.countDocuments(query)
     ]);
 
@@ -47,12 +47,12 @@ const getActiveReviews = async (restaurantId?: string) => {
     if (restaurantId) {
         filter.restaurantId = restaurantId;
     }
-    const reviews = await ReviewModel.find(filter).populate("restaurantId").populate("userId", "name email").sort({ createdAt: -1 });
+    const reviews = await ReviewModel.find(filter).populate("restaurantId", "restaurantName restaurantImage").populate("userId", "name email profileImage").sort({ createdAt: -1 });
     return reviews;
 };
 
 const getReviewById = async (reviewId: string) => {
-    const review = await ReviewModel.findOne({ _id: reviewId, isDeleted: false }).populate("restaurantId").populate("userId", "name email");
+    const review = await ReviewModel.findOne({ _id: reviewId, isDeleted: false }).populate("restaurantId", "restaurantName restaurantImage").populate("userId", "name email profileImage");
     if (!review) throw new ApiError(httpStatus.NOT_FOUND, "Review not found");
     return review;
 };
