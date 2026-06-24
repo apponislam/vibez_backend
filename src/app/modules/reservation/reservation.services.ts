@@ -145,7 +145,10 @@ const getAllReservations = async (filters: any = {}) => {
 };
 
 const getReservationById = async (id: string) => {
-    const reservation = await ReservationModel.findById(id).populate("restaurantId userId dealId");
+    const reservation = await ReservationModel.findById(id)
+        .populate("restaurantId", "restaurantName restaurantImage restaurantAddress restaurantType cuisineType")
+        .populate("userId", "name email phone profileImage")
+        .populate("dealId");
     if (!reservation) throw new ApiError(httpStatus.NOT_FOUND, "Reservation not found");
     return reservation;
 };
