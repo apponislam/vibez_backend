@@ -108,7 +108,7 @@ export const uploadReviewImages = (req: Request, res: Response, next: NextFuncti
                     // Convert to webp
                     await sharp(file.buffer).webp({ quality: 80 }).toFile(outputPath);
 
-                    processedFiles.push(newName);
+                    processedFiles.push(`/uploads/review-images/${newName}`);
                 }
 
                 // Add processed filenames to request body

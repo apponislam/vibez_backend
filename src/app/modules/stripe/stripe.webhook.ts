@@ -97,10 +97,7 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
 
                     // Increment coupon redemption counter if a coupon was used
                     if (coupon) {
-                        await CouponModel.findOneAndUpdate(
-                            { couponId: coupon },
-                            { $inc: { timesRedeemed: 1 } }
-                        );
+                        await CouponModel.findOneAndUpdate({ couponId: coupon }, { $inc: { timesRedeemed: 1 } });
                     }
                 }
                 break;
@@ -177,86 +174,83 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                                 logDebug("UserModel updated successfully", { userFound: !!updatedUser });
 
                                 if (coupon) {
-                                    await CouponModel.findOneAndUpdate(
-                                        { couponId: coupon },
-                                        { $inc: { timesRedeemed: 1 } }
-                                    );
+                                    await CouponModel.findOneAndUpdate({ couponId: coupon }, { $inc: { timesRedeemed: 1 } });
                                 }
                             }
                         } else {
                             logDebug("Skipped subscription creation: No userId in stripeSub metadata");
                         }
                     } else {
-                    // Extend end date
-                    let newEndDate = new Date(userSubscription.endDate);
-                    // Get plan to know duration
-                    const plan = await SubscriptionPlanModel.findById(userSubscription.subscriptionPlanId);
-                    if (plan) {
-                        if (plan.duration === "MONTHLY") {
-                            newEndDate.setMonth(newEndDate.getMonth() + 1);
-                        } else if (plan.duration === "HALF_YEARLY") {
-                            newEndDate.setMonth(newEndDate.getMonth() + 6);
-                        } else if (plan.duration === "YEARLY") {
-                            newEndDate.setFullYear(newEndDate.getFullYear() + 1);
+                        // Extend end date
+                        let newEndDate = new Date(userSubscription.endDate);
+                        // Get plan to know duration
+                        const plan = await SubscriptionPlanModel.findById(userSubscription.subscriptionPlanId);
+                        if (plan) {
+                            if (plan.duration === "MONTHLY") {
+                                newEndDate.setMonth(newEndDate.getMonth() + 1);
+                            } else if (plan.duration === "HALF_YEARLY") {
+                                newEndDate.setMonth(newEndDate.getMonth() + 6);
+                            } else if (plan.duration === "YEARLY") {
+                                newEndDate.setFullYear(newEndDate.getFullYear() + 1);
+                            }
+                            await UserSubscriptionModel.findByIdAndUpdate(userSubscription._id, {
+                                $set: {
+                                    endDate: newEndDate,
+                                    status: UserSubscriptionStatus.ACTIVE,
+                                },
+                            });
+                            // Update User model as well
+                            await UserModel.findByIdAndUpdate(userSubscription.userId, {
+                                $set: {
+                                    subscriptionEndDate: newEndDate,
+                                },
+                            });
                         }
-                        await UserSubscriptionModel.findByIdAndUpdate(userSubscription._id, {
-                            $set: {
-                                endDate: newEndDate,
-                                status: UserSubscriptionStatus.ACTIVE,
-                            },
-                        });
-                        // Update User model as well
-                        await UserModel.findByIdAndUpdate(userSubscription.userId, {
-                            $set: {
-                                subscriptionEndDate: newEndDate,
-                            },
-                        });
                     }
                 }
+                break;
             }
-            break;
-        }
-        case "invoice.payment_failed": {
-            const invoice = event.data.object;
-            console.log("Invoice payment failed:", invoice);
+            case "invoice.payment_failed": {
+                const invoice = event.data.object;
+                console.log("Invoice payment failed:", invoice);
 
-            const subscriptionId = (invoice as any).subscription || (invoice as any).parent?.subscription_details?.subscription || (invoice as any).lines?.data?.[0]?.parent?.subscription_item_details?.subscription;
+                const subscriptionId = (invoice as any).subscription || (invoice as any).parent?.subscription_details?.subscription || (invoice as any).lines?.data?.[0]?.parent?.subscription_item_details?.subscription;
 
-            // Update user subscription status
-            const userSubscription = await UserSubscriptionModel.findOne({
-                stripeSubscriptionId: subscriptionId,
-            });
-            if (userSubscription) {
-                await UserSubscriptionModel.findByIdAndUpdate(userSubscription._id, {
-                    $set: { status: UserSubscriptionStatus.CANCELLED },
+                // Update user subscription status
+                const userSubscription = await UserSubscriptionModel.findOne({
+                    stripeSubscriptionId: subscriptionId,
                 });
-            }
-            break;
-        }
-        case "customer.subscription.updated": {
-            const subscription = event.data.object;
-            console.log("Subscription updated:", subscription);
-
-            // Update user subscription
-            const userSubscription = await UserSubscriptionModel.findOne({
-                stripeSubscriptionId: (subscription as any).id,
-            });
-            if (userSubscription) {
-                let newStatus = UserSubscriptionStatus.ACTIVE;
-                if ((subscription as any).cancel_at_period_end || (subscription as any).canceled_at) {
-                    newStatus = UserSubscriptionStatus.CANCELLED;
-                } else if ((subscription as any).status === "past_due" || (subscription as any).status === "unpaid") {
-                    newStatus = UserSubscriptionStatus.CANCELLED;
+                if (userSubscription) {
+                    await UserSubscriptionModel.findByIdAndUpdate(userSubscription._id, {
+                        $set: { status: UserSubscriptionStatus.CANCELLED },
+                    });
                 }
-
-                await UserSubscriptionModel.findByIdAndUpdate(userSubscription._id, { $set: { status: newStatus } });
+                break;
             }
-            break;
+            case "customer.subscription.updated": {
+                const subscription = event.data.object;
+                console.log("Subscription updated:", subscription);
+
+                // Update user subscription
+                const userSubscription = await UserSubscriptionModel.findOne({
+                    stripeSubscriptionId: (subscription as any).id,
+                });
+                if (userSubscription) {
+                    let newStatus = UserSubscriptionStatus.ACTIVE;
+                    if ((subscription as any).cancel_at_period_end || (subscription as any).canceled_at) {
+                        newStatus = UserSubscriptionStatus.CANCELLED;
+                    } else if ((subscription as any).status === "past_due" || (subscription as any).status === "unpaid") {
+                        newStatus = UserSubscriptionStatus.CANCELLED;
+                    }
+
+                    await UserSubscriptionModel.findByIdAndUpdate(userSubscription._id, { $set: { status: newStatus } });
+                }
+                break;
+            }
+            default: {
+                console.log(`Unhandled event type ${event.type}`);
+            }
         }
-        default: {
-            console.log(`Unhandled event type ${event.type}`);
-        }
-    }
     } catch (err: any) {
         logDebug("ERROR inside webhook handler", { message: err.message, stack: err.stack });
         throw err;
