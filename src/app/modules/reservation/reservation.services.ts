@@ -170,7 +170,15 @@ const getMyReservations = async (userId: string, filters: any = {}) => {
     const limit = parseInt(filters.limit as string) || 10;
     const skip = (page - 1) * limit;
 
-    const [reservations, total] = await Promise.all([ReservationModel.find(query).populate("restaurantId dealId").sort({ reservationDate: -1, reservationTime: -1 }).skip(skip).limit(limit), ReservationModel.countDocuments(query)]);
+    const [reservations, total] = await Promise.all([
+        ReservationModel.find(query)
+            .populate("restaurantId", "restaurantName restaurantImage restaurantType cuisineType")
+            .populate("dealId")
+            .sort({ reservationDate: -1, reservationTime: -1 })
+            .skip(skip)
+            .limit(limit),
+        ReservationModel.countDocuments(query),
+    ]);
 
     // Attach isReviewed flag to each reservation
     const reservationIds = reservations.map((r) => r._id);
