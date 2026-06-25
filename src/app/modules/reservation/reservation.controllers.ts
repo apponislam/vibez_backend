@@ -88,6 +88,17 @@ const getReservationStats = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const getOwnerStats = catchAsync(async (req: Request, res: Response) => {
+    const result = await reservationServices.getOwnerStats(req.user as any);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Owner reservation statistics retrieved successfully",
+        data: result,
+    });
+});
+
 export const reservationControllers = {
     createReservation,
     getAllReservations,
@@ -97,4 +108,5 @@ export const reservationControllers = {
     updateReservationStatus,
     deleteReservation,
     getReservationStats,
+    getOwnerStats,
 };

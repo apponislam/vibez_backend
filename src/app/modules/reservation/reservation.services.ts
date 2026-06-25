@@ -362,6 +362,66 @@ const getReservationStats = async (user: { _id: string; role: string; restaurant
     };
 };
 
+const getOwnerStats = async (user: { _id: string; role: string; restaurantId?: any }) => {
+    let restaurantId = user.restaurantId;
+
+    if (!restaurantId && user.role === "RESTAURANT_OWNER") {
+        const restaurant = await restaurantServices.getRestaurantByOwner(user._id);
+        if (restaurant) {
+            restaurantId = restaurant._id;
+        }
+    }
+
+    if (!restaurantId) {
+        throw new ApiError(httpStatus.FORBIDDEN, "User is not associated with any restaurant");
+    }
+
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const matchQuery: any = {
+        restaurantId: new Types.ObjectId(restaurantId),
+        reservationDate: { $gte: startOfDay, $lte: endOfDay },
+    };
+
+    // 1. Total Bookings Today (excluding cancelled)
+    const totalBookingsToday = await ReservationModel.countDocuments({
+        ...matchQuery,
+        status: { $ne: ReservationStatus.CANCELLED },
+    });
+
+    // 2. Upcoming Guests (sum partySize for UPCOMING status today)
+    const upcomingGuestsResult = await ReservationModel.aggregate([
+        {
+            $match: {
+                ...matchQuery,
+                status: ReservationStatus.UPCOMING,
+            },
+        },
+        {
+            $group: {
+                _id: null,
+                totalGuests: { $sum: "$partySize" },
+            },
+        },
+    ]);
+    const upcomingGuests = upcomingGuestsResult[0]?.totalGuests || 0;
+
+    // 3. Completed Bookings (count status COMPLETED today)
+    const completedBookings = await ReservationModel.countDocuments({
+        ...matchQuery,
+        status: ReservationStatus.COMPLETED,
+    });
+
+    return {
+        totalBookingsToday,
+        upcomingGuests,
+        completedBookings,
+    };
+};
+
 export const reservationServices = {
     createReservation,
     getAllReservations,
@@ -371,4 +431,5 @@ export const reservationServices = {
     updateReservationStatus,
     deleteReservation,
     getReservationStats,
+    getOwnerStats,
 };
