@@ -138,7 +138,16 @@ const getAllReservations = async (user: { _id: string; role: string; restaurantI
     const limit = parseInt(filters.limit as string) || 10;
     const skip = (page - 1) * limit;
 
-    const [reservations, total] = await Promise.all([ReservationModel.find(query).populate("restaurantId userId dealId").sort({ reservationDate: 1, reservationTime: 1 }).skip(skip).limit(limit), ReservationModel.countDocuments(query)]);
+    const [reservations, total] = await Promise.all([
+        ReservationModel.find(query)
+            .populate("restaurantId", "restaurantName restaurantImage restaurantAddress restaurantType cuisineType")
+            .populate("userId", "name email phone profileImage")
+            .populate("dealId")
+            .sort({ reservationDate: 1, reservationTime: 1 })
+            .skip(skip)
+            .limit(limit),
+        ReservationModel.countDocuments(query)
+    ]);
 
     const totalPages = Math.ceil(total / limit);
     const hasNext = page < totalPages;
