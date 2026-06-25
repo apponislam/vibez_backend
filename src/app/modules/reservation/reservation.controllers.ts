@@ -16,7 +16,7 @@ const createReservation = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllReservations = catchAsync(async (req: Request, res: Response) => {
-    const result = await reservationServices.getAllReservations(req.query);
+    const result = await reservationServices.getAllReservations(req.user as any, req.query);
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
@@ -58,10 +58,7 @@ const updateReservation = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateReservationStatus = catchAsync(async (req: Request, res: Response) => {
-    const result = await reservationServices.updateReservationStatus(
-        req.params.id as string,
-        req.body.status as ReservationStatus
-    );
+    const result = await reservationServices.updateReservationStatus(req.params.id as string, req.body.status as ReservationStatus, req.user as any);
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
@@ -81,10 +78,7 @@ const deleteReservation = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getReservationStats = catchAsync(async (req: Request, res: Response) => {
-    const result = await reservationServices.getReservationStats(
-        { _id: req.user._id, role: req.user.role },
-        req.query
-    );
+    const result = await reservationServices.getReservationStats(req.user as any, req.query);
 
     sendResponse(res, {
         statusCode: httpStatus.OK,

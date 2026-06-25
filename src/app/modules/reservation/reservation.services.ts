@@ -99,10 +99,22 @@ const createReservation = async (data: Partial<IReservation>, userId: string) =>
     return reservation;
 };
 
-const getAllReservations = async (filters: any = {}) => {
+const getAllReservations = async (user: { _id: string; role: string; restaurantId?: any }, filters: any = {}) => {
     let query: any = {};
 
-    if (filters.restaurantId) {
+    if (user.role === "RESTAURANT_OWNER" || user.role === "STAFF") {
+        let restaurantId = user.restaurantId;
+        if (!restaurantId && user.role === "RESTAURANT_OWNER") {
+            const restaurant = await restaurantServices.getRestaurantByOwner(user._id);
+            if (restaurant) {
+                restaurantId = restaurant._id;
+            }
+        }
+        if (!restaurantId) {
+            throw new ApiError(httpStatus.FORBIDDEN, "User is not associated with any restaurant");
+        }
+        query.restaurantId = restaurantId;
+    } else if (filters.restaurantId) {
         query.restaurantId = filters.restaurantId;
     }
     if (filters.userId) {
@@ -227,10 +239,26 @@ const updateReservation = async (id: string, data: Partial<IReservation>, userId
     return reservation;
 };
 
-const updateReservationStatus = async (id: string, status: ReservationStatus) => {
-    const reservation = await ReservationModel.findByIdAndUpdate(id, { $set: { status } }, { new: true, runValidators: true }).populate("restaurantId userId");
+const updateReservationStatus = async (id: string, status: ReservationStatus, user: { _id: string; role: string; restaurantId?: any }) => {
+    let query: any = { _id: id };
 
-    if (!reservation) throw new ApiError(httpStatus.NOT_FOUND, "Reservation not found");
+    if (user.role === "RESTAURANT_OWNER" || user.role === "STAFF") {
+        let restaurantId = user.restaurantId;
+        if (!restaurantId && user.role === "RESTAURANT_OWNER") {
+            const restaurant = await restaurantServices.getRestaurantByOwner(user._id);
+            if (restaurant) {
+                restaurantId = restaurant._id;
+            }
+        }
+        if (!restaurantId) {
+            throw new ApiError(httpStatus.FORBIDDEN, "User is not associated with any restaurant");
+        }
+        query.restaurantId = restaurantId;
+    }
+
+    const reservation = await ReservationModel.findOneAndUpdate(query, { $set: { status } }, { new: true, runValidators: true }).populate("restaurantId userId");
+
+    if (!reservation) throw new ApiError(httpStatus.NOT_FOUND, "Reservation not found or not authorized");
     return reservation;
 };
 
@@ -240,15 +268,21 @@ const deleteReservation = async (id: string, userId: string) => {
     return { message: "Reservation cancelled successfully" };
 };
 
-const getReservationStats = async (user: { _id: string; role: string }, queryParams: any) => {
+const getReservationStats = async (user: { _id: string; role: string; restaurantId?: any }, queryParams: any) => {
     let restaurantId = queryParams.restaurantId;
 
-    if (user.role === "RESTAURANT_OWNER" || user.role === "MANAGER") {
-        const restaurant = await restaurantServices.getRestaurantByOwner(user._id);
-        if (!restaurant) {
-            throw new ApiError(httpStatus.NOT_FOUND, "Restaurant not found for this user");
+    if (user.role === "RESTAURANT_OWNER" || user.role === "STAFF" || user.role === "MANAGER") {
+        restaurantId = user.restaurantId;
+        if (!restaurantId && user.role === "RESTAURANT_OWNER") {
+            const restaurant = await restaurantServices.getRestaurantByOwner(user._id);
+            if (restaurant) {
+                restaurantId = restaurant._id;
+            }
         }
-        restaurantId = restaurant._id.toString();
+        if (!restaurantId) {
+            throw new ApiError(httpStatus.FORBIDDEN, "User is not associated with any restaurant");
+        }
+        restaurantId = restaurantId.toString();
     }
 
     if (!restaurantId) {
