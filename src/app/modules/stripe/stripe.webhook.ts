@@ -7,6 +7,7 @@ import { SubscriptionPlanModel } from "../subscription/subscription.model";
 import { UserSubscriptionStatus } from "../subscription/subscription.interface";
 import { UserModel } from "../auth/auth.model";
 import { CouponModel } from "../coupon/coupon.model";
+import { userSubscriptionServices } from "../usersubscription/usersubscription.services";
 
 const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
     const sig = req.headers["stripe-signature"] as string;
@@ -53,6 +54,9 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                             referredBy = referrer._id;
                         }
                     }
+
+                    // Cancel any previous active subscriptions first
+                    await userSubscriptionServices.cancelPreviousActiveSubscriptions(userId, (session as any).subscription);
 
                     // Create user subscription
                     await UserSubscriptionModel.create({
@@ -125,6 +129,9 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                                         referredBy = referrer._id;
                                     }
                                 }
+
+                                // Cancel any previous active subscriptions first
+                                await userSubscriptionServices.cancelPreviousActiveSubscriptions(userId, subscriptionId);
 
                                 userSubscription = await UserSubscriptionModel.create({
                                     userId,
@@ -216,6 +223,32 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                     }
 
                     await UserSubscriptionModel.findByIdAndUpdate(userSubscription._id, { $set: { status: newStatus } });
+                }
+                break;
+            }
+            case "customer.subscription.deleted": {
+                const subscription = event.data.object;
+                console.log("Subscription deleted/cancelled:", subscription);
+
+                // Find user subscription
+                const userSubscription = await UserSubscriptionModel.findOne({
+                    stripeSubscriptionId: (subscription as any).id,
+                });
+                if (userSubscription) {
+                    await UserSubscriptionModel.findByIdAndUpdate(userSubscription._id, {
+                        $set: { status: UserSubscriptionStatus.CANCELLED },
+                    });
+
+                    // Clear user's subscription info if this was their active subscription
+                    const user = await UserModel.findById(userSubscription.userId);
+                    if (user && user.subscriptionPlanId?.toString() === userSubscription.subscriptionPlanId.toString()) {
+                        await UserModel.findByIdAndUpdate(userSubscription.userId, {
+                            $set: {
+                                subscriptionPlanId: null,
+                                subscriptionEndDate: null,
+                            },
+                        });
+                    }
                 }
                 break;
             }

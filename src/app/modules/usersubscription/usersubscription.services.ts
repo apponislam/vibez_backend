@@ -3,15 +3,43 @@ import ApiError from "../../../errors/ApiError";
 import { UserSubscriptionModel } from "./usersubscription.model";
 import { IUserSubscription } from "./usersubscription.interface";
 import { SubscriptionPlanModel } from "../subscription/subscription.model";
-import { SubscriptionDuration } from "../subscription/subscription.interface";
+import { SubscriptionDuration, UserSubscriptionStatus } from "../subscription/subscription.interface";
 import { stripeServices } from "../stripe/stripe.service";
 import { UserModel } from "../auth/auth.model";
 
 const populateOptions = ["subscriptionPlanId", { path: "commissionUser", select: "name email" }];
 
+const cancelPreviousActiveSubscriptions = async (userId: string, newStripeSubscriptionId?: string) => {
+    const activeSubscriptions = await UserSubscriptionModel.find({
+        userId,
+        status: UserSubscriptionStatus.ACTIVE,
+    });
+
+    for (const sub of activeSubscriptions) {
+        if (newStripeSubscriptionId && sub.stripeSubscriptionId === newStripeSubscriptionId) {
+            continue;
+        }
+
+        if (sub.stripeSubscriptionId) {
+            try {
+                await stripeServices.stripe.subscriptions.cancel(sub.stripeSubscriptionId);
+            } catch (error) {
+                console.error(`Failed to cancel Stripe subscription ${sub.stripeSubscriptionId}:`, error);
+            }
+        }
+
+        await UserSubscriptionModel.findByIdAndUpdate(sub._id, {
+            $set: { status: UserSubscriptionStatus.CANCELLED },
+        });
+    }
+};
+
 const createUserSubscription = async (data: Partial<IUserSubscription>, userId: string) => {
     const plan = await SubscriptionPlanModel.findById(data.subscriptionPlanId);
     if (!plan) throw new ApiError(httpStatus.NOT_FOUND, "Subscription plan not found");
+
+    // Cancel any previous active subscriptions
+    await cancelPreviousActiveSubscriptions(userId, data.stripeSubscriptionId);
 
     let endDate;
     const startDate = new Date();
@@ -113,4 +141,5 @@ export const userSubscriptionServices = {
     getUserSubscriptionById,
     cancelUserSubscription,
     resumeUserSubscription,
+    cancelPreviousActiveSubscriptions,
 };
