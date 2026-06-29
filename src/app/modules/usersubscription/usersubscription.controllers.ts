@@ -139,6 +139,16 @@ const getAllSubscriptionsByAdmin = catchAsync(async (req: Request, res: Response
     });
 });
 
+const getRevenueBreakdown = catchAsync(async (req: Request, res: Response) => {
+    const result = await userSubscriptionServices.getRevenueBreakdown();
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Revenue breakdown retrieved successfully",
+        data: result,
+    });
+});
+
 export const userSubscriptionControllers = {
     createCheckoutSession,
     createUserSubscription,
@@ -147,4 +157,5 @@ export const userSubscriptionControllers = {
     cancelUserSubscription,
     resumeUserSubscription,
     getAllSubscriptionsByAdmin,
+    getRevenueBreakdown,
 };

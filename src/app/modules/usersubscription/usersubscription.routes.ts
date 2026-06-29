@@ -7,6 +7,7 @@ const router = Router();
 
 // Admin routes
 router.get("/admin/all", auth, authorize(["ADMIN"]), userSubscriptionControllers.getAllSubscriptionsByAdmin);
+router.get("/admin/revenue-breakdown", auth, authorize(["ADMIN"]), userSubscriptionControllers.getRevenueBreakdown);
 
 // Protected routes (user)
 router.post("/checkout", auth, userSubscriptionControllers.createCheckoutSession);

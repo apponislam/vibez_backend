@@ -196,6 +196,48 @@ const getAllSubscriptionsByAdmin = async (query: any) => {
     };
 };
 
+const getRevenueBreakdown = async () => {
+    const currentYear = new Date().getFullYear();
+    const startDate = new Date(currentYear, 0, 1);
+    const endDate = new Date(currentYear, 11, 31, 23, 59, 59, 999);
+
+    const subscriptions = await UserSubscriptionModel.find({
+        createdAt: { $gte: startDate, $lte: endDate },
+    })
+    .populate("subscriptionPlanId")
+    .lean();
+
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+    const breakdown = monthNames.map((month) => ({
+        month,
+        revenue: 0,
+        referrals: 0,
+    }));
+
+    for (const sub of subscriptions) {
+        const date = new Date((sub as any).createdAt);
+        const monthIndex = date.getMonth();
+
+        if (sub.commissionUser) {
+            breakdown[monthIndex].referrals++;
+        }
+
+        if (!sub.isTrial && sub.subscriptionPlanId) {
+            const plan = sub.subscriptionPlanId as any;
+            if (plan && typeof plan.price === "number") {
+                breakdown[monthIndex].revenue += plan.price;
+            }
+        }
+    }
+
+    for (const entry of breakdown) {
+        entry.revenue = Number(entry.revenue.toFixed(2));
+    }
+
+    return breakdown;
+};
+
 export const userSubscriptionServices = {
     createUserSubscription,
     getUserSubscriptions,
@@ -204,4 +246,5 @@ export const userSubscriptionServices = {
     resumeUserSubscription,
     cancelPreviousActiveSubscriptions,
     getAllSubscriptionsByAdmin,
+    getRevenueBreakdown,
 };

@@ -99,6 +99,17 @@ const getOwnerStats = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const getWeeklyBookings = catchAsync(async (req: Request, res: Response) => {
+    const result = await reservationServices.getWeeklyBookings(req.query);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Weekly bookings statistics retrieved successfully",
+        data: result,
+    });
+});
+
 export const reservationControllers = {
     createReservation,
     getAllReservations,
@@ -109,4 +120,5 @@ export const reservationControllers = {
     deleteReservation,
     getReservationStats,
     getOwnerStats,
+    getWeeklyBookings,
 };

@@ -422,6 +422,102 @@ const getOwnerStats = async (user: { _id: string; role: string; restaurantId?: a
     };
 };
 
+const getWeeklyBookings = async (queryParams: any) => {
+    let restaurantId = queryParams.restaurantId;
+
+    // 1. Calculate stats for the last 7 days (rolling trend)
+    const endDate = new Date();
+    endDate.setHours(23, 59, 59, 999);
+
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 6);
+    startDate.setHours(0, 0, 0, 0);
+
+    const query: any = {
+        reservationDate: { $gte: startDate, $lte: endDate },
+        status: { $ne: ReservationStatus.CANCELLED },
+    };
+
+    if (restaurantId) {
+        query.restaurantId = new Types.ObjectId(restaurantId);
+    }
+
+    const reservations = await ReservationModel.find(query).select("reservationDate").lean();
+
+    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const rollingWeekData: { day: string; date: string; count: number }[] = [];
+
+    for (let i = 0; i < 7; i++) {
+        const date = new Date(startDate);
+        date.setDate(startDate.getDate() + i);
+        const dayName = dayNames[date.getDay()];
+        const dateStr = date.toISOString().split("T")[0];
+        rollingWeekData.push({
+            day: dayName,
+            date: dateStr,
+            count: 0,
+        });
+    }
+
+    for (const res of reservations) {
+        const resDate = new Date(res.reservationDate);
+        const resDateStr = resDate.toISOString().split("T")[0];
+        const dayEntry = rollingWeekData.find((d) => d.date === resDateStr);
+        if (dayEntry) {
+            dayEntry.count++;
+        }
+    }
+
+    // 2. Calculate stats for the current calendar week (Monday to Sunday)
+    const today = new Date();
+    const currentDay = today.getDay();
+    const distanceToMonday = currentDay === 0 ? -6 : 1 - currentDay;
+    const mondayOfCurrentWeek = new Date(today);
+    mondayOfCurrentWeek.setDate(today.getDate() + distanceToMonday);
+    mondayOfCurrentWeek.setHours(0, 0, 0, 0);
+
+    const sundayOfCurrentWeek = new Date(mondayOfCurrentWeek);
+    sundayOfCurrentWeek.setDate(mondayOfCurrentWeek.getDate() + 6);
+    sundayOfCurrentWeek.setHours(23, 59, 59, 999);
+
+    const currentWeekQuery: any = {
+        reservationDate: { $gte: mondayOfCurrentWeek, $lte: sundayOfCurrentWeek },
+        status: { $ne: ReservationStatus.CANCELLED },
+    };
+
+    if (restaurantId) {
+        currentWeekQuery.restaurantId = new Types.ObjectId(restaurantId);
+    }
+
+    const currentWeekReservations = await ReservationModel.find(currentWeekQuery).select("reservationDate").lean();
+
+    const fixedDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    const currentWeekData = fixedDays.map((day, index) => {
+        const date = new Date(mondayOfCurrentWeek);
+        date.setDate(mondayOfCurrentWeek.getDate() + index);
+        const dateStr = date.toISOString().split("T")[0];
+        return {
+            day,
+            date: dateStr,
+            count: 0,
+        };
+    });
+
+    for (const res of currentWeekReservations) {
+        const resDate = new Date(res.reservationDate);
+        const resDateStr = resDate.toISOString().split("T")[0];
+        const dayEntry = currentWeekData.find((d) => d.date === resDateStr);
+        if (dayEntry) {
+            dayEntry.count++;
+        }
+    }
+
+    return {
+        rollingWeek: rollingWeekData,
+        currentWeek: currentWeekData,
+    };
+};
+
 export const reservationServices = {
     createReservation,
     getAllReservations,
@@ -432,4 +528,5 @@ export const reservationServices = {
     deleteReservation,
     getReservationStats,
     getOwnerStats,
+    getWeeklyBookings,
 };
