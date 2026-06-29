@@ -135,6 +135,67 @@ const resumeUserSubscription = async (id: string, userId: string) => {
     return updatedSubscription;
 };
 
+const getAllSubscriptionsByAdmin = async (query: any) => {
+    const { page = 1, limit = 10, search, status } = query;
+    const parsedPage = Number(page);
+    const parsedLimit = Number(limit);
+    const skip = (parsedPage - 1) * parsedLimit;
+
+    const filters: any = {};
+
+    if (status) {
+        filters.status = status;
+    }
+
+    if (search) {
+        const users = await UserModel.find({
+            $or: [
+                { name: { $regex: search, $options: "i" } },
+                { email: { $regex: search, $options: "i" } },
+            ],
+        }).select("_id");
+        const userIds = users.map((u) => u._id);
+        filters.userId = { $in: userIds };
+    }
+
+    const [subscriptions, total] = await Promise.all([
+        UserSubscriptionModel.find(filters)
+            .populate({
+                path: "userId",
+                select: "name email profileImage",
+            })
+            .populate({
+                path: "subscriptionPlanId",
+                select: "name price duration isFreeTrial",
+            })
+            .populate({
+                path: "commissionUser",
+                select: "name email",
+            })
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(parsedLimit)
+            .lean(),
+        UserSubscriptionModel.countDocuments(filters),
+    ]);
+
+    const totalPages = Math.ceil(total / parsedLimit);
+    const hasNext = parsedPage < totalPages;
+    const hasPrev = parsedPage > 1;
+
+    return {
+        data: subscriptions,
+        meta: {
+            page: parsedPage,
+            limit: parsedLimit,
+            total,
+            totalPages,
+            hasNext,
+            hasPrev,
+        },
+    };
+};
+
 export const userSubscriptionServices = {
     createUserSubscription,
     getUserSubscriptions,
@@ -142,4 +203,5 @@ export const userSubscriptionServices = {
     cancelUserSubscription,
     resumeUserSubscription,
     cancelPreviousActiveSubscriptions,
+    getAllSubscriptionsByAdmin,
 };

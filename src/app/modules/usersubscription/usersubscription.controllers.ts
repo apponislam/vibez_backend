@@ -128,6 +128,17 @@ const resumeUserSubscription = catchAsync(async (req: Request, res: Response) =>
     });
 });
 
+const getAllSubscriptionsByAdmin = catchAsync(async (req: Request, res: Response) => {
+    const result = await userSubscriptionServices.getAllSubscriptionsByAdmin(req.query);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "All user subscriptions retrieved successfully",
+        data: result.data,
+        meta: result.meta,
+    });
+});
+
 export const userSubscriptionControllers = {
     createCheckoutSession,
     createUserSubscription,
@@ -135,4 +146,5 @@ export const userSubscriptionControllers = {
     getUserSubscriptionById,
     cancelUserSubscription,
     resumeUserSubscription,
+    getAllSubscriptionsByAdmin,
 };

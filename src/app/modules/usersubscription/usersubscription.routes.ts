@@ -1,8 +1,12 @@
 import { Router } from "express";
 import { userSubscriptionControllers } from "./usersubscription.controllers";
 import auth from "../../middlewares/auth";
+import authorize from "../../middlewares/authorized";
 
 const router = Router();
+
+// Admin routes
+router.get("/admin/all", auth, authorize(["ADMIN"]), userSubscriptionControllers.getAllSubscriptionsByAdmin);
 
 // Protected routes (user)
 router.post("/checkout", auth, userSubscriptionControllers.createCheckoutSession);
