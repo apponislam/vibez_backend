@@ -7,5 +7,6 @@ const router = Router();
 
 // Admin dashboard routes
 router.get("/stats", auth, authorize(["ADMIN"]), dashboardControllers.getAdminDashboardStats);
+router.get("/affiliate-stats", auth, authorize(["ADMIN"]), dashboardControllers.getAffiliateStats);
 
 export const dashboardRoutes = router;

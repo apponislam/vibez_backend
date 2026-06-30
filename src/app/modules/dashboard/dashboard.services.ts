@@ -114,24 +114,29 @@ const getAdminDashboardStats = async () => {
     }
 
     // 3. Referral Revenue Card Stats
-    const paidReferredSubscriptions = await UserSubscriptionModel.find({
-        commissionUser: { $ne: null },
-        isTrial: false
-    }).populate("subscriptionPlanId").lean();
-
     let totalReferralRevenue = 0;
+    for (const sub of activeSubscriptions) {
+        if (sub.commissionUser && !sub.isTrial && sub.subscriptionPlanId) {
+            totalReferralRevenue += (sub.subscriptionPlanId as any).price || 0;
+        }
+    }
+
+    const commissionStats = await CommissionModel.aggregate([
+        { $group: { _id: null, total: { $sum: "$maxPayout" } } }
+    ]);
+    const totalCommissionPaid = commissionStats[0]?.total || 0;
+
     let thisMonthReferralRevenue = 0;
+    for (const sub of thisMonthSubs) {
+        if (sub.commissionUser && sub.subscriptionPlanId) {
+            thisMonthReferralRevenue += (sub.subscriptionPlanId as any).price || 0;
+        }
+    }
+
     let lastMonthReferralRevenue = 0;
-
-    for (const sub of paidReferredSubscriptions) {
-        const price = (sub.subscriptionPlanId as any)?.price || 0;
-        totalReferralRevenue += price;
-
-        const createdAt = new Date((sub as any).createdAt);
-        if (createdAt >= thisMonthStart && createdAt <= thisMonthEnd) {
-            thisMonthReferralRevenue += price;
-        } else if (createdAt >= lastMonthStart && createdAt <= lastMonthEnd) {
-            lastMonthReferralRevenue += price;
+    for (const sub of lastMonthSubs) {
+        if (sub.commissionUser && sub.subscriptionPlanId) {
+            lastMonthReferralRevenue += (sub.subscriptionPlanId as any).price || 0;
         }
     }
 
@@ -142,75 +147,7 @@ const getAdminDashboardStats = async () => {
         referralRevenueGrowthPercentage = 100.0;
     }
 
-    // 4. Total Affiliates Card Stats
-    const influencerAffiliates = await UserModel.countDocuments({
-        isInfluencer: true,
-        isDeleted: false
-    });
-
-    const referredByIds = await UserModel.distinct("referredBy", {
-        referredBy: { $ne: null },
-        isDeleted: false
-    });
-
-    const normalAffiliates = await UserModel.countDocuments({
-        _id: { $in: referredByIds },
-        isInfluencer: { $ne: true },
-        isDeleted: false
-    });
-
-    const totalAffiliates = influencerAffiliates + normalAffiliates;
-
-    const affiliatesEndLastMonth = await getAffiliatesCountUpToDate(lastMonthEnd);
-    const affiliatesEndThisMonth = await getAffiliatesCountUpToDate(now);
-    const newAffiliatesThisMonth = affiliatesEndThisMonth - affiliatesEndLastMonth;
-
-    let affiliatesGrowthPercentage = 0;
-    if (affiliatesEndLastMonth > 0) {
-        affiliatesGrowthPercentage = Number(((newAffiliatesThisMonth / affiliatesEndLastMonth) * 100).toFixed(1));
-    } else if (newAffiliatesThisMonth > 0) {
-        affiliatesGrowthPercentage = 100.0;
-    }
-
-    // 5. Active Referral Subscriptions Card Stats
-    const totalActiveReferralSubscriptions = await UserSubscriptionModel.countDocuments({
-        commissionUser: { $ne: null },
-        status: UserSubscriptionStatus.ACTIVE
-    });
-
-    const thisMonthActiveReferralSubs = await UserSubscriptionModel.countDocuments({
-        commissionUser: { $ne: null },
-        status: UserSubscriptionStatus.ACTIVE,
-        createdAt: { $gte: thisMonthStart, $lte: thisMonthEnd }
-    });
-
-    const lastMonthActiveReferralSubs = await UserSubscriptionModel.countDocuments({
-        commissionUser: { $ne: null },
-        status: UserSubscriptionStatus.ACTIVE,
-        createdAt: { $gte: lastMonthStart, $lte: lastMonthEnd }
-    });
-
-    let activeReferralSubsGrowthPercentage = 0;
-    if (lastMonthActiveReferralSubs > 0) {
-        activeReferralSubsGrowthPercentage = Number((((thisMonthActiveReferralSubs - lastMonthActiveReferralSubs) / lastMonthActiveReferralSubs) * 100).toFixed(1));
-    } else if (thisMonthActiveReferralSubs > 0) {
-        activeReferralSubsGrowthPercentage = 100.0;
-    }
-
-    // 6. Total Commission Paid Card Stats
-    const approvedWithdrawals = await WithdrawModel.aggregate([
-        { $match: { status: WithdrawStatus.APPROVED } },
-        { $group: { _id: null, total: { $sum: "$amount" } } }
-    ]);
-    const totalCommissionPaid = approvedWithdrawals[0]?.total || 0;
-
-    const pendingWithdrawals = await WithdrawModel.aggregate([
-        { $match: { status: WithdrawStatus.PENDING } },
-        { $group: { _id: null, total: { $sum: "$amount" } } }
-    ]);
-    const pendingCommission = pendingWithdrawals[0]?.total || 0;
-
-    // 7. Active Restaurants Card Stats
+    // 4. Active Restaurants Card Stats
     const allRestaurants = await RestaurantModel.find().populate({
         path: "restaurantOwner",
         select: "isActive"
@@ -233,13 +170,13 @@ const getAdminDashboardStats = async () => {
         }
     }
 
-    // 8. Active Deals Card Stats
+    // 5. Active Deals Card Stats
     const [activeDeals, draftDeals] = await Promise.all([
         DealModel.countDocuments({ isActive: true, isDeleted: false }),
         DealModel.countDocuments({ isActive: false, isDeleted: false }),
     ]);
 
-    // 9. Total Bookings Card Stats
+    // 6. Total Bookings Card Stats
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
     const todayEnd = new Date();
@@ -294,22 +231,8 @@ const getAdminDashboardStats = async () => {
         },
         referralRevenue: {
             totalReferralRevenue: Number(totalReferralRevenue.toFixed(2)),
-            thisMonthReferralRevenue: Number(thisMonthReferralRevenue.toFixed(2)),
-            growthPercentage: referralRevenueGrowthPercentage,
-        },
-        affiliates: {
-            totalAffiliates,
-            normalAffiliates,
-            influencerAffiliates,
-            growthPercentage: affiliatesGrowthPercentage,
-        },
-        activeReferralSubscriptions: {
-            totalActiveReferralSubscriptions,
-            growthPercentage: activeReferralSubsGrowthPercentage,
-        },
-        commissions: {
             totalCommissionPaid: Number(totalCommissionPaid.toFixed(2)),
-            pendingCommission: Number(pendingCommission.toFixed(2)),
+            growthPercentage: referralRevenueGrowthPercentage,
         },
         restaurants: {
             activeRestaurants,
@@ -330,6 +253,137 @@ const getAdminDashboardStats = async () => {
     };
 };
 
+const getAffiliateStats = async () => {
+    const now = new Date();
+
+    // Months boundary
+    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const thisMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+
+    // 1. Total Referral Revenue
+    const paidReferredSubscriptions = await UserSubscriptionModel.find({
+        commissionUser: { $ne: null },
+        isTrial: false
+    }).populate("subscriptionPlanId").lean();
+
+    let totalReferralRevenue = 0;
+    let thisMonthReferralRevenue = 0;
+    let lastMonthReferralRevenue = 0;
+
+    for (const sub of paidReferredSubscriptions) {
+        const price = (sub.subscriptionPlanId as any)?.price || 0;
+        totalReferralRevenue += price;
+
+        const createdAt = new Date((sub as any).createdAt);
+        if (createdAt >= thisMonthStart && createdAt <= thisMonthEnd) {
+            thisMonthReferralRevenue += price;
+        } else if (createdAt >= lastMonthStart && createdAt <= lastMonthEnd) {
+            lastMonthReferralRevenue += price;
+        }
+    }
+
+    let referralRevenueGrowthPercentage = 0;
+    if (lastMonthReferralRevenue > 0) {
+        referralRevenueGrowthPercentage = Number((((thisMonthReferralRevenue - lastMonthReferralRevenue) / lastMonthReferralRevenue) * 100).toFixed(1));
+    } else if (thisMonthReferralRevenue > 0) {
+        referralRevenueGrowthPercentage = 100.0;
+    }
+
+    // 2. Total Affiliates
+    const influencerAffiliates = await UserModel.countDocuments({
+        isInfluencer: true,
+        isDeleted: false
+    });
+
+    const referredByIds = await UserModel.distinct("referredBy", {
+        referredBy: { $ne: null },
+        isDeleted: false
+    });
+
+    const normalAffiliates = await UserModel.countDocuments({
+        _id: { $in: referredByIds },
+        isInfluencer: { $ne: true },
+        isDeleted: false
+    });
+
+    const totalAffiliates = influencerAffiliates + normalAffiliates;
+
+    const affiliatesEndLastMonth = await getAffiliatesCountUpToDate(lastMonthEnd);
+    const affiliatesEndThisMonth = await getAffiliatesCountUpToDate(now);
+    const newAffiliatesThisMonth = affiliatesEndThisMonth - affiliatesEndLastMonth;
+
+    let affiliatesGrowthPercentage = 0;
+    if (affiliatesEndLastMonth > 0) {
+        affiliatesGrowthPercentage = Number(((newAffiliatesThisMonth / affiliatesEndLastMonth) * 100).toFixed(1));
+    } else if (newAffiliatesThisMonth > 0) {
+        affiliatesGrowthPercentage = 100.0;
+    }
+
+    // 3. Active Referral Subscriptions
+    const totalActiveReferralSubscriptions = await UserSubscriptionModel.countDocuments({
+        commissionUser: { $ne: null },
+        status: UserSubscriptionStatus.ACTIVE
+    });
+
+    const thisMonthActiveReferralSubs = await UserSubscriptionModel.countDocuments({
+        commissionUser: { $ne: null },
+        status: UserSubscriptionStatus.ACTIVE,
+        createdAt: { $gte: thisMonthStart, $lte: thisMonthEnd }
+    });
+
+    const lastMonthActiveReferralSubs = await UserSubscriptionModel.countDocuments({
+        commissionUser: { $ne: null },
+        status: UserSubscriptionStatus.ACTIVE,
+        createdAt: { $gte: lastMonthStart, $lte: lastMonthEnd }
+    });
+
+    let activeReferralSubsGrowthPercentage = 0;
+    if (lastMonthActiveReferralSubs > 0) {
+        activeReferralSubsGrowthPercentage = Number((((thisMonthActiveReferralSubs - lastMonthActiveReferralSubs) / lastMonthActiveReferralSubs) * 100).toFixed(1));
+    } else if (thisMonthActiveReferralSubs > 0) {
+        activeReferralSubsGrowthPercentage = 100.0;
+    }
+
+    // 4. Total Commission Paid
+    const approvedWithdrawals = await WithdrawModel.aggregate([
+        { $match: { status: WithdrawStatus.APPROVED } },
+        { $group: { _id: null, total: { $sum: "$amount" } } }
+    ]);
+    const totalCommissionPaid = approvedWithdrawals[0]?.total || 0;
+
+    const pendingWithdrawals = await WithdrawModel.aggregate([
+        { $match: { status: WithdrawStatus.PENDING } },
+        { $group: { _id: null, total: { $sum: "$amount" } } }
+    ]);
+    const pendingCommission = pendingWithdrawals[0]?.total || 0;
+
+    return {
+        referralRevenue: {
+            totalReferralRevenue: Number(totalReferralRevenue.toFixed(2)),
+            thisMonthReferralRevenue: Number(thisMonthReferralRevenue.toFixed(2)),
+            growthPercentage: referralRevenueGrowthPercentage,
+        },
+        affiliates: {
+            totalAffiliates,
+            normalAffiliates,
+            influencerAffiliates,
+            growthPercentage: affiliatesGrowthPercentage,
+        },
+        activeReferralSubscriptions: {
+            totalActiveReferralSubscriptions,
+            growthPercentage: activeReferralSubsGrowthPercentage,
+        },
+        commissions: {
+            totalCommissionPaid: Number(totalCommissionPaid.toFixed(2)),
+            pendingCommission: Number(pendingCommission.toFixed(2)),
+        }
+    };
+};
+
 export const dashboardServices = {
     getAdminDashboardStats,
+    getAffiliateStats,
 };

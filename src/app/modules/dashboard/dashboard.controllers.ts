@@ -14,6 +14,17 @@ const getAdminDashboardStats = catchAsync(async (req: Request, res: Response) =>
     });
 });
 
+const getAffiliateStats = catchAsync(async (req: Request, res: Response) => {
+    const result = await dashboardServices.getAffiliateStats();
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Affiliate dashboard statistics retrieved successfully",
+        data: result,
+    });
+});
+
 export const dashboardControllers = {
     getAdminDashboardStats,
+    getAffiliateStats,
 };
