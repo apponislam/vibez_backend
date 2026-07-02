@@ -38,7 +38,7 @@ const getAllUsers = async (query: any) => {
     const [users, total] = await Promise.all([
         UserModel.find(filters)
             .populate("referredBy", "name email")
-            .populate("subscriptionPlanId", "name price duration")
+            .populate("subscriptionPlanId", "name price duration isFreeTrial freeTrialDays")
             .skip(skip)
             .limit(parsedLimit)
             .lean(),
@@ -130,7 +130,7 @@ const updateUserByAdmin = async (userId: string, data: any) => {
         userId,
         { $set: updateData },
         { new: true, runValidators: true }
-    ).select("-password").populate("referredBy", "name email").populate("subscriptionPlanId", "name price duration");
+    ).select("-password").populate("referredBy", "name email").populate("subscriptionPlanId", "name price duration isFreeTrial freeTrialDays");
 
     if (!user) {
         throw new ApiError(httpStatus.NOT_FOUND, "User not found");
@@ -281,7 +281,7 @@ const toggleAllStaffLoginStatus = async (ownerId: string, enable?: boolean) => {
 
 const changeStaffPasswordByOwner = async (callerId: string, callerRole: string, staffId: string, newPassword: string) => {
     let staff;
-    
+
     if (callerRole === "ADMIN") {
         staff = await UserModel.findOne({ _id: staffId, role: "STAFF" });
     } else {
@@ -319,7 +319,7 @@ const changeStaffPasswordByOwner = async (callerId: string, callerRole: string, 
 
 const updateStaffDetailsByOwner = async (callerId: string, callerRole: string, staffId: string, updateData: any) => {
     let staff;
-    
+
     if (callerRole === "ADMIN") {
         staff = await UserModel.findOne({ _id: staffId, role: "STAFF" });
     } else {
