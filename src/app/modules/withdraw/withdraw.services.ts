@@ -172,7 +172,7 @@ const approveWithdrawal = async (withdrawId: string) => {
 };
 
 // Reject withdrawal (restores user balance)
-const rejectWithdrawal = async (withdrawId: string, adminFeedback: string) => {
+const rejectWithdrawal = async (withdrawId: string, adminFeedback?: string) => {
     const withdrawal = await WithdrawModel.findById(withdrawId);
     if (!withdrawal) throw new ApiError(httpStatus.NOT_FOUND, "Withdrawal request not found");
 

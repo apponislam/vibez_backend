@@ -65,7 +65,7 @@ const approveWithdrawal = catchAsync(async (req: Request, res: Response) => {
 });
 
 const rejectWithdrawal = catchAsync(async (req: Request, res: Response) => {
-    const { adminFeedback } = req.body;
+    const { adminFeedback } = req.body || {};
     const result = await withdrawServices.rejectWithdrawal(req.params.id as string, adminFeedback);
 
     sendResponse(res, {
