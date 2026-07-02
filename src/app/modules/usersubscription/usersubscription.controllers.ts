@@ -149,6 +149,16 @@ const getRevenueBreakdown = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const getMonthlyCommissionGraph = catchAsync(async (req: Request, res: Response) => {
+    const result = await userSubscriptionServices.getMonthlyCommissionGraph();
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Monthly commission graph data retrieved successfully",
+        data: result,
+    });
+});
+
 export const userSubscriptionControllers = {
     createCheckoutSession,
     createUserSubscription,
@@ -158,4 +168,5 @@ export const userSubscriptionControllers = {
     resumeUserSubscription,
     getAllSubscriptionsByAdmin,
     getRevenueBreakdown,
+    getMonthlyCommissionGraph,
 };

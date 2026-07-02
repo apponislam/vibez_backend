@@ -8,6 +8,8 @@ import { UserSubscriptionStatus } from "../subscription/subscription.interface";
 import { UserModel } from "../auth/auth.model";
 import { CouponModel } from "../coupon/coupon.model";
 import { userSubscriptionServices } from "../usersubscription/usersubscription.services";
+import { commissionServices } from "../commission/commission.services";
+import { Types } from "mongoose";
 
 const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
     const sig = req.headers["stripe-signature"] as string;
@@ -58,6 +60,16 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                     // Cancel any previous active subscriptions first
                     await userSubscriptionServices.cancelPreviousActiveSubscriptions(userId, (session as any).subscription);
 
+                    // Calculate commissionAmount if referred
+                    let commissionAmount = undefined;
+                    if (referredBy) {
+                        const referrer = await UserModel.findById(referredBy);
+                        if (referrer) {
+                            const commissionPercentage = referrer.commissionPercentage || 0;
+                            commissionAmount = Number((subscriptionPlan.price * (commissionPercentage / 100)).toFixed(2));
+                        }
+                    }
+
                     // Create user subscription
                     await UserSubscriptionModel.create({
                         userId,
@@ -70,6 +82,7 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                         isTrial: false,
                         coupon: coupon || undefined,
                         commissionUser: referredBy || undefined,
+                        commissionAmount,
                     });
 
                     // Update User model with subscription info
@@ -133,6 +146,16 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                                 // Cancel any previous active subscriptions first
                                 await userSubscriptionServices.cancelPreviousActiveSubscriptions(userId, subscriptionId);
 
+                                // Calculate commissionAmount if referred
+                                let commissionAmount = undefined;
+                                if (referredBy) {
+                                    const referrer = await UserModel.findById(referredBy);
+                                    if (referrer) {
+                                        const commissionPercentage = referrer.commissionPercentage || 0;
+                                        commissionAmount = Number((subscriptionPlan.price * (commissionPercentage / 100)).toFixed(2));
+                                    }
+                                }
+
                                 userSubscription = await UserSubscriptionModel.create({
                                     userId,
                                     subscriptionPlanId: subscriptionPlan._id,
@@ -144,6 +167,7 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                                     isTrial: false,
                                     coupon: coupon || undefined,
                                     commissionUser: referredBy || undefined,
+                                    commissionAmount,
                                 });
 
                                 const updatedUser = await UserModel.findByIdAndUpdate(userId, {

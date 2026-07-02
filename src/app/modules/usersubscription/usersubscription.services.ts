@@ -6,6 +6,8 @@ import { SubscriptionPlanModel } from "../subscription/subscription.model";
 import { SubscriptionDuration, UserSubscriptionStatus } from "../subscription/subscription.interface";
 import { stripeServices } from "../stripe/stripe.service";
 import { UserModel } from "../auth/auth.model";
+import { commissionServices } from "../commission/commission.services";
+import { Types } from "mongoose";
 
 const populateOptions = ["subscriptionPlanId", { path: "commissionUser", select: "name email" }];
 
@@ -66,12 +68,24 @@ const createUserSubscription = async (data: Partial<IUserSubscription>, userId: 
         delete subscriptionData.referralCode;
     }
 
+    // Calculate commissionAmount if referred
+    let commissionAmount = undefined;
+    if (subscriptionData.commissionUser) {
+        const referrer = await UserModel.findById(subscriptionData.commissionUser);
+        if (referrer) {
+            const commissionPercentage = referrer.commissionPercentage || 0;
+            commissionAmount = Number((plan.price * (commissionPercentage / 100)).toFixed(2));
+        }
+    }
+
     const userSubscription = await UserSubscriptionModel.create({
         ...subscriptionData,
         userId,
         startDate,
         endDate,
+        commissionAmount,
     });
+
     await userSubscription.populate(populateOptions);
     // Update User model with subscription info
     await UserModel.findByIdAndUpdate(userId, {
@@ -238,6 +252,40 @@ const getRevenueBreakdown = async () => {
     return breakdown;
 };
 
+const getMonthlyCommissionGraph = async () => {
+    const currentYear = new Date().getFullYear();
+    const startDate = new Date(currentYear, 0, 1);
+    const endDate = new Date(currentYear, 11, 31, 23, 59, 59, 999);
+
+    const subscriptions = await UserSubscriptionModel.find({
+        commissionUser: { $ne: null },
+        commissionAmount: { $gt: 0 },
+        createdAt: { $gte: startDate, $lte: endDate },
+    }).lean();
+
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+    const breakdown = monthNames.map((month) => ({
+        month,
+        commissionRevenue: 0,
+    }));
+
+    for (const sub of subscriptions) {
+        const subData = sub as any;
+        if (subData.createdAt) {
+            const date = new Date(subData.createdAt);
+            const monthIndex = date.getMonth();
+            breakdown[monthIndex].commissionRevenue += subData.commissionAmount || 0;
+        }
+    }
+
+    for (const entry of breakdown) {
+        entry.commissionRevenue = Number(entry.commissionRevenue.toFixed(2));
+    }
+
+    return breakdown;
+};
+
 export const userSubscriptionServices = {
     createUserSubscription,
     getUserSubscriptions,
@@ -247,4 +295,5 @@ export const userSubscriptionServices = {
     cancelPreviousActiveSubscriptions,
     getAllSubscriptionsByAdmin,
     getRevenueBreakdown,
+    getMonthlyCommissionGraph,
 };
