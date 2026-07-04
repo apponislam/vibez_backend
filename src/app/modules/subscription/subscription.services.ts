@@ -52,7 +52,7 @@ const updateSubscriptionPlan = async (id: string, data: Partial<ISubscriptionPla
         updateQuery.$unset = { freeTrialDays: "" };
     }
 
-    const plan = await SubscriptionPlanModel.findByIdAndUpdate(id, updateQuery, { new: true, runValidators: true });
+    const plan = await SubscriptionPlanModel.findByIdAndUpdate(id, updateQuery, { returnDocument: 'after', runValidators: true });
     if (!plan) throw new ApiError(httpStatus.NOT_FOUND, "Subscription plan not found");
     return plan;
 };

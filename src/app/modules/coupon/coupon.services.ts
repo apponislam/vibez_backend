@@ -98,7 +98,7 @@ const updateCoupon = async (id: string, data: Partial<ICoupon>) => {
     }
 
     // 2. Update locally
-    const updatedCoupon = await CouponModel.findByIdAndUpdate(id, { $set: data }, { new: true, runValidators: true });
+    const updatedCoupon = await CouponModel.findByIdAndUpdate(id, { $set: data }, { returnDocument: 'after', runValidators: true });
     return updatedCoupon;
 };
 

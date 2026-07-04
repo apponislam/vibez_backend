@@ -29,7 +29,7 @@ const markAsRead = async (userId: string, notificationId: string): Promise<INoti
     const notification = await NotificationModel.findOneAndUpdate(
         { _id: notificationId, userId },
         { $set: { isRead: true } },
-        { new: true }
+        { returnDocument: 'after' }
     );
     if (!notification) {
         throw new ApiError(httpStatus.NOT_FOUND, "Notification not found");

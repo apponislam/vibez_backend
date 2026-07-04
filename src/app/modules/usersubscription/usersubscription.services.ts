@@ -122,7 +122,7 @@ const cancelUserSubscription = async (id: string, userId: string) => {
     }
 
     // Update in DB
-    const updatedSubscription = await UserSubscriptionModel.findOneAndUpdate({ _id: id, userId }, { $set: { status: "CANCELLED" } }, { new: true }).populate(populateOptions);
+    const updatedSubscription = await UserSubscriptionModel.findOneAndUpdate({ _id: id, userId }, { $set: { status: "CANCELLED" } }, { returnDocument: 'after' }).populate(populateOptions);
 
     // Clear user's subscription info if needed
     await UserModel.findByIdAndUpdate(userId, {
@@ -145,7 +145,7 @@ const resumeUserSubscription = async (id: string, userId: string) => {
     }
 
     // Update in DB
-    const updatedSubscription = await UserSubscriptionModel.findOneAndUpdate({ _id: id, userId }, { $set: { status: "ACTIVE" } }, { new: true }).populate(populateOptions);
+    const updatedSubscription = await UserSubscriptionModel.findOneAndUpdate({ _id: id, userId }, { $set: { status: "ACTIVE" } }, { returnDocument: 'after' }).populate(populateOptions);
     return updatedSubscription;
 };
 

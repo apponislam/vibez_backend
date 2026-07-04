@@ -40,7 +40,7 @@ const updatePromoCode = async (id: string, data: any) => {
     const promoCode = await PromoCodeModel.findByIdAndUpdate(
         id,
         { $set: data },
-        { new: true, runValidators: true }
+        { returnDocument: 'after', runValidators: true }
     );
     if (!promoCode) throw new ApiError(httpStatus.NOT_FOUND, "Promo code not found");
     return promoCode;

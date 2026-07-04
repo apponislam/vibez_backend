@@ -129,7 +129,7 @@ const updateUserByAdmin = async (userId: string, data: any) => {
     const user = await UserModel.findByIdAndUpdate(
         userId,
         { $set: updateData },
-        { new: true, runValidators: true }
+        { returnDocument: 'after', runValidators: true }
     ).select("-password").populate("referredBy", "name email").populate("subscriptionPlanId", "name price duration isFreeTrial freeTrialDays");
 
     if (!user) {

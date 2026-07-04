@@ -171,7 +171,7 @@ const incrementShareCount = async (shortId: string) => {
     const short = await ShortsModel.findByIdAndUpdate(
         shortId,
         { $inc: { shareCount: 1 } },
-        { new: true }
+        { returnDocument: 'after' }
     );
     if (!short) {
         throw new ApiError(httpStatus.NOT_FOUND, "Short not found");

@@ -242,7 +242,7 @@ const updateReservation = async (id: string, data: Partial<IReservation>, userId
         }
     }
 
-    const reservation = await ReservationModel.findOneAndUpdate({ _id: id, userId }, { $set: data }, { new: true, runValidators: true }).populate("restaurantId userId");
+    const reservation = await ReservationModel.findOneAndUpdate({ _id: id, userId }, { $set: data }, { returnDocument: 'after', runValidators: true }).populate("restaurantId userId");
 
     if (!reservation) throw new ApiError(httpStatus.NOT_FOUND, "Reservation not found or not authorized");
     return reservation;
@@ -265,7 +265,7 @@ const updateReservationStatus = async (id: string, status: ReservationStatus, us
         query.restaurantId = restaurantId;
     }
 
-    const reservation = await ReservationModel.findOneAndUpdate(query, { $set: { status } }, { new: true, runValidators: true }).populate("restaurantId userId");
+    const reservation = await ReservationModel.findOneAndUpdate(query, { $set: { status } }, { returnDocument: 'after', runValidators: true }).populate("restaurantId userId");
 
     if (!reservation) throw new ApiError(httpStatus.NOT_FOUND, "Reservation not found or not authorized");
     return reservation;

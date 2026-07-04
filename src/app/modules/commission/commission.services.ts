@@ -97,7 +97,7 @@ const updateCommission = async (id: string, data: Partial<ICommission>) => {
     const commission = await CommissionModel.findByIdAndUpdate(
         id,
         { $set: data },
-        { new: true, runValidators: true }
+        { returnDocument: 'after', runValidators: true }
     ).populate(populateOptions);
     if (!commission) throw new ApiError(httpStatus.NOT_FOUND, "Commission not found");
     return commission;

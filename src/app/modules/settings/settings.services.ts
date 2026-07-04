@@ -18,7 +18,7 @@ const updateSettings = async (data: Partial<ISettings>): Promise<ISettings> => {
         settings = await SettingsModel.findByIdAndUpdate(
             settings._id,
             { $set: data },
-            { new: true, runValidators: true }
+            { returnDocument: 'after', runValidators: true }
         ) as any;
     }
     return settings!;

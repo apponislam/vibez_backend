@@ -408,7 +408,7 @@ const updateRestaurant = async (id: string, data: any, ownerId: string) => {
         });
     }
 
-    const restaurant = await RestaurantModel.findOneAndUpdate({ _id: id, restaurantOwner: ownerId }, { $set: data }, { new: true, runValidators: true }).populate("restaurantOwner", "name email phone");
+    const restaurant = await RestaurantModel.findOneAndUpdate({ _id: id, restaurantOwner: ownerId }, { $set: data }, { returnDocument: 'after', runValidators: true }).populate("restaurantOwner", "name email phone");
 
     return restaurant;
 };
@@ -420,14 +420,14 @@ const deleteRestaurant = async (id: string, ownerId: string) => {
 };
 
 const approveRestaurant = async (id: string, approvedBy: string) => {
-    const restaurant = await RestaurantModel.findByIdAndUpdate(id, { $set: { approved: true, approvedBy, approvedAt: new Date() } }, { new: true, runValidators: true }).populate("restaurantOwner", "name email phone");
+    const restaurant = await RestaurantModel.findByIdAndUpdate(id, { $set: { approved: true, approvedBy, approvedAt: new Date() } }, { returnDocument: 'after', runValidators: true }).populate("restaurantOwner", "name email phone");
 
     if (!restaurant) throw new ApiError(httpStatus.NOT_FOUND, "Restaurant not found");
     return restaurant;
 };
 
 const revokeRestaurantApproval = async (id: string) => {
-    const restaurant = await RestaurantModel.findByIdAndUpdate(id, { $set: { approved: false, approvedBy: null, approvedAt: undefined } }, { new: true, runValidators: true }).populate("restaurantOwner", "name email phone");
+    const restaurant = await RestaurantModel.findByIdAndUpdate(id, { $set: { approved: false, approvedBy: null, approvedAt: undefined } }, { returnDocument: 'after', runValidators: true }).populate("restaurantOwner", "name email phone");
 
     if (!restaurant) throw new ApiError(httpStatus.NOT_FOUND, "Restaurant not found");
     return restaurant;
