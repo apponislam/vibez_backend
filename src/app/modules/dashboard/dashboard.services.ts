@@ -671,9 +671,59 @@ const getRestaurantOwnerBookingsPerDay = async (user: { _id: string; role: strin
     return bookingsPerDay;
 };
 
+const getRestaurantOwnerMealTimeStats = async (user: { _id: string; role: string; restaurantId?: any }) => {
+    let restaurantId = user.restaurantId;
+
+    if (!restaurantId && user.role === "RESTAURANT_OWNER") {
+        const restaurant = await RestaurantModel.findOne({ restaurantOwner: user._id });
+        if (restaurant) {
+            restaurantId = restaurant._id;
+        }
+    }
+
+    if (!restaurantId) {
+        throw new ApiError(httpStatus.FORBIDDEN, "User is not associated with any restaurant");
+    }
+
+    const restaurantObjectId = new Types.ObjectId(restaurantId);
+
+    const reservations = await ReservationModel.find({
+        restaurantId: restaurantObjectId,
+        status: { $ne: ReservationStatus.CANCELLED },
+    }).select("reservationTime");
+
+    let lunchCount = 0;
+    let dinnerCount = 0;
+
+    for (const res of reservations) {
+        const time = res.reservationTime;
+        if (time) {
+            const [hourStr] = time.split(":");
+            const hour = parseInt(hourStr, 10);
+            // Lunch: 11:00 AM to 3:59 PM (11:00 - 15:59)
+            // Dinner: Otherwise (after 4:00 PM or early morning)
+            if (hour >= 11 && hour < 16) {
+                lunchCount++;
+            } else {
+                dinnerCount++;
+            }
+        }
+    }
+
+    const total = lunchCount + dinnerCount;
+    const lunchPercentage = total > 0 ? Number(((lunchCount / total) * 100).toFixed(1)) : 0;
+    const dinnerPercentage = total > 0 ? Number(((dinnerCount / total) * 100).toFixed(1)) : 0;
+
+    return [
+        { name: "Lunch", value: lunchCount, percentage: lunchPercentage },
+        { name: "Dinner", value: dinnerCount, percentage: dinnerPercentage },
+    ];
+};
+
 export const dashboardServices = {
     getAdminDashboardStats,
     getAffiliateStats,
     getRestaurantOwnerDashboardStats,
     getRestaurantOwnerBookingsPerDay,
+    getRestaurantOwnerMealTimeStats,
 };

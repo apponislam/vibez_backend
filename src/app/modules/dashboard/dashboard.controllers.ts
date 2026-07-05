@@ -44,9 +44,20 @@ const getRestaurantOwnerBookingsPerDay = catchAsync(async (req: Request, res: Re
     });
 });
 
+const getRestaurantOwnerMealTimeStats = catchAsync(async (req: Request, res: Response) => {
+    const result = await dashboardServices.getRestaurantOwnerMealTimeStats(req.user as any);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Restaurant owner meal time statistics (Lunch vs Dinner) retrieved successfully",
+        data: result,
+    });
+});
+
 export const dashboardControllers = {
     getAdminDashboardStats,
     getAffiliateStats,
     getRestaurantOwnerDashboardStats,
     getRestaurantOwnerBookingsPerDay,
+    getRestaurantOwnerMealTimeStats,
 };
