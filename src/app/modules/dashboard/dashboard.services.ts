@@ -720,7 +720,7 @@ const getRestaurantOwnerOverview = async (user: { _id: string; role: string; res
     }
 
     const conversionRate = {
-        value: `${conversionRateAllTime}%`,
+        value: conversionRateAllTime,
         growth: conversionChange
     };
 
