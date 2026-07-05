@@ -87,17 +87,26 @@ const createReservation = async (data: Partial<IReservation>, userId: string) =>
         const threeMonthsAgo = new Date();
         threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
 
-        const usedInLast3Months = await ReservationModel.exists({
+        const lastReservation = await ReservationModel.findOne({
             dealId: deal._id,
             userId: new Types.ObjectId(userId),
             status: { $ne: ReservationStatus.CANCELLED },
             reservationDate: { $gte: threeMonthsAgo },
-        });
+        }).sort({ reservationDate: -1 });
 
-        if (usedInLast3Months) {
+        if (lastReservation) {
+            const availableDate = new Date(lastReservation.reservationDate);
+            availableDate.setMonth(availableDate.getMonth() + 3);
+
+            const formattedDate = availableDate.toLocaleDateString("en-GB", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+            });
+
             throw new ApiError(
                 httpStatus.BAD_REQUEST,
-                "You cannot use this deal again for 3 months."
+                `You cannot use this deal again until ${formattedDate}.`
             );
         }
     }
