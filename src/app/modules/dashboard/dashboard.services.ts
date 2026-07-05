@@ -1,3 +1,5 @@
+import httpStatus from "http-status";
+import ApiError from "../../../errors/ApiError";
 import { UserSubscriptionModel } from "../usersubscription/usersubscription.model";
 import { SubscriptionPlanModel } from "../subscription/subscription.model";
 import { UserModel } from "../auth/auth.model";
@@ -383,7 +385,237 @@ const getAffiliateStats = async () => {
     };
 };
 
+const getRestaurantOwnerDashboardStats = async (user: { _id: string; role: string; restaurantId?: any }) => {
+    let restaurantId = user.restaurantId;
+
+    if (!restaurantId && user.role === "RESTAURANT_OWNER") {
+        const restaurant = await RestaurantModel.findOne({ restaurantOwner: user._id });
+        if (restaurant) {
+            restaurantId = restaurant._id;
+        }
+    }
+
+    if (!restaurantId) {
+        throw new ApiError(httpStatus.FORBIDDEN, "User is not associated with any restaurant");
+    }
+
+    const restaurantObjectId = new Types.ObjectId(restaurantId);
+
+    // 1. Calculate Average Guests per Booking and compare with last week
+    const now = new Date();
+
+    // Start of this week (Sunday 00:00:00)
+    const startOfThisWeek = new Date(now);
+    startOfThisWeek.setDate(now.getDate() - now.getDay());
+    startOfThisWeek.setHours(0, 0, 0, 0);
+
+    // Start of last week (7 days before start of this week)
+    const startOfLastWeek = new Date(startOfThisWeek);
+    startOfLastWeek.setDate(startOfLastWeek.getDate() - 7);
+
+    const [allTimeStats, thisWeekStats, lastWeekStats] = await Promise.all([
+        ReservationModel.aggregate([
+            {
+                $match: {
+                    restaurantId: restaurantObjectId,
+                    status: { $ne: ReservationStatus.CANCELLED },
+                },
+            },
+            {
+                $group: {
+                    _id: null,
+                    averagePartySize: { $avg: "$partySize" },
+                },
+            },
+        ]),
+        ReservationModel.aggregate([
+            {
+                $match: {
+                    restaurantId: restaurantObjectId,
+                    status: { $ne: ReservationStatus.CANCELLED },
+                    reservationDate: { $gte: startOfThisWeek },
+                },
+            },
+            {
+                $group: {
+                    _id: null,
+                    averagePartySize: { $avg: "$partySize" },
+                },
+            },
+        ]),
+        ReservationModel.aggregate([
+            {
+                $match: {
+                    restaurantId: restaurantObjectId,
+                    status: { $ne: ReservationStatus.CANCELLED },
+                    reservationDate: { $gte: startOfLastWeek, $lt: startOfThisWeek },
+                },
+            },
+            {
+                $group: {
+                    _id: null,
+                    averagePartySize: { $avg: "$partySize" },
+                },
+            },
+        ]),
+    ]);
+
+    const averageAllTime = allTimeStats[0]?.averagePartySize || 0;
+    const averageThisWeek = thisWeekStats[0]?.averagePartySize || averageAllTime;
+    const averageLastWeek = lastWeekStats[0]?.averagePartySize || 0;
+
+    let averageGuests = {
+        average: Number(averageThisWeek.toFixed(1)),
+        change: "0.0 from last week",
+    };
+
+    if (averageLastWeek > 0) {
+        const diff = averageThisWeek - averageLastWeek;
+        const sign = diff >= 0 ? "↑" : "↓";
+        averageGuests.change = `${sign} ${Math.abs(diff).toFixed(1)} from last week`;
+    } else if (averageThisWeek > 0) {
+        averageGuests.change = `↑ ${averageThisWeek.toFixed(1)} from last week`;
+    }
+
+    // 2. Calculate Peak Time (Meal time category and most popular 1.5 hr range)
+    const reservations = await ReservationModel.find({
+        restaurantId: restaurantObjectId,
+        status: { $ne: ReservationStatus.CANCELLED },
+    }).select("reservationTime");
+
+    let peakTime = {
+        mealTime: "N/A",
+        timeRange: "N/A",
+    };
+
+    if (reservations.length > 0) {
+        const timeCounts: { [key: string]: number } = {};
+        for (const res of reservations) {
+            const time = res.reservationTime;
+            if (time) {
+                timeCounts[time] = (timeCounts[time] || 0) + 1;
+            }
+        }
+
+        let peakTimeStr = "";
+        let maxCount = 0;
+        for (const [time, count] of Object.entries(timeCounts)) {
+            if (count > maxCount) {
+                maxCount = count;
+                peakTimeStr = time;
+            }
+        }
+
+        if (peakTimeStr) {
+            const [hourStr, minStr] = peakTimeStr.split(":");
+            const hour = parseInt(hourStr, 10);
+            const minute = parseInt(minStr, 10);
+
+            let mealTime = "All Day";
+            if (hour >= 11 && hour < 16) {
+                mealTime = "Lunch";
+            } else if (hour >= 17 && hour < 23) {
+                mealTime = "Dinner";
+            }
+
+            const format12Hour = (h: number, m: number) => {
+                const ampm = h >= 12 ? "PM" : "AM";
+                const displayHour = h % 12 === 0 ? 12 : h % 12;
+                const displayMinute = m.toString().padStart(2, "0");
+                return `${displayHour}:${displayMinute} ${ampm}`;
+            };
+
+            const startTimeFormatted = format12Hour(hour, minute);
+
+            let endHour = hour + 1;
+            let endMinute = minute + 30;
+            if (endMinute >= 60) {
+                endHour += 1;
+                endMinute -= 60;
+            }
+            if (endHour >= 24) {
+                endHour -= 24;
+            }
+            const endTimeFormatted = format12Hour(endHour, endMinute);
+
+            peakTime = {
+                mealTime,
+                timeRange: `${startTimeFormatted} - ${endTimeFormatted}`,
+            };
+        }
+    }
+
+    // 3. Calculate Most Popular Deal and percentage usage increase
+    const dealStats = await ReservationModel.aggregate([
+        {
+            $match: {
+                restaurantId: restaurantObjectId,
+                status: { $ne: ReservationStatus.CANCELLED },
+                dealId: { $ne: null },
+            },
+        },
+        {
+            $group: {
+                _id: "$dealId",
+                count: { $sum: 1 },
+            },
+        },
+        { $sort: { count: -1 } },
+        { $limit: 1 },
+    ]);
+
+    let mostPopularDeal = {
+        title: "N/A",
+        totalClaims: 0,
+        usageChange: "0%",
+    };
+
+    if (dealStats.length > 0) {
+        const dealId = dealStats[0]._id;
+        const totalClaims = dealStats[0].count;
+        const deal = await DealModel.findById(dealId);
+
+        if (deal) {
+            const [claimsThisWeek, claimsLastWeek] = await Promise.all([
+                ReservationModel.countDocuments({
+                    restaurantId: restaurantObjectId,
+                    dealId,
+                    status: { $ne: ReservationStatus.CANCELLED },
+                    reservationDate: { $gte: startOfThisWeek },
+                }),
+                ReservationModel.countDocuments({
+                    restaurantId: restaurantObjectId,
+                    dealId,
+                    status: { $ne: ReservationStatus.CANCELLED },
+                    reservationDate: { $gte: startOfLastWeek, $lt: startOfThisWeek },
+                }),
+            ]);
+
+            let usageChange = "0%";
+            if (claimsLastWeek > 0) {
+                const diff = ((claimsThisWeek - claimsLastWeek) / claimsLastWeek) * 100;
+                usageChange = `${diff >= 0 ? "+" : ""}${diff.toFixed(0)}%`;
+            } else if (claimsThisWeek > 0) {
+                usageChange = "+100%";
+            }
+
+            mostPopularDeal = {
+                title: deal.title,
+                totalClaims,
+                usageChange,
+            };
+        }
+    }
+
+    return {
+        mostPopularDeal,
+        peakTime,
+        averageGuests,
+    };
+};
+
 export const dashboardServices = {
     getAdminDashboardStats,
     getAffiliateStats,
+    getRestaurantOwnerDashboardStats,
 };

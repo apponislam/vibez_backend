@@ -9,4 +9,7 @@ const router = Router();
 router.get("/stats", auth, authorize(["ADMIN"]), dashboardControllers.getAdminDashboardStats);
 router.get("/affiliate-stats", auth, authorize(["ADMIN"]), dashboardControllers.getAffiliateStats);
 
+// Restaurant owner dashboard routes
+router.get("/restaurant-stats", auth, authorize(["RESTAURANT_OWNER", "STAFF"]), dashboardControllers.getRestaurantOwnerDashboardStats);
+
 export const dashboardRoutes = router;

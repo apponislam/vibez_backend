@@ -24,7 +24,18 @@ const getAffiliateStats = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const getRestaurantOwnerDashboardStats = catchAsync(async (req: Request, res: Response) => {
+    const result = await dashboardServices.getRestaurantOwnerDashboardStats(req.user as any);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Restaurant owner dashboard statistics retrieved successfully",
+        data: result,
+    });
+});
+
 export const dashboardControllers = {
     getAdminDashboardStats,
     getAffiliateStats,
+    getRestaurantOwnerDashboardStats,
 };
