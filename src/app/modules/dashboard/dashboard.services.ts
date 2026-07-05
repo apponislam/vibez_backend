@@ -11,6 +11,7 @@ import { WithdrawModel } from "../withdraw/withdraw.model";
 import { WithdrawStatus } from "../withdraw/withdraw.interface";
 import { SubscriptionDuration, UserSubscriptionStatus } from "../subscription/subscription.interface";
 import { ReservationStatus } from "../reservation/reservation.interface";
+import { SavedDealModel } from "../saved-deal/saved-deal.model";
 import { Types } from "mongoose";
 
 // Helper function to calculate affiliates count up to a certain date
@@ -401,7 +402,6 @@ const getRestaurantOwnerDashboardStats = async (user: { _id: string; role: strin
 
     const restaurantObjectId = new Types.ObjectId(restaurantId);
 
-    // 1. Calculate Average Guests per Booking and compare with last week
     const now = new Date();
 
     // Start of this week (Sunday 00:00:00)
@@ -477,7 +477,7 @@ const getRestaurantOwnerDashboardStats = async (user: { _id: string; role: strin
         averageGuests.change = `↑ ${averageThisWeek.toFixed(1)} from last week`;
     }
 
-    // 2. Calculate Peak Time (Meal time category and most popular 1.5 hr range)
+    // Peak Time (Meal time category and most popular 1.5 hr range)
     const reservations = await ReservationModel.find({
         restaurantId: restaurantObjectId,
         status: { $ne: ReservationStatus.CANCELLED },
@@ -545,7 +545,7 @@ const getRestaurantOwnerDashboardStats = async (user: { _id: string; role: strin
         }
     }
 
-    // 3. Calculate Most Popular Deal and percentage usage increase
+    // Calculate Most Popular Deal and percentage usage increase
     const dealStats = await ReservationModel.aggregate([
         {
             $match: {
@@ -611,6 +611,224 @@ const getRestaurantOwnerDashboardStats = async (user: { _id: string; role: strin
         mostPopularDeal,
         peakTime,
         averageGuests,
+    };
+};
+
+const getRestaurantOwnerOverview = async (user: { _id: string; role: string; restaurantId?: any }) => {
+    let restaurantId = user.restaurantId;
+
+    if (!restaurantId && user.role === "RESTAURANT_OWNER") {
+        const restaurant = await RestaurantModel.findOne({ restaurantOwner: user._id });
+        if (restaurant) {
+            restaurantId = restaurant._id;
+        }
+    }
+
+    if (!restaurantId) {
+        throw new ApiError(httpStatus.FORBIDDEN, "User is not associated with any restaurant");
+    }
+
+    const restaurantObjectId = new Types.ObjectId(restaurantId);
+
+    // Get deals of the restaurant first to calculate saved deals (claims)
+    const deals = await DealModel.find({ restaurantId: restaurantObjectId }).select("_id");
+    const dealIds = deals.map(d => d._id);
+
+    const totalSaved = await SavedDealModel.countDocuments({ dealId: { $in: dealIds } });
+    
+    const totalUsed = await ReservationModel.countDocuments({
+        restaurantId: restaurantObjectId,
+        dealId: { $ne: null },
+        status: { $ne: ReservationStatus.CANCELLED }
+    });
+
+    const now = new Date();
+
+    // Start of this week (Sunday 00:00:00)
+    const startOfThisWeek = new Date(now);
+    startOfThisWeek.setDate(now.getDate() - now.getDay());
+    startOfThisWeek.setHours(0, 0, 0, 0);
+
+    // Start of last week (7 days before start of this week)
+    const startOfLastWeek = new Date(startOfThisWeek);
+    startOfLastWeek.setDate(startOfLastWeek.getDate() - 7);
+
+    // Saved deals this week and last week
+    const [savedThisWeek, savedLastWeek] = await Promise.all([
+        SavedDealModel.countDocuments({
+            dealId: { $in: dealIds },
+            createdAt: { $gte: startOfThisWeek }
+        }),
+        SavedDealModel.countDocuments({
+            dealId: { $in: dealIds },
+            createdAt: { $gte: startOfLastWeek, $lt: startOfThisWeek }
+        })
+    ]);
+
+    // Used deals (reservations) this week and last week
+    const [usedThisWeek, usedLastWeek] = await Promise.all([
+        ReservationModel.countDocuments({
+            restaurantId: restaurantObjectId,
+            dealId: { $ne: null },
+            status: { $ne: ReservationStatus.CANCELLED },
+            createdAt: { $gte: startOfThisWeek }
+        }),
+        ReservationModel.countDocuments({
+            restaurantId: restaurantObjectId,
+            dealId: { $ne: null },
+            status: { $ne: ReservationStatus.CANCELLED },
+            createdAt: { $gte: startOfLastWeek, $lt: startOfThisWeek }
+        })
+    ]);
+
+    const claimsThisWeek = savedThisWeek + usedThisWeek;
+    const claimsLastWeek = savedLastWeek + usedLastWeek;
+    const totalClaimsAllTime = totalSaved + totalUsed;
+
+    let claimsChange = "0%";
+    if (claimsLastWeek > 0) {
+        const diff = ((claimsThisWeek - claimsLastWeek) / claimsLastWeek) * 100;
+        claimsChange = `${diff >= 0 ? "+" : ""}${diff.toFixed(1)}%`;
+    } else if (claimsThisWeek > 0) {
+        claimsChange = "+100%";
+    }
+
+    const totalClaims = {
+        value: totalClaimsAllTime,
+        change: claimsChange
+    };
+
+    // Calculate Conversion Rate
+    const conversionRateAllTime = totalClaimsAllTime > 0
+        ? Number(((totalUsed / totalClaimsAllTime) * 100).toFixed(1))
+        : 0;
+
+    const conversionRateThisWeek = claimsThisWeek > 0
+        ? Number(((usedThisWeek / claimsThisWeek) * 100).toFixed(1))
+        : 0;
+
+    const conversionRateLastWeek = claimsLastWeek > 0
+        ? Number(((usedLastWeek / claimsLastWeek) * 100).toFixed(1))
+        : 0;
+
+    let conversionChange = "0%";
+    if (conversionRateLastWeek > 0) {
+        const diff = conversionRateThisWeek - conversionRateLastWeek;
+        conversionChange = `${diff >= 0 ? "+" : ""}${diff.toFixed(1)}%`;
+    } else if (conversionRateThisWeek > 0) {
+        conversionChange = `+${conversionRateThisWeek.toFixed(1)}%`;
+    }
+
+    const conversionRate = {
+        value: `${conversionRateAllTime}%`,
+        change: conversionChange
+    };
+
+    // Calculate Peak Hours (Meal time category and most popular 2 hr range)
+    const reservations = await ReservationModel.find({
+        restaurantId: restaurantObjectId,
+        status: { $ne: ReservationStatus.CANCELLED },
+    }).select("reservationTime");
+
+    let peakHours = {
+        mealTime: "N/A",
+        timeRange: "N/A",
+    };
+
+    if (reservations.length > 0) {
+        const timeCounts: { [key: string]: number } = {};
+        for (const res of reservations) {
+            const time = res.reservationTime;
+            if (time) {
+                timeCounts[time] = (timeCounts[time] || 0) + 1;
+            }
+        }
+
+        let peakTimeStr = "";
+        let maxCount = 0;
+        for (const [time, count] of Object.entries(timeCounts)) {
+            if (count > maxCount) {
+                maxCount = count;
+                peakTimeStr = time;
+            }
+        }
+
+        if (peakTimeStr) {
+            const [hourStr, minStr] = peakTimeStr.split(":");
+            const hour = parseInt(hourStr, 10);
+
+            let mealTime = "All Day";
+            if (hour >= 11 && hour < 16) {
+                mealTime = "Lunch";
+            } else if (hour >= 17 && hour < 23) {
+                mealTime = "Dinner";
+            }
+
+            const startHour = hour;
+            const endHour = (hour + 2) % 24;
+            const startAMPM = startHour >= 12 ? "PM" : "AM";
+            const endAMPM = endHour >= 12 ? "PM" : "AM";
+
+            const startDisplay = startHour % 12 === 0 ? 12 : startHour % 12;
+            const endDisplay = endHour % 12 === 0 ? 12 : endHour % 12;
+
+            let timeRange = "";
+            if (startAMPM === endAMPM) {
+                timeRange = `${startDisplay}-${endDisplay} ${startAMPM}`;
+            } else {
+                timeRange = `${startDisplay} ${startAMPM} - ${endDisplay} ${endAMPM}`;
+            }
+
+            peakHours = {
+                mealTime,
+                timeRange,
+            };
+        }
+    }
+
+    // Calculate Most Popular Deal
+    const dealStats = await ReservationModel.aggregate([
+        {
+            $match: {
+                restaurantId: restaurantObjectId,
+                status: { $ne: ReservationStatus.CANCELLED },
+                dealId: { $ne: null },
+            },
+        },
+        {
+            $group: {
+                _id: "$dealId",
+                count: { $sum: 1 },
+            },
+        },
+        { $sort: { count: -1 } },
+        { $limit: 1 },
+    ]);
+
+    let mostPopularDeal = {
+        title: "N/A",
+        claims: 0,
+    };
+
+    if (dealStats.length > 0) {
+        const dealId = dealStats[0]._id;
+        const totalUsedClaims = dealStats[0].count;
+        const deal = await DealModel.findById(dealId);
+
+        if (deal) {
+            const totalSavedClaims = await SavedDealModel.countDocuments({ dealId });
+            mostPopularDeal = {
+                title: deal.title,
+                claims: totalUsedClaims + totalSavedClaims,
+            };
+        }
+    }
+
+    return {
+        totalClaims,
+        conversionRate,
+        peakHours,
+        mostPopularDeal,
     };
 };
 
@@ -726,4 +944,5 @@ export const dashboardServices = {
     getRestaurantOwnerDashboardStats,
     getRestaurantOwnerBookingsPerDay,
     getRestaurantOwnerMealTimeStats,
+    getRestaurantOwnerOverview,
 };

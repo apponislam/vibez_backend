@@ -44,6 +44,16 @@ const getRestaurantOwnerBookingsPerDay = catchAsync(async (req: Request, res: Re
     });
 });
 
+const getRestaurantOwnerOverview = catchAsync(async (req: Request, res: Response) => {
+    const result = await dashboardServices.getRestaurantOwnerOverview(req.user as any);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Restaurant owner dashboard overview retrieved successfully",
+        data: result,
+    });
+});
+
 const getRestaurantOwnerMealTimeStats = catchAsync(async (req: Request, res: Response) => {
     const result = await dashboardServices.getRestaurantOwnerMealTimeStats(req.user as any);
     sendResponse(res, {
@@ -59,5 +69,6 @@ export const dashboardControllers = {
     getAffiliateStats,
     getRestaurantOwnerDashboardStats,
     getRestaurantOwnerBookingsPerDay,
+    getRestaurantOwnerOverview,
     getRestaurantOwnerMealTimeStats,
 };

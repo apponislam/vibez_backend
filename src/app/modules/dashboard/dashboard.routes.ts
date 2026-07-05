@@ -11,6 +11,7 @@ router.get("/affiliate-stats", auth, authorize(["ADMIN"]), dashboardControllers.
 
 // Restaurant owner dashboard routes
 router.get("/restaurant-stats", auth, authorize(["RESTAURANT_OWNER", "STAFF"]), dashboardControllers.getRestaurantOwnerDashboardStats);
+router.get("/restaurant-overview", auth, authorize(["RESTAURANT_OWNER", "STAFF"]), dashboardControllers.getRestaurantOwnerOverview);
 router.get("/restaurant-bookings-per-day", auth, authorize(["RESTAURANT_OWNER", "STAFF"]), dashboardControllers.getRestaurantOwnerBookingsPerDay);
 router.get("/restaurant-lunch-vs-dinner", auth, authorize(["RESTAURANT_OWNER", "STAFF"]), dashboardControllers.getRestaurantOwnerMealTimeStats);
 
