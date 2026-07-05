@@ -695,7 +695,7 @@ const getRestaurantOwnerOverview = async (user: { _id: string; role: string; res
 
     const totalClaims = {
         value: totalClaimsAllTime,
-        change: claimsChange
+        growth: claimsChange
     };
 
     // Calculate Conversion Rate
@@ -721,7 +721,7 @@ const getRestaurantOwnerOverview = async (user: { _id: string; role: string; res
 
     const conversionRate = {
         value: `${conversionRateAllTime}%`,
-        change: conversionChange
+        growth: conversionChange
     };
 
     // Calculate Peak Hours (Meal time category and most popular 2 hr range)
