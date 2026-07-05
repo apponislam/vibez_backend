@@ -614,8 +614,66 @@ const getRestaurantOwnerDashboardStats = async (user: { _id: string; role: strin
     };
 };
 
+const getRestaurantOwnerBookingsPerDay = async (user: { _id: string; role: string; restaurantId?: any }) => {
+    let restaurantId = user.restaurantId;
+
+    if (!restaurantId && user.role === "RESTAURANT_OWNER") {
+        const restaurant = await RestaurantModel.findOne({ restaurantOwner: user._id });
+        if (restaurant) {
+            restaurantId = restaurant._id;
+        }
+    }
+
+    if (!restaurantId) {
+        throw new ApiError(httpStatus.FORBIDDEN, "User is not associated with any restaurant");
+    }
+
+    const restaurantObjectId = new Types.ObjectId(restaurantId);
+    const now = new Date();
+
+    const currentDay = now.getDay();
+    const distanceToMonday = currentDay === 0 ? -6 : 1 - currentDay;
+    const mondayOfCurrentWeek = new Date(now);
+    mondayOfCurrentWeek.setDate(now.getDate() + distanceToMonday);
+    mondayOfCurrentWeek.setHours(0, 0, 0, 0);
+
+    const sundayOfCurrentWeek = new Date(mondayOfCurrentWeek);
+    sundayOfCurrentWeek.setDate(mondayOfCurrentWeek.getDate() + 6);
+    sundayOfCurrentWeek.setHours(23, 59, 59, 999);
+
+    const currentWeekReservations = await ReservationModel.find({
+        restaurantId: restaurantObjectId,
+        status: { $ne: ReservationStatus.CANCELLED },
+        reservationDate: { $gte: mondayOfCurrentWeek, $lte: sundayOfCurrentWeek },
+    }).select("reservationDate").lean();
+
+    const fixedDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    const bookingsPerDay = fixedDays.map((day, index) => {
+        const date = new Date(mondayOfCurrentWeek);
+        date.setDate(mondayOfCurrentWeek.getDate() + index);
+        const dateStr = date.toISOString().split("T")[0];
+        return {
+            day,
+            date: dateStr,
+            count: 0,
+        };
+    });
+
+    for (const res of currentWeekReservations) {
+        const resDate = new Date(res.reservationDate);
+        const resDateStr = resDate.toISOString().split("T")[0];
+        const dayEntry = bookingsPerDay.find((d) => d.date === resDateStr);
+        if (dayEntry) {
+            dayEntry.count++;
+        }
+    }
+
+    return bookingsPerDay;
+};
+
 export const dashboardServices = {
     getAdminDashboardStats,
     getAffiliateStats,
     getRestaurantOwnerDashboardStats,
+    getRestaurantOwnerBookingsPerDay,
 };
