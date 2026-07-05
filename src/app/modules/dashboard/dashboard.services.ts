@@ -1028,9 +1028,10 @@ const getRestaurantOwnerInsights = async (user: { _id: string; role: string; res
         }
     }
 
-    const bestDay = bestDayName !== "N/A"
-        ? `${bestDayName} - ${maxCustomers} customers`
-        : "N/A";
+    const bestDay = {
+        day: bestDayName,
+        mostCount: maxCustomers
+    };
 
     // 3. Customer Satisfaction (Average Rating of active, non-deleted reviews)
     const reviews = await ReviewModel.aggregate([
