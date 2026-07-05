@@ -82,6 +82,24 @@ const createReservation = async (data: Partial<IReservation>, userId: string) =>
         if (userClaimedToday) {
             throw new ApiError(httpStatus.BAD_REQUEST, "You have already claimed this deal today");
         }
+
+        // Check if user already used this deal in the last 3 months
+        const threeMonthsAgo = new Date();
+        threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+
+        const usedInLast3Months = await ReservationModel.exists({
+            dealId: deal._id,
+            userId: new Types.ObjectId(userId),
+            status: { $ne: ReservationStatus.CANCELLED },
+            reservationDate: { $gte: threeMonthsAgo },
+        });
+
+        if (usedInLast3Months) {
+            throw new ApiError(
+                httpStatus.BAD_REQUEST,
+                "You cannot use this deal again for 3 months."
+            );
+        }
     }
 
     const reservationData = { ...data, userId };

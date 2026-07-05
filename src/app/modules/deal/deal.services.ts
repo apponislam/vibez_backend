@@ -6,6 +6,8 @@ import { DealModel } from "./deal.model";
 import { UserModel } from "../auth/auth.model";
 import { RestaurantModel } from "../restaurant/restaurant.model";
 import { SavedDealModel } from "../saved-deal/saved-deal.model";
+import { ReservationModel } from "../reservation/reservation.model";
+import { ReservationStatus } from "../reservation/reservation.interface";
 
 const createDeal = async (userId: string, payload: any) => {
     const user = await UserModel.findById(userId);
@@ -78,16 +80,31 @@ const getActiveDeals = async (filters: any = {}, userId?: string) => {
     let formattedDeals = deals.map((deal) => (deal.toObject ? deal.toObject() : deal));
 
     if (userId) {
-        const savedDeals = await SavedDealModel.find({ userId });
+        const threeMonthsAgo = new Date();
+        threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+
+        const [savedDeals, usedReservations] = await Promise.all([
+            SavedDealModel.find({ userId }),
+            ReservationModel.find({
+                userId: new Types.ObjectId(userId),
+                status: { $ne: ReservationStatus.CANCELLED },
+                reservationDate: { $gte: threeMonthsAgo },
+            }).select("dealId"),
+        ]);
+
         const savedDealIds = new Set(savedDeals.map((sd) => sd.dealId.toString()));
+        const usedDealIds = new Set(usedReservations.map((ur) => ur.dealId.toString()));
+
         formattedDeals = formattedDeals.map((deal: any) => ({
             ...deal,
             isSaved: savedDealIds.has(deal._id.toString()),
+            isUsed: usedDealIds.has(deal._id.toString()),
         }));
     } else {
         formattedDeals = formattedDeals.map((deal: any) => ({
             ...deal,
             isSaved: false,
+            isUsed: false,
         }));
     }
 
@@ -114,17 +131,34 @@ const getDealById = async (dealId: string, userId?: string) => {
 
     const dealObj = deal.toObject ? deal.toObject() : deal;
     let isSaved = false;
+    let isUsed = false;
 
     if (userId) {
-        const saved = await SavedDealModel.findOne({ userId, dealId: dealObj._id });
+        const threeMonthsAgo = new Date();
+        threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+
+        const [saved, reservation] = await Promise.all([
+            SavedDealModel.findOne({ userId, dealId: dealObj._id }),
+            ReservationModel.findOne({
+                dealId: dealObj._id,
+                userId: new Types.ObjectId(userId),
+                status: { $ne: ReservationStatus.CANCELLED },
+                reservationDate: { $gte: threeMonthsAgo },
+            }),
+        ]);
+
         if (saved) {
             isSaved = true;
+        }
+        if (reservation) {
+            isUsed = true;
         }
     }
 
     return {
         ...dealObj,
         isSaved,
+        isUsed,
     };
 };
 

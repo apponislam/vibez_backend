@@ -1,0 +1,58 @@
+
+But. It will be good. If a user visite a restaurant and use a deal.  That after he used 1 deal in this restaurant A.  He can not use the deal for the next 3 months.
+ 
+But he can use and visite all other restaurant.  Visite restaurant b...c....d....e....f .
+ 
+And after the time past. He can use deals from restaurant a again
+So it should be a temporary block for Just the deal wich is used. And also Just for the guest who used it.
+ 
+For other app user. The deal still stay activ. And other app user see it and can use it.
+ 
+ 
+Hope i can explain it
+Restaurant A have deals
+2 for 1 menu
+And oder 1 menu get free dessert
+ 
+User aa  use deal.  2 for 1 menu in restaurant a
+So this deal will be blocked after using it for some temporay time. That the same user not always go cheaper in the same restaurant 
+User aa can not use the deal anymoore in restaurant a
+But he can use deals in restaurant b...c...d..
+ 
+For other user.  The used deal is still activ in Applikation. And they also can use it.
+ 
+ 
+To avoid. That guest who are already good costumers. From restaurant A. Still go there but just cheaper.
+ 
+It would be good if the Applikation brings New guest.  New guest with a deal.
+ 
+Not taking guest which are already every week on the same restaurant.
+ 
+You understand what i want to say?
+ 
+The app should bring New guest.  
+Not.. guest who are alreaey every month there. Just use the deals now and kill the Marge of the restaurant
+ 
+So it must be.....if 1 deal is used... the same deal can not be used for some time.... so it must block it. For some time.
+ 
+But
+
+
+Core Goal
+The client wants to prevent users from abusing deals at the same restaurant over and over again (which hurts the restaurant's profit margins). The app should focus on bringing new customers to restaurants rather than letting the same regular customers repeatedly use discounts.
+
+How the Feature Works (Rules)
+User-Specific & Deal-Specific Block:
+
+When User A uses a specific Deal at Restaurant A, that specific deal becomes temporarily blocked only for User A.
+The client suggests a block duration of 3 months (though it should probably be configurable).
+Impact on User A:
+
+User A cannot use that same deal at Restaurant A again until the block period (e.g., 3 months) has passed.
+However, User A is still free to use deals at other restaurants (Restaurant B, C, D, etc.).
+Impact on Other Users:
+
+The deal remains active, visible, and usable for every other user on the app. The block is strictly personalized to the user who redeemed it.
+Expiration of the Block:
+
+Once the temporary block period (e.g., 3 months) expires, the deal becomes available for User A to redeem again at Restaurant A.
