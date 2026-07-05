@@ -9,11 +9,12 @@ const router = Router();
 
 // Public routes
 router.get("/", checkAuth, restaurantControllers.getAllRestaurants);
-router.get("/admin/all", auth, authorize(["ADMIN"]), restaurantControllers.getAllRestaurantsForAdmin);
 router.get("/:id", checkAuth, restaurantControllers.getRestaurantById);
+router.get("/admin/all", auth, authorize(["ADMIN"]), restaurantControllers.getAllRestaurantsForAdmin);
 
 // Protected routes (require auth)
 router.get("/my/restaurant", auth, restaurantControllers.getMyRestaurant);
+router.post("/", auth, authorize(["ADMIN", "RESTAURANT_OWNER"]), uploadRestaurantImage, restaurantControllers.createRestaurant);
 router.patch("/my/restaurant", auth, authorize(["RESTAURANT_OWNER"]), uploadRestaurantImage, restaurantControllers.updateRestaurant);
 router.delete("/:id", auth, authorize(["ADMIN", "RESTAURANT_OWNER"]), restaurantControllers.deleteRestaurant);
 
