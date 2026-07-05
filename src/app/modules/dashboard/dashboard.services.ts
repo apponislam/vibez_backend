@@ -1051,8 +1051,7 @@ const getRestaurantOwnerInsights = async (user: { _id: string; role: string; res
     ]);
 
     const rawRating = reviews[0]?.averageRating || 0;
-    const averageRating = rawRating > 0 ? Number(rawRating.toFixed(1)) : 0;
-    const customerSatisfaction = `${averageRating}/5.0 ⭐`;
+    const customerSatisfaction = rawRating > 0 ? Number(rawRating.toFixed(1)) : 0.0;
 
     return {
         topPerformingDeals,
