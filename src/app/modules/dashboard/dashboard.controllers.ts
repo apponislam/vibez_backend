@@ -64,6 +64,16 @@ const getRestaurantOwnerMealTimeStats = catchAsync(async (req: Request, res: Res
     });
 });
 
+const getRestaurantOwnerInsights = catchAsync(async (req: Request, res: Response) => {
+    const result = await dashboardServices.getRestaurantOwnerInsights(req.user as any);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Restaurant owner dashboard insights retrieved successfully",
+        data: result,
+    });
+});
+
 export const dashboardControllers = {
     getAdminDashboardStats,
     getAffiliateStats,
@@ -71,4 +81,5 @@ export const dashboardControllers = {
     getRestaurantOwnerBookingsPerDay,
     getRestaurantOwnerOverview,
     getRestaurantOwnerMealTimeStats,
+    getRestaurantOwnerInsights,
 };

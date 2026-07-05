@@ -12,6 +12,7 @@ import { WithdrawStatus } from "../withdraw/withdraw.interface";
 import { SubscriptionDuration, UserSubscriptionStatus } from "../subscription/subscription.interface";
 import { ReservationStatus } from "../reservation/reservation.interface";
 import { SavedDealModel } from "../saved-deal/saved-deal.model";
+import { ReviewModel } from "../review/review.model";
 import { Types } from "mongoose";
 
 // Helper function to calculate affiliates count up to a certain date
@@ -938,6 +939,129 @@ const getRestaurantOwnerMealTimeStats = async (user: { _id: string; role: string
     ];
 };
 
+const getRestaurantOwnerInsights = async (user: { _id: string; role: string; restaurantId?: any }) => {
+    let restaurantId = user.restaurantId;
+
+    if (!restaurantId && user.role === "RESTAURANT_OWNER") {
+        const restaurant = await RestaurantModel.findOne({ restaurantOwner: user._id });
+        if (restaurant) {
+            restaurantId = restaurant._id;
+        }
+    }
+
+    if (!restaurantId) {
+        throw new ApiError(httpStatus.FORBIDDEN, "User is not associated with any restaurant");
+    }
+
+    const restaurantObjectId = new Types.ObjectId(restaurantId);
+
+    // 1. Top Performing Deals (limit 3, order by total claims [saved + used])
+    const dealStats = await ReservationModel.aggregate([
+        {
+            $match: {
+                restaurantId: restaurantObjectId,
+                status: { $ne: ReservationStatus.CANCELLED },
+                dealId: { $ne: null },
+            },
+        },
+        {
+            $group: {
+                _id: "$dealId",
+                usedClaims: { $sum: 1 },
+            },
+        },
+        { $sort: { usedClaims: -1 } },
+        { $limit: 3 },
+    ]);
+
+    const topPerformingDeals = [];
+    for (const stat of dealStats) {
+        const deal = await DealModel.findById(stat._id);
+        if (deal) {
+            const savedClaims = await SavedDealModel.countDocuments({ dealId: stat._id });
+            topPerformingDeals.push({
+                title: deal.title,
+                claims: stat.usedClaims + savedClaims,
+            });
+        }
+    }
+    // Sort in memory in case saved deals alter ranking
+    topPerformingDeals.sort((a, b) => b.claims - a.claims);
+
+    // 2. Weekly Insights - Best Day (of current calendar week, based on total partySize)
+    const now = new Date();
+    const currentDay = now.getDay();
+    const distanceToMonday = currentDay === 0 ? -6 : 1 - currentDay;
+    const mondayOfCurrentWeek = new Date(now);
+    mondayOfCurrentWeek.setDate(now.getDate() + distanceToMonday);
+    mondayOfCurrentWeek.setHours(0, 0, 0, 0);
+
+    const sundayOfCurrentWeek = new Date(mondayOfCurrentWeek);
+    sundayOfCurrentWeek.setDate(mondayOfCurrentWeek.getDate() + 6);
+    sundayOfCurrentWeek.setHours(23, 59, 59, 999);
+
+    const currentWeekReservations = await ReservationModel.find({
+        restaurantId: restaurantObjectId,
+        status: { $ne: ReservationStatus.CANCELLED },
+        reservationDate: { $gte: mondayOfCurrentWeek, $lte: sundayOfCurrentWeek },
+    });
+
+    const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const dayCustomerSums: { [key: string]: number } = {};
+
+    for (const name of dayNames) {
+        dayCustomerSums[name] = 0;
+    }
+
+    for (const res of currentWeekReservations) {
+        const dayIndex = new Date(res.reservationDate).getDay();
+        const dayName = dayNames[dayIndex];
+        dayCustomerSums[dayName] += res.partySize || 0;
+    }
+
+    let bestDayName = "N/A";
+    let maxCustomers = 0;
+    for (const [dayName, sum] of Object.entries(dayCustomerSums)) {
+        if (sum > maxCustomers) {
+            maxCustomers = sum;
+            bestDayName = dayName;
+        }
+    }
+
+    const bestDay = bestDayName !== "N/A"
+        ? `${bestDayName} - ${maxCustomers} customers`
+        : "N/A";
+
+    // 3. Customer Satisfaction (Average Rating of active, non-deleted reviews)
+    const reviews = await ReviewModel.aggregate([
+        {
+            $match: {
+                restaurantId: restaurantObjectId,
+                isDeleted: false,
+                isActive: true,
+            },
+        },
+        {
+            $group: {
+                _id: null,
+                averageRating: { $avg: "$rating" },
+            },
+        },
+    ]);
+
+    const rawRating = reviews[0]?.averageRating || 0;
+    const averageRating = rawRating > 0 ? Number(rawRating.toFixed(1)) : 0;
+    const customerSatisfaction = `${averageRating}/5.0 ⭐`;
+
+    return {
+        topPerformingDeals,
+        weeklyInsights: {
+            bestDay,
+        },
+        customerSatisfaction,
+    };
+};
+
 export const dashboardServices = {
     getAdminDashboardStats,
     getAffiliateStats,
@@ -945,4 +1069,5 @@ export const dashboardServices = {
     getRestaurantOwnerBookingsPerDay,
     getRestaurantOwnerMealTimeStats,
     getRestaurantOwnerOverview,
+    getRestaurantOwnerInsights,
 };
