@@ -8,52 +8,6 @@ import { DealModel } from "../deal/deal.model";
 import { SavedDealModel } from "../saved-deal/saved-deal.model";
 import { ReviewModel } from "../review/review.model";
 
-const createRestaurant = async (data: any, ownerId: string) => {
-    let address = data.restaurantAddress;
-    if (address) {
-        if (typeof address === "string") {
-            try {
-                address = JSON.parse(address);
-            } catch (error) {
-                throw new ApiError(httpStatus.BAD_REQUEST, "Invalid restaurant address format");
-            }
-        }
-
-        const latVal = address.lat;
-        const lngVal = address.lng !== undefined ? address.lng : address.lan;
-
-        if (latVal !== undefined && lngVal !== undefined && latVal !== "" && lngVal !== "") {
-            const lat = parseFloat(latVal);
-            const lng = parseFloat(lngVal);
-            address.lat = lat.toString();
-            address.lng = lng.toString();
-            address.location = {
-                type: "Point",
-                coordinates: [lng, lat],
-            };
-        } else {
-            const coords = await getLatLngFromAddress(address, data.restaurantName);
-            if (coords) {
-                address.lat = coords.lat.toString();
-                address.lng = coords.lng.toString();
-                address.location = {
-                    type: "Point",
-                    coordinates: [coords.lng, coords.lat],
-                };
-            }
-        }
-        data.restaurantAddress = address;
-    }
-
-    const restaurantData = { ...data, restaurantOwner: ownerId };
-    const restaurant = await RestaurantModel.create(restaurantData);
-
-    // Update Owner's User document with the new Restaurant ID
-    await UserModel.findByIdAndUpdate(ownerId, { $set: { restaurantId: restaurant._id } });
-
-    return restaurant;
-};
-
 const getAllRestaurants = async (filters: any = {}, userId?: string) => {
     let query: any = { approved: true };
 
@@ -434,7 +388,6 @@ const revokeRestaurantApproval = async (id: string) => {
 };
 
 export const restaurantServices = {
-    createRestaurant,
     getAllRestaurants,
     getAllRestaurantsForAdmin,
     getRestaurantById,

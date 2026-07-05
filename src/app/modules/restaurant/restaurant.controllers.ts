@@ -27,17 +27,6 @@ const parseRequestBody = (req: Request): any => {
     return data;
 };
 
-const createRestaurant = catchAsync(async (req: Request, res: Response) => {
-    const data = parseRequestBody(req);
-    const result = await restaurantServices.createRestaurant(data, req.user._id as string);
-    sendResponse(res, {
-        statusCode: httpStatus.CREATED,
-        success: true,
-        message: "Restaurant created successfully",
-        data: result,
-    });
-});
-
 const getAllRestaurants = catchAsync(async (req: Request, res: Response) => {
     const userId = req.user?._id?.toString();
     const result = await restaurantServices.getAllRestaurants(req.query, userId);
@@ -133,7 +122,6 @@ const getAllRestaurantsForAdmin = catchAsync(async (req: Request, res: Response)
 });
 
 export const restaurantControllers = {
-    createRestaurant,
     getAllRestaurants,
     getAllRestaurantsForAdmin,
     getRestaurantById,
