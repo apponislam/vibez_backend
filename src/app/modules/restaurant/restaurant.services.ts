@@ -45,8 +45,21 @@ const getAllRestaurants = async (filters: any = {}, userId?: string) => {
     const page = parseInt(filters.page as string) || 1;
     const limit = parseInt(filters.limit as string) || 10;
     const skip = (page - 1) * limit;
+    const minRating = filters.minRating ? parseFloat(filters.minRating as string) : undefined;
 
-    const [restaurants, total] = await Promise.all([RestaurantModel.find(query).populate("restaurantOwner", "name email phone").skip(skip).limit(limit), RestaurantModel.countDocuments(countQuery)]);
+    let restaurants;
+    let total = 0;
+
+    if (minRating !== undefined && !isNaN(minRating)) {
+        // If minRating is provided, fetch all matching restaurants first to calculate ratings
+        restaurants = await RestaurantModel.find(query).populate("restaurantOwner", "name email phone");
+    } else {
+        // Normal fast paginated query
+        [restaurants, total] = await Promise.all([
+            RestaurantModel.find(query).populate("restaurantOwner", "name email phone").skip(skip).limit(limit),
+            RestaurantModel.countDocuments(countQuery),
+        ]);
+    }
 
     let resultData: any[] = [];
     if (userId) {
@@ -115,6 +128,14 @@ const getAllRestaurants = async (filters: any = {}, userId?: string) => {
         averageRating: parseFloat((ratingMap.get(restaurantObj._id.toString())?.averageRating || 0).toFixed(1)),
         totalReviews: ratingMap.get(restaurantObj._id.toString())?.totalReviews || 0,
     }));
+
+    if (minRating !== undefined && !isNaN(minRating)) {
+        // Filter by minRating
+        resultData = resultData.filter((r: any) => r.averageRating >= minRating);
+        total = resultData.length;
+        // Paginate in-memory
+        resultData = resultData.slice(skip, skip + limit);
+    }
 
     const totalPages = Math.ceil(total / limit);
     const hasNext = page < totalPages;
