@@ -46,12 +46,14 @@ const getAllRestaurants = async (filters: any = {}, userId?: string) => {
     const limit = parseInt(filters.limit as string) || 10;
     const skip = (page - 1) * limit;
     const minRating = filters.minRating ? parseFloat(filters.minRating as string) : undefined;
+    const openNow = filters.openNow === "true";
+    const useInMemoryFiltering = (minRating !== undefined && !isNaN(minRating)) || openNow;
 
     let restaurants;
     let total = 0;
 
-    if (minRating !== undefined && !isNaN(minRating)) {
-        // If minRating is provided, fetch all matching restaurants first to calculate ratings
+    if (useInMemoryFiltering) {
+        // If minRating or openNow is provided, fetch all matching restaurants first to calculate/filter ratings/hours
         restaurants = await RestaurantModel.find(query).populate("restaurantOwner", "name email phone");
     } else {
         // Normal fast paginated query
@@ -132,6 +134,76 @@ const getAllRestaurants = async (filters: any = {}, userId?: string) => {
     if (minRating !== undefined && !isNaN(minRating)) {
         // Filter by minRating
         resultData = resultData.filter((r: any) => r.averageRating >= minRating);
+    }
+
+    if (openNow) {
+        let currentDayName: string;
+        let currentTimeStr: string;
+
+        if (filters.clientDay && filters.clientTime) {
+            currentDayName = (filters.clientDay as string).toUpperCase();
+            currentTimeStr = filters.clientTime as string;
+        } else {
+            const now = new Date();
+            const dayNames = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
+            currentDayName = dayNames[now.getDay()];
+            const currentHour = now.getHours().toString().padStart(2, "0");
+            const currentMinute = now.getMinutes().toString().padStart(2, "0");
+            currentTimeStr = `${currentHour}:${currentMinute}`;
+        }
+
+        const timeToMinutes = (timeStr: string): number => {
+            if (!timeStr) return 0;
+            const parts = timeStr.split(":");
+            if (parts.length < 2) return 0;
+            const hours = parseInt(parts[0], 10);
+            const minutes = parseInt(parts[1], 10);
+            return hours * 60 + minutes;
+        };
+
+        const currentMinutes = timeToMinutes(currentTimeStr);
+
+        const checkTimeInRange = (open: string, close: string, current: number): boolean => {
+            if (!open || !close) return false;
+            const openMins = timeToMinutes(open);
+            const closeMins = timeToMinutes(close);
+
+            if (closeMins < openMins) {
+                // Over midnight (e.g., 18:00 to 02:00)
+                return current >= openMins || current <= closeMins;
+            }
+            return current >= openMins && current <= closeMins;
+        };
+
+        resultData = resultData.filter((restaurantObj: any) => {
+            const todayHours = restaurantObj.restaurantOpenHours?.find(
+                (h: any) => h.day === currentDayName
+            );
+            if (!todayHours || !todayHours.isOpen) {
+                return false;
+            }
+
+            // Check primary openTime and closeTime
+            if (todayHours.openTime && todayHours.closeTime) {
+                if (checkTimeInRange(todayHours.openTime, todayHours.closeTime, currentMinutes)) {
+                    return true;
+                }
+            }
+
+            // Check slots
+            if (todayHours.slots && todayHours.slots.length > 0) {
+                for (const slot of todayHours.slots) {
+                    if (checkTimeInRange(slot.openTime, slot.closeTime, currentMinutes)) {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        });
+    }
+
+    if (useInMemoryFiltering) {
         total = resultData.length;
         // Paginate in-memory
         resultData = resultData.slice(skip, skip + limit);
