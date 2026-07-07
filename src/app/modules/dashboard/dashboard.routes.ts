@@ -8,6 +8,7 @@ const router = Router();
 // Admin dashboard routes
 router.get("/stats", auth, authorize(["ADMIN"]), dashboardControllers.getAdminDashboardStats);
 router.get("/affiliate-stats", auth, authorize(["ADMIN"]), dashboardControllers.getAffiliateStats);
+router.get("/admin-restaurant-stats", auth, authorize(["ADMIN"]), dashboardControllers.getAdminRestaurantStats);
 
 // Restaurant owner dashboard routes
 router.get("/restaurant-stats", auth, authorize(["RESTAURANT_OWNER", "STAFF"]), dashboardControllers.getRestaurantOwnerDashboardStats);

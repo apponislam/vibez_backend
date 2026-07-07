@@ -1207,6 +1207,60 @@ const broadcastRestaurantStats = async (restaurantId: string) => {
     }
 };
 
+const getAdminRestaurantStats = async () => {
+    const now = new Date();
+    const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    // 1. Total Restaurants & Growth
+    const totalApprovedRestaurants = await RestaurantModel.countDocuments({ approved: true });
+    
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+
+    const approvedThisMonth = await RestaurantModel.countDocuments({
+        approved: true,
+        approvedAt: { $gte: startOfThisMonth }
+    });
+
+    const approvedLastMonth = await RestaurantModel.countDocuments({
+        approved: true,
+        approvedAt: { $gte: startOfLastMonth, $lte: endOfLastMonth }
+    });
+
+    const diff = approvedThisMonth - approvedLastMonth;
+    const restaurantsChangeStr = `${diff >= 0 ? "+" : ""}${diff}`;
+
+    // 2. Pending Approvals & Growth status
+    const pendingApprovalsCount = await RestaurantModel.countDocuments({ approved: false });
+    const pendingChangeStr = pendingApprovalsCount > 0 ? "Requires attention" : "Stable";
+
+    // 3. Avg Performance (Redemption rate: claims to reservations ratio)
+    const totalSaved = await SavedDealModel.countDocuments();
+    const totalUsed = await ReservationModel.countDocuments({
+        dealId: { $ne: null },
+        status: { $ne: ReservationStatus.CANCELLED }
+    });
+
+    const totalClaimsAllTime = totalSaved + totalUsed;
+    const avgPerformance = totalClaimsAllTime > 0 ? (totalUsed / totalClaimsAllTime) * 100 : 0;
+    const avgPerformanceStr = `${avgPerformance.toFixed(1)}%`;
+
+    return {
+        totalRestaurants: {
+            value: totalApprovedRestaurants,
+            change: restaurantsChangeStr
+        },
+        pendingApprovals: {
+            value: pendingApprovalsCount,
+            change: pendingChangeStr
+        },
+        avgPerformance: {
+            value: avgPerformanceStr,
+            change: "Redemption rate"
+        }
+    };
+};
+
 export const dashboardServices = {
     getAdminDashboardStats,
     getAffiliateStats,
@@ -1218,4 +1272,5 @@ export const dashboardServices = {
     getRestaurantRealtimeStatsById,
     getRestaurantRealtimeStats,
     broadcastRestaurantStats,
+    getAdminRestaurantStats,
 };
