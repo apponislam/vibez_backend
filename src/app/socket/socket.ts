@@ -31,7 +31,8 @@ export const initSocket = (server: http.Server) => {
         // console.log(socket);
         console.log("🔌 Socket connected:", socket.id);
 
-        const userId = socket.handshake.auth?._id;
+        const userId = socket.handshake.auth?._id || socket.handshake.query?._id;
+        let restaurantId = socket.handshake.auth?.restaurantId || socket.handshake.query?.restaurantId;
 
         if (userId) {
             socket.join(`user_${userId}`);
@@ -42,36 +43,46 @@ export const initSocket = (server: http.Server) => {
                 onlineUsers.set(userId, new Set());
             }
             onlineUsers.get(userId)!.add(socket.id);
+        }
 
+        // If restaurantId is not passed directly, look it up via userId
+        if (!restaurantId && userId) {
             try {
-                // Join restaurant room if owner or staff
                 const user = await UserModel.findById(userId).lean();
                 if (user) {
-                    let restaurantId = user.restaurantId;
+                    restaurantId = user.restaurantId;
                     if (!restaurantId && user.role === "RESTAURANT_OWNER") {
                         const restaurant = await RestaurantModel.findOne({ restaurantOwner: userId }).lean();
                         if (restaurant) {
                             restaurantId = restaurant._id;
                         }
                     }
-                    if (restaurantId) {
-                        const restaurantRoom = `restaurant_${restaurantId.toString()}`;
-                        socket.join(restaurantRoom);
-                        console.log(`User ${userId} joined room ${restaurantRoom}`);
+                }
+            } catch (err) {
+                console.error("Error looking up restaurantId via userId:", err);
+            }
+        }
 
-                        // Immediately send the initial stats to this socket
-                        const { dashboardServices } = require("../modules/dashboard/dashboard.services");
-                        const stats = await dashboardServices.getRestaurantRealtimeStatsById(restaurantId.toString());
-                        socket.emit("restaurant_stats", stats);
+        if (restaurantId) {
+            const restaurantRoom = `restaurant_${restaurantId.toString()}`;
+            socket.join(restaurantRoom);
+            console.log(`Socket joined room ${restaurantRoom}`);
 
-                        // If user is STAFF, notify restaurant room that online staff count changed
-                        if (user.role === "STAFF") {
-                            await dashboardServices.broadcastRestaurantStats(restaurantId.toString());
-                        }
+            try {
+                // Immediately send the initial stats to this socket
+                const { dashboardServices } = require("../modules/dashboard/dashboard.services");
+                const stats = await dashboardServices.getRestaurantRealtimeStatsById(restaurantId.toString());
+                socket.emit("restaurant_stats", stats);
+
+                // If user is STAFF, notify restaurant room that online staff count changed
+                if (userId) {
+                    const user = await UserModel.findById(userId).lean();
+                    if (user && user.role === "STAFF") {
+                        await dashboardServices.broadcastRestaurantStats(restaurantId.toString());
                     }
                 }
             } catch (err) {
-                console.error("Error setting up restaurant socket room:", err);
+                console.error("Error handling restaurant stats initialization:", err);
             }
         }
 
