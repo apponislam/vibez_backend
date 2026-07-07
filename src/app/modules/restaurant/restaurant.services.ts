@@ -1,7 +1,6 @@
 import httpStatus from "http-status";
 import ApiError from "../../../errors/ApiError";
 import { RestaurantModel } from "./restaurant.model";
-import { UserModel } from "../auth/auth.model";
 import { getLatLngFromAddress } from "../../../utils/googleMaps";
 import { FavoriteModel } from "../favorite/favorite.model";
 import { DealModel } from "../deal/deal.model";
