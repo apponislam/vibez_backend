@@ -14,7 +14,7 @@ const app: Application = express();
 app.post("/api/v1/subscription/webhook", express.raw({ type: "application/json" }), stripeWebhooks.handleStripeWebhook);
 
 const corsOptions = {
-    origin: ["http://localhost:3000", "http://10.10.7.111:3000"],
+    origin: ["http://localhost:3000", "http://10.10.7.111:3000", "http://localhost:3001"],
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
