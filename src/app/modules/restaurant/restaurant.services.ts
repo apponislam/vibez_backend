@@ -7,6 +7,8 @@ import { FavoriteModel } from "../favorite/favorite.model";
 import { DealModel } from "../deal/deal.model";
 import { SavedDealModel } from "../saved-deal/saved-deal.model";
 import { ReviewModel } from "../review/review.model";
+import { ReservationModel } from "../reservation/reservation.model";
+import { ReservationStatus } from "../reservation/reservation.interface";
 
 const getAllRestaurants = async (filters: any = {}, userId?: string) => {
     let query: any = { approved: true };
@@ -267,30 +269,54 @@ const getAllRestaurantsForAdmin = async (filters: any = {}) => {
     const limit = parseInt(filters.limit as string) || 10;
     const skip = (page - 1) * limit;
 
-    const [restaurants, total] = await Promise.all([RestaurantModel.find(query).populate("restaurantOwner", "name email phone").skip(skip).limit(limit), RestaurantModel.countDocuments(countQuery)]);
+    const [restaurants, total] = await Promise.all([
+        RestaurantModel.find(query)
+            .select("restaurantName restaurantImage approved createdAt restaurantOwner")
+            .populate("restaurantOwner", "name email phone profileImage")
+            .skip(skip)
+            .limit(limit),
+        RestaurantModel.countDocuments(countQuery)
+    ]);
 
     const formattedRestaurants = await Promise.all(
         restaurants.map(async (restaurant) => {
-            const restaurantObj = restaurant.toObject ? restaurant.toObject() : restaurant;
-            const recentDeals = await DealModel.find({
-                restaurantId: restaurantObj._id,
+            const restaurantId = restaurant._id;
+
+            // 1. Count Active Deals
+            const activeDeals = await DealModel.countDocuments({
+                restaurantId,
                 isActive: true,
                 isDeleted: false,
-            })
-                .sort({ createdAt: -1 })
-                .limit(2);
-
-            const formattedDeals = recentDeals.map((deal) => {
-                const dealObj = deal.toObject ? deal.toObject() : deal;
-                return {
-                    ...dealObj,
-                    isSaved: false,
-                };
             });
 
+            // 2. Count Total Bookings (reservations not cancelled)
+            const totalBookings = await ReservationModel.countDocuments({
+                restaurantId,
+                status: { $ne: ReservationStatus.CANCELLED }
+            });
+
+            // 3. Calculate Redemption Rate
+            const deals = await DealModel.find({ restaurantId }).select("_id");
+            const dealIds = deals.map(d => d._id);
+            const totalSaved = await SavedDealModel.countDocuments({ dealId: { $in: dealIds } });
+            const totalUsed = await ReservationModel.countDocuments({
+                restaurantId,
+                dealId: { $ne: null },
+                status: { $ne: ReservationStatus.CANCELLED }
+            });
+            const totalClaims = totalSaved + totalUsed;
+            const redemptionRate = totalClaims > 0 ? Number(((totalUsed / totalClaims) * 100).toFixed(1)) : 0;
+
             return {
-                ...restaurantObj,
-                recentDeals: formattedDeals,
+                _id: restaurant._id,
+                restaurantName: restaurant.restaurantName,
+                restaurantImage: restaurant.restaurantImage,
+                approved: restaurant.approved,
+                createdAt: (restaurant as any).createdAt,
+                restaurantOwner: restaurant.restaurantOwner,
+                activeDeals,
+                totalBookings,
+                redemptionRate: `${redemptionRate}%`,
             };
         }),
     );
