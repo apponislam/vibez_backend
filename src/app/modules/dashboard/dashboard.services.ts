@@ -467,15 +467,14 @@ const getRestaurantOwnerDashboardStats = async (user: { _id: string; role: strin
 
     let averageGuests = {
         average: Number(averageThisWeek.toFixed(1)),
-        change: "0.0 from last week",
+        change: 0,
     };
 
     if (averageLastWeek > 0) {
         const diff = averageThisWeek - averageLastWeek;
-        const sign = diff >= 0 ? "↑" : "↓";
-        averageGuests.change = `${sign} ${Math.abs(diff).toFixed(1)} from last week`;
+        averageGuests.change = Number(diff.toFixed(1));
     } else if (averageThisWeek > 0) {
-        averageGuests.change = `↑ ${averageThisWeek.toFixed(1)} from last week`;
+        averageGuests.change = Number(averageThisWeek.toFixed(1));
     }
 
     // Peak Time (Meal time category and most popular 1.5 hr range)
@@ -568,7 +567,7 @@ const getRestaurantOwnerDashboardStats = async (user: { _id: string; role: strin
     let mostPopularDeal = {
         title: "N/A",
         totalClaims: 0,
-        usageChange: "0%",
+        usageChange: 0,
     };
 
     if (dealStats.length > 0) {
@@ -592,12 +591,12 @@ const getRestaurantOwnerDashboardStats = async (user: { _id: string; role: strin
                 }),
             ]);
 
-            let usageChange = "0%";
+            let usageChange = 0;
             if (claimsLastWeek > 0) {
                 const diff = ((claimsThisWeek - claimsLastWeek) / claimsLastWeek) * 100;
-                usageChange = `${diff >= 0 ? "+" : ""}${diff.toFixed(0)}%`;
+                usageChange = Number(diff.toFixed(0));
             } else if (claimsThisWeek > 0) {
-                usageChange = "+100%";
+                usageChange = 100;
             }
 
             mostPopularDeal = {
