@@ -9,6 +9,7 @@ const router = Router();
 router.get("/plans", subscriptionControllers.getAllSubscriptionPlans);
 
 // Admin routes
+router.get("/admin-stats", auth, authorize(["ADMIN"]), subscriptionControllers.getAdminSubscriptionStats);
 router.post("/plans", auth, authorize(["ADMIN"]), subscriptionControllers.createSubscriptionPlan);
 router.get("/plans/:id", auth, authorize(["ADMIN"]), subscriptionControllers.getSubscriptionPlanById);
 router.patch("/plans/:id", auth, authorize(["ADMIN"]), subscriptionControllers.updateSubscriptionPlan);

@@ -62,10 +62,21 @@ const deleteSubscriptionPlan = catchAsync(async (req: Request, res: Response) =>
     });
 });
 
+const getAdminSubscriptionStats = catchAsync(async (req: Request, res: Response) => {
+    const result = await subscriptionServices.getAdminSubscriptionStats();
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Admin subscription statistics retrieved successfully",
+        data: result,
+    });
+});
+
 export const subscriptionControllers = {
     createSubscriptionPlan,
     getAllSubscriptionPlans,
     getSubscriptionPlanById,
     updateSubscriptionPlan,
     deleteSubscriptionPlan,
+    getAdminSubscriptionStats,
 };
