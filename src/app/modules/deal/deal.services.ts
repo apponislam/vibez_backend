@@ -8,6 +8,7 @@ import { RestaurantModel } from "../restaurant/restaurant.model";
 import { SavedDealModel } from "../saved-deal/saved-deal.model";
 import { ReservationModel } from "../reservation/reservation.model";
 import { ReservationStatus } from "../reservation/reservation.interface";
+import { dashboardServices } from "../dashboard/dashboard.services";
 
 const createDeal = async (userId: string, payload: any) => {
     const user = await UserModel.findById(userId);
@@ -34,6 +35,12 @@ const createDeal = async (userId: string, payload: any) => {
         ...payload,
         createdBy: new Types.ObjectId(userId),
     });
+
+    // Broadcast stats update
+    if (deal.restaurantId) {
+        dashboardServices.broadcastRestaurantStats(deal.restaurantId.toString()).catch(console.error);
+    }
+
     return deal;
 };
 
@@ -179,6 +186,12 @@ const updateDeal = async (dealId: string, payload: any, userId: string, userRole
 
     const deal = await DealModel.findOneAndUpdate({ _id: dealId, isDeleted: false }, { $set: payload }, { returnDocument: "after", runValidators: true });
     if (!deal) throw new ApiError(httpStatus.NOT_FOUND, "Deal not found");
+
+    // Broadcast stats update
+    if (deal.restaurantId) {
+        dashboardServices.broadcastRestaurantStats(deal.restaurantId.toString()).catch(console.error);
+    }
+
     return deal;
 };
 
@@ -198,6 +211,12 @@ const toggleDealStatus = async (dealId: string, userId: string, userRole: string
 
     deal.isActive = !deal.isActive;
     await deal.save();
+
+    // Broadcast stats update
+    if (deal.restaurantId) {
+        dashboardServices.broadcastRestaurantStats(deal.restaurantId.toString()).catch(console.error);
+    }
+
     return deal;
 };
 
@@ -218,6 +237,12 @@ const deleteDeal = async (dealId: string, userId: string, userRole: string) => {
     deal.isDeleted = true;
     deal.isActive = false;
     await deal.save();
+
+    // Broadcast stats update
+    if (deal.restaurantId) {
+        dashboardServices.broadcastRestaurantStats(deal.restaurantId.toString()).catch(console.error);
+    }
+
     return deal;
 };
 

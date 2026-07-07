@@ -1061,6 +1061,152 @@ const getRestaurantOwnerInsights = async (user: { _id: string; role: string; res
     };
 };
 
+const getRestaurantRealtimeStatsById = async (restaurantId: string) => {
+    const restaurantObjectId = new Types.ObjectId(restaurantId);
+    const now = new Date();
+
+    // 1. Total Bookings Today & Change from yesterday
+    const getBookingsCountForDate = async (date: Date) => {
+        const start = new Date(date);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(date);
+        end.setHours(23, 59, 59, 999);
+        return await ReservationModel.countDocuments({
+            restaurantId: restaurantObjectId,
+            status: { $ne: ReservationStatus.CANCELLED },
+            reservationDate: { $gte: start, $lte: end },
+        });
+    };
+
+    const todayBookings = await getBookingsCountForDate(now);
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    const yesterdayBookings = await getBookingsCountForDate(yesterday);
+    const bookingsChange = todayBookings - yesterdayBookings;
+    const bookingsChangeStr = `${bookingsChange >= 0 ? "+" : ""}${bookingsChange} from yesterday`;
+
+    // 2. Active Deals & Change from yesterday (or status)
+    const activeDeals = await DealModel.countDocuments({
+        restaurantId: restaurantObjectId,
+        isActive: true,
+        isDeleted: false,
+    });
+
+    const startOfToday = new Date(now);
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const yesterdayActiveDeals = await DealModel.countDocuments({
+        restaurantId: restaurantObjectId,
+        createdAt: { $lt: startOfToday },
+        $or: [
+            { isActive: true, isDeleted: false },
+            { updatedAt: { $gte: startOfToday } }, // If updated today, it might have been active yesterday
+        ],
+    });
+
+    const dealsDiff = activeDeals - yesterdayActiveDeals;
+    const activeDealsChangeStr = dealsDiff === 0 ? "Stable" : `${dealsDiff >= 0 ? "+" : ""}${dealsDiff} from yesterday`;
+
+    // 3. Total Customers Served This Month
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
+    const customerServedResult = await ReservationModel.aggregate([
+        {
+            $match: {
+                restaurantId: restaurantObjectId,
+                status: { $in: [ReservationStatus.COMPLETED, ReservationStatus.ARRIVED] },
+                reservationDate: { $gte: startOfMonth, $lte: endOfMonth },
+            },
+        },
+        {
+            $group: {
+                _id: null,
+                total: { $sum: "$partySize" },
+            },
+        },
+    ]);
+    const totalCustomersServedThisMonth = customerServedResult[0]?.total || 0;
+
+    // 4. Staff Online Now & Status
+    let staffOnlineNow = 0;
+    let staffStatus = "No staff online";
+    try {
+        const { getOnlineUserIds } = require("../../socket/socket");
+        const onlineUserIds = getOnlineUserIds();
+        
+        staffOnlineNow = await UserModel.countDocuments({
+            restaurantId: restaurantObjectId,
+            role: "STAFF",
+            isDeleted: false,
+            _id: { $in: onlineUserIds },
+        });
+
+        const totalStaffCount = await UserModel.countDocuments({
+            restaurantId: restaurantObjectId,
+            role: "STAFF",
+            isDeleted: false,
+        });
+
+        if (staffOnlineNow === 0) {
+            staffStatus = "No staff online";
+        } else if (staffOnlineNow === totalStaffCount && totalStaffCount > 0) {
+            staffStatus = "Full capacity";
+        } else {
+            staffStatus = `${staffOnlineNow} of ${totalStaffCount} online`;
+        }
+    } catch (err) {
+        console.error("Error calculating online staff statistics:", err);
+    }
+
+    return {
+        totalBookingsToday: {
+            count: todayBookings,
+            change: bookingsChangeStr,
+        },
+        activeDeals: {
+            count: activeDeals,
+            change: activeDealsChangeStr,
+        },
+        totalCustomersServed: {
+            count: totalCustomersServedThisMonth,
+            period: "This month",
+        },
+        staffOnlineNow: {
+            count: staffOnlineNow,
+            status: staffStatus,
+        },
+    };
+};
+
+const getRestaurantRealtimeStats = async (user: { _id: string; role: string; restaurantId?: any }) => {
+    let restaurantId = user.restaurantId;
+
+    if (!restaurantId && user.role === "RESTAURANT_OWNER") {
+        const restaurant = await RestaurantModel.findOne({ restaurantOwner: user._id });
+        if (restaurant) {
+            restaurantId = restaurant._id;
+        }
+    }
+
+    if (!restaurantId) {
+        throw new ApiError(httpStatus.FORBIDDEN, "User is not associated with any restaurant");
+    }
+
+    return await getRestaurantRealtimeStatsById(restaurantId.toString());
+};
+
+const broadcastRestaurantStats = async (restaurantId: string) => {
+    try {
+        const stats = await getRestaurantRealtimeStatsById(restaurantId);
+        const { getSocket } = require("../../socket/socket");
+        const io = getSocket();
+        io.to(`restaurant_${restaurantId}`).emit("restaurant_stats", stats);
+    } catch (err) {
+        console.error(`Error broadcasting stats for restaurant ${restaurantId}:`, err);
+    }
+};
+
 export const dashboardServices = {
     getAdminDashboardStats,
     getAffiliateStats,
@@ -1069,4 +1215,7 @@ export const dashboardServices = {
     getRestaurantOwnerMealTimeStats,
     getRestaurantOwnerOverview,
     getRestaurantOwnerInsights,
+    getRestaurantRealtimeStatsById,
+    getRestaurantRealtimeStats,
+    broadcastRestaurantStats,
 };

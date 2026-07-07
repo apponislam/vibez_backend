@@ -8,6 +8,7 @@ import { DayOfWeek, MealTimeType } from "../deal/deal.interface";
 import { restaurantServices } from "../restaurant/restaurant.services";
 import { SavedDealModel } from "../saved-deal/saved-deal.model";
 import { ReviewModel } from "../review/review.model";
+import { dashboardServices } from "../dashboard/dashboard.services";
 
 const createReservation = async (data: Partial<IReservation>, userId: string) => {
     const today = new Date();
@@ -123,6 +124,12 @@ const createReservation = async (data: Partial<IReservation>, userId: string) =>
     }
 
     await reservation.populate("restaurantId userId dealId");
+
+    // Broadcast real-time stats update
+    if (reservation.restaurantId) {
+        dashboardServices.broadcastRestaurantStats(reservation.restaurantId.toString()).catch(console.error);
+    }
+
     return reservation;
 };
 
@@ -272,6 +279,12 @@ const updateReservation = async (id: string, data: Partial<IReservation>, userId
     const reservation = await ReservationModel.findOneAndUpdate({ _id: id, userId }, { $set: data }, { returnDocument: 'after', runValidators: true }).populate("restaurantId userId");
 
     if (!reservation) throw new ApiError(httpStatus.NOT_FOUND, "Reservation not found or not authorized");
+
+    // Broadcast real-time stats update
+    if (reservation.restaurantId) {
+        dashboardServices.broadcastRestaurantStats(reservation.restaurantId.toString()).catch(console.error);
+    }
+
     return reservation;
 };
 
@@ -295,12 +308,24 @@ const updateReservationStatus = async (id: string, status: ReservationStatus, us
     const reservation = await ReservationModel.findOneAndUpdate(query, { $set: { status } }, { returnDocument: 'after', runValidators: true }).populate("restaurantId userId");
 
     if (!reservation) throw new ApiError(httpStatus.NOT_FOUND, "Reservation not found or not authorized");
+
+    // Broadcast real-time stats update
+    if (reservation.restaurantId) {
+        dashboardServices.broadcastRestaurantStats(reservation.restaurantId.toString()).catch(console.error);
+    }
+
     return reservation;
 };
 
 const deleteReservation = async (id: string, userId: string) => {
     const reservation = await ReservationModel.findOneAndDelete({ _id: id, userId });
     if (!reservation) throw new ApiError(httpStatus.NOT_FOUND, "Reservation not found or not authorized");
+
+    // Broadcast real-time stats update
+    if (reservation.restaurantId) {
+        dashboardServices.broadcastRestaurantStats(reservation.restaurantId.toString()).catch(console.error);
+    }
+
     return { message: "Reservation cancelled successfully" };
 };
 

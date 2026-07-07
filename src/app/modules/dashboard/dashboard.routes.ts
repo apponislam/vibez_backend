@@ -15,5 +15,6 @@ router.get("/restaurant-overview", auth, authorize(["RESTAURANT_OWNER", "STAFF"]
 router.get("/restaurant-bookings-per-day", auth, authorize(["RESTAURANT_OWNER", "STAFF"]), dashboardControllers.getRestaurantOwnerBookingsPerDay);
 router.get("/restaurant-lunch-vs-dinner", auth, authorize(["RESTAURANT_OWNER", "STAFF"]), dashboardControllers.getRestaurantOwnerMealTimeStats);
 router.get("/restaurant-insights", auth, authorize(["RESTAURANT_OWNER", "STAFF"]), dashboardControllers.getRestaurantOwnerInsights);
+router.get("/restaurant-realtime-stats", auth, authorize(["RESTAURANT_OWNER", "STAFF"]), dashboardControllers.getRestaurantRealtimeStats);
 
 export const dashboardRoutes = router;
