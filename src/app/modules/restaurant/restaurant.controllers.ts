@@ -121,6 +121,17 @@ const getAllRestaurantsForAdmin = catchAsync(async (req: Request, res: Response)
     });
 });
 
+const getPendingRestaurantsForAdmin = catchAsync(async (req: Request, res: Response) => {
+    const result = await restaurantServices.getPendingRestaurantsForAdmin(req.query);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Pending restaurants retrieved successfully for admin",
+        data: result.data,
+        meta: result.meta,
+    });
+});
+
 export const restaurantControllers = {
     getAllRestaurants,
     getAllRestaurantsForAdmin,
@@ -130,4 +141,5 @@ export const restaurantControllers = {
     deleteRestaurant,
     approveRestaurant,
     revokeRestaurantApproval,
+    getPendingRestaurantsForAdmin,
 };

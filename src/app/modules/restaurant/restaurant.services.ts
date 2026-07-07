@@ -480,6 +480,41 @@ const revokeRestaurantApproval = async (id: string) => {
     return restaurant;
 };
 
+const getPendingRestaurantsForAdmin = async (filters: any = {}) => {
+    const page = parseInt(filters.page as string) || 1;
+    const limit = parseInt(filters.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    const query = { approved: false };
+
+    const [restaurants, total] = await Promise.all([
+        RestaurantModel.find(query)
+            .select("restaurantName restaurantDescription restaurantImage cuisineType restaurantType createdAt restaurantOwner")
+            .populate("restaurantOwner", "name email phone profileImage")
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .lean(),
+        RestaurantModel.countDocuments(query),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+    const hasNext = page < totalPages;
+    const hasPrev = page > 1;
+
+    return {
+        data: restaurants,
+        meta: {
+            page,
+            limit,
+            total,
+            totalPages,
+            hasNext,
+            hasPrev,
+        },
+    };
+};
+
 export const restaurantServices = {
     getAllRestaurants,
     getAllRestaurantsForAdmin,
@@ -489,4 +524,5 @@ export const restaurantServices = {
     deleteRestaurant,
     approveRestaurant,
     revokeRestaurantApproval,
+    getPendingRestaurantsForAdmin,
 };

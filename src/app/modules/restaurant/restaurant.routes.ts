@@ -9,8 +9,9 @@ const router = Router();
 
 // Public routes
 router.get("/", checkAuth, restaurantControllers.getAllRestaurants);
-router.get("/:id", checkAuth, restaurantControllers.getRestaurantById);
 router.get("/admin/all", auth, authorize(["ADMIN"]), restaurantControllers.getAllRestaurantsForAdmin);
+router.get("/admin/pending", auth, authorize(["ADMIN"]), restaurantControllers.getPendingRestaurantsForAdmin);
+router.get("/:id", checkAuth, restaurantControllers.getRestaurantById);
 
 // Protected routes (require auth)
 router.get("/my/restaurant", auth, restaurantControllers.getMyRestaurant);
