@@ -62,7 +62,7 @@ const verifyReferralCode = catchAsync(async (req: Request, res: Response) => {
     }
 
     const referralCode = req.body.referralCode || req.query.referralCode || req.body.code || req.query.code;
-    const result = await couponServices.verifyReferralCodeAndGetCoupon(referralCode);
+    const result = await couponServices.verifyReferralCodeAndGetCoupon(referralCode, user._id?.toString());
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,

@@ -1,4 +1,5 @@
 import httpStatus from "http-status";
+import { Types } from "mongoose";
 import ApiError from "../../../errors/ApiError";
 import { CouponModel } from "./coupon.model";
 import { ICoupon } from "./coupon.interface";
@@ -51,9 +52,12 @@ const getAllCoupons = async () => {
 
 // Get coupon details by local ID or Stripe couponId
 const getCouponById = async (id: string) => {
-    const coupon = await CouponModel.findOne({
-        $or: [{ _id: id }, { couponId: id }],
-    });
+    const isObjectId = Types.ObjectId.isValid(id);
+    const query = isObjectId
+        ? { $or: [{ _id: id }, { couponId: id }] }
+        : { couponId: id };
+
+    const coupon = await CouponModel.findOne(query);
     if (!coupon) throw new ApiError(httpStatus.NOT_FOUND, "Coupon not found");
     return coupon;
 };
@@ -102,7 +106,7 @@ const updateCoupon = async (id: string, data: Partial<ICoupon>) => {
     return updatedCoupon;
 };
 
-const verifyReferralCodeAndGetCoupon = async (referralCode: string) => {
+const verifyReferralCodeAndGetCoupon = async (referralCode: string, currentUserId?: string) => {
     if (!referralCode) {
         throw new ApiError(httpStatus.BAD_REQUEST, "Referral code is required");
     }
@@ -111,6 +115,11 @@ const verifyReferralCodeAndGetCoupon = async (referralCode: string) => {
     const referrer = await UserModel.findOne({ referralCode });
     if (!referrer) {
         throw new ApiError(httpStatus.NOT_FOUND, "Invalid referral code");
+    }
+
+    // Check if user is trying to refer themselves
+    if (currentUserId && referrer._id.toString() === currentUserId.toString()) {
+        throw new ApiError(httpStatus.BAD_REQUEST, "You cannot use your own referral code");
     }
 
     // Get active default coupon

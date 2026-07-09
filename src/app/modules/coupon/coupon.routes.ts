@@ -7,6 +7,7 @@ const router = Router();
 
 // Public/Protected routes
 router.post("/verify-referral", auth, couponControllers.verifyReferralCode);
+router.get("/verify-referral", auth, couponControllers.verifyReferralCode);
 
 // Admin routes (require ADMIN role)
 router.post("/", auth, authorize(["ADMIN"]), couponControllers.createCoupon);
