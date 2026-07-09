@@ -53,14 +53,38 @@ const getAllDeals = async (filters: any = {}) => {
     const limit = parseInt(filters.limit as string) || 10;
     const skip = (page - 1) * limit;
 
-    const [deals, total] = await Promise.all([DealModel.find(query).populate("restaurantId", "restaurantName restaurantImage restaurantDescription").skip(skip).limit(limit), DealModel.countDocuments(query)]);
+    const [deals, total] = await Promise.all([
+        DealModel.find(query)
+            .populate("restaurantId", "restaurantName restaurantImage restaurantDescription")
+            .skip(skip)
+            .limit(limit),
+        DealModel.countDocuments(query),
+    ]);
+
+    const dealIds = deals.map((d) => d._id);
+    const savedCounts = await SavedDealModel.aggregate([
+        { $match: { dealId: { $in: dealIds } } },
+        { $group: { _id: "$dealId", count: { $sum: 1 } } },
+    ]);
+    const savedCountMap = new Map<string, number>(
+        savedCounts.map((item) => [item._id.toString(), item.count])
+    );
+
+    const formattedDeals = deals.map((deal) => {
+        const dealObj = deal.toObject ? deal.toObject() : deal;
+        const count = savedCountMap.get(dealObj._id.toString()) || 0;
+        return {
+            ...dealObj,
+            savedCount: count,
+        };
+    });
 
     const totalPages = Math.ceil(total / limit);
     const hasNext = page < totalPages;
     const hasPrev = page > 1;
 
     return {
-        data: deals,
+        data: formattedDeals,
         meta: {
             page,
             limit,
