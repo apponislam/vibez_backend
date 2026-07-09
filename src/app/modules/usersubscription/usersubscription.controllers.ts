@@ -7,6 +7,7 @@ import { stripeServices } from "../stripe/stripe.service";
 import { SubscriptionPlanModel } from "../subscription/subscription.model";
 import { CouponModel } from "../coupon/coupon.model";
 import config from "../../config";
+import ApiError from "../../../errors/ApiError";
 
 const createCheckoutSession = catchAsync(async (req: Request, res: Response) => {
     const { planId, subscriptionPlanId, successUrl, cancelUrl, coupon, uiMode } = req.body;
@@ -25,10 +26,10 @@ const createCheckoutSession = catchAsync(async (req: Request, res: Response) => 
     if (coupon) {
         const dbCoupon = await CouponModel.findOne({ couponId: coupon });
         if (!dbCoupon) {
-            throw new Error("Invalid coupon code");
+            throw new ApiError(httpStatus.BAD_REQUEST, "Invalid coupon code");
         }
         if (!dbCoupon.isActive) {
-            throw new Error("This coupon is no longer active");
+            throw new ApiError(httpStatus.BAD_REQUEST, "This coupon is no longer active");
         }
     }
 
