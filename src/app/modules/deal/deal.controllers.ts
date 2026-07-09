@@ -108,6 +108,16 @@ const getMyDeals = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const getAdminDealStats = catchAsync(async (req: Request, res: Response) => {
+    const result = await dealServices.getAdminDealStats();
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Admin deal statistics retrieved successfully",
+        data: result,
+    });
+});
+
 export const dealControllers = {
     createDeal,
     getAllDeals,
@@ -118,4 +128,5 @@ export const dealControllers = {
     deleteDeal,
     getDealsByRestaurant,
     getMyDeals,
+    getAdminDealStats,
 };

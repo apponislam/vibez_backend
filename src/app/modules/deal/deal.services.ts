@@ -314,6 +314,100 @@ const getMyDeals = async (userId: string, query: any) => {
     return await getAllDeals({ ...query, restaurantId: restaurant._id.toString() });
 };
 
+const getAdminDealStats = async () => {
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    // 1. Active Deals Count & Growth today
+    const activeDealsCount = await DealModel.countDocuments({ isActive: true, isDeleted: false });
+    const todayActiveDealsCount = await DealModel.countDocuments({
+        isActive: true,
+        isDeleted: false,
+        createdAt: { $gte: todayStart }
+    });
+
+    // Get non-deleted deals to filter claims
+    const nonDeletedDeals = await DealModel.find({ isDeleted: false }).select("_id");
+    const nonDeletedDealIds = nonDeletedDeals.map((d) => d._id);
+
+    // 2. Most Claimed Deal
+    const [reservationCounts, savedCounts] = await Promise.all([
+        ReservationModel.aggregate([
+            {
+                $match: {
+                    dealId: { $in: nonDeletedDealIds },
+                    status: { $ne: ReservationStatus.CANCELLED }
+                }
+            },
+            {
+                $group: {
+                    _id: "$dealId",
+                    count: { $sum: 1 }
+                }
+            }
+        ]),
+        SavedDealModel.aggregate([
+            {
+                $match: {
+                    dealId: { $in: nonDeletedDealIds }
+                }
+            },
+            {
+                $group: {
+                    _id: "$dealId",
+                    count: { $sum: 1 }
+                }
+            }
+        ])
+    ]);
+
+    const claimMap = new Map<string, number>();
+    for (const item of reservationCounts) {
+        if (item._id) claimMap.set(item._id.toString(), item.count);
+    }
+    for (const item of savedCounts) {
+        if (item._id) {
+            const key = item._id.toString();
+            claimMap.set(key, (claimMap.get(key) || 0) + item.count);
+        }
+    }
+
+    let mostClaimedDealId: string | null = null;
+    let maxClaims = 0;
+    for (const [dealId, count] of claimMap.entries()) {
+        if (count > maxClaims) {
+            maxClaims = count;
+            mostClaimedDealId = dealId;
+        }
+    }
+
+    let dealTitle = "N/A";
+    if (mostClaimedDealId) {
+        const deal = await DealModel.findOne({ _id: mostClaimedDealId, isDeleted: false });
+        if (deal) {
+            dealTitle = deal.title;
+        }
+    }
+
+    // 3. Inactive Deals
+    const inactiveDealsCount = await DealModel.countDocuments({ isActive: false, isDeleted: false });
+
+    return {
+        activeDeals: {
+            value: activeDealsCount,
+            change: `+${todayActiveDealsCount}`
+        },
+        mostClaimed: {
+            value: maxClaims,
+            change: dealTitle
+        },
+        inactiveDeals: {
+            value: inactiveDealsCount,
+            change: "Inactive"
+        }
+    };
+};
+
 export const dealServices = {
     createDeal,
     getAllDeals,
@@ -323,4 +417,5 @@ export const dealServices = {
     toggleDealStatus,
     deleteDeal,
     getMyDeals,
+    getAdminDealStats,
 };
