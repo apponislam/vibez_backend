@@ -19,6 +19,7 @@ router.get("/:dealId", checkAuth, dealControllers.getDealById);
 // Admin & Restaurant Owner routes
 router.post("/", auth, authorize(["ADMIN", "RESTAURANT_OWNER"]), dealControllers.createDeal);
 router.get("/admin/all", auth, authorize(["ADMIN"]), dealControllers.getAllDeals);
+router.get("/admin/:dealId", auth, authorize(["ADMIN"]), dealControllers.getDealById);
 router.patch("/:dealId", auth, authorize(["ADMIN", "RESTAURANT_OWNER"]), dealControllers.updateDeal);
 router.patch("/:dealId/toggle-status", auth, authorize(["ADMIN", "RESTAURANT_OWNER"]), dealControllers.toggleDealStatus);
 router.delete("/:dealId", auth, authorize(["ADMIN", "RESTAURANT_OWNER"]), dealControllers.deleteDeal);

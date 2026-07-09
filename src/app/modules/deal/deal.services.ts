@@ -49,6 +49,24 @@ const getAllDeals = async (filters: any = {}) => {
     if (filters.restaurantId) query.restaurantId = filters.restaurantId;
     if (filters.isActive !== undefined) query.isActive = filters.isActive === "true";
 
+    if (filters.search) {
+        const matchingRestaurants = await RestaurantModel.find({
+            restaurantName: { $regex: filters.search, $options: "i" },
+        }).select("_id");
+        const restaurantIds = matchingRestaurants.map((r) => r._id);
+
+        if (query.restaurantId) {
+            const reqId = query.restaurantId.toString();
+            if (restaurantIds.some((id) => id.toString() === reqId)) {
+                query.restaurantId = query.restaurantId;
+            } else {
+                query.restaurantId = { $in: [] };
+            }
+        } else {
+            query.restaurantId = { $in: restaurantIds };
+        }
+    }
+
     const page = parseInt(filters.page as string) || 1;
     const limit = parseInt(filters.limit as string) || 10;
     const skip = (page - 1) * limit;
@@ -100,6 +118,24 @@ const getActiveDeals = async (filters: any = {}, userId?: string) => {
     const query: any = { isActive: true, isDeleted: false };
     if (filters.restaurantId) {
         query.restaurantId = filters.restaurantId;
+    }
+
+    if (filters.search) {
+        const matchingRestaurants = await RestaurantModel.find({
+            restaurantName: { $regex: filters.search, $options: "i" },
+        }).select("_id");
+        const restaurantIds = matchingRestaurants.map((r) => r._id);
+
+        if (query.restaurantId) {
+            const reqId = query.restaurantId.toString();
+            if (restaurantIds.some((id) => id.toString() === reqId)) {
+                query.restaurantId = query.restaurantId;
+            } else {
+                query.restaurantId = { $in: [] };
+            }
+        } else {
+            query.restaurantId = { $in: restaurantIds };
+        }
     }
 
     const page = parseInt(filters.page as string) || 1;
