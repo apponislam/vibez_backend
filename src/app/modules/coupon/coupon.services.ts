@@ -15,7 +15,7 @@ const createCoupon = async (data: Partial<ICoupon>) => {
 
     // 1. Create Coupon in Stripe
     try {
-        await stripeServices.createCoupon(data.couponId, data.percentOff, data.amountOff, data.currency, data.duration, data.durationInMonths);
+        await stripeServices.createCoupon(data.couponId, data.percentOff, data.amountOff, "chf", data.duration, data.durationInMonths);
     } catch (error: any) {
         throw new ApiError(httpStatus.BAD_REQUEST, `Failed to create coupon in Stripe: ${error.message}`);
     }
@@ -31,7 +31,7 @@ const createCoupon = async (data: Partial<ICoupon>) => {
         name: data.name || `${data.couponId} Coupon`,
         percentOff: data.percentOff,
         amountOff: data.amountOff,
-        currency: data.currency || "chf",
+        currency: "chf",
         duration: data.duration || "forever",
         durationInMonths: data.durationInMonths,
         maxRedemptions: data.maxRedemptions,
@@ -128,7 +128,14 @@ const verifyReferralCodeAndGetCoupon = async (referralCode: string, currentUserI
         throw new ApiError(httpStatus.NOT_FOUND, "Default coupon not configured or inactive");
     }
 
-    return defaultCoupon;
+    return {
+        _id: defaultCoupon._id,
+        couponId: defaultCoupon.couponId,
+        name: defaultCoupon.name,
+        percentOff: defaultCoupon.percentOff,
+        amountOff: defaultCoupon.amountOff,
+        referralCode,
+    };
 };
 
 export const couponServices = {

@@ -47,14 +47,53 @@ const getSubscriptionPlanById = async (id: string) => {
 };
 
 const updateSubscriptionPlan = async (id: string, data: Partial<ISubscriptionPlan>) => {
-    const updateQuery: any = { $set: data };
+    const existingPlan = await SubscriptionPlanModel.findById(id);
+    if (!existingPlan) throw new ApiError(httpStatus.NOT_FOUND, "Subscription plan not found");
+
+    let stripePriceId = existingPlan.stripePriceId;
+    let stripeProductId = existingPlan.stripeProductId;
+
+    // If price is updated, create a new price in Stripe using CHF
+    if (data.price !== undefined && data.price !== existingPlan.price) {
+        let productId = existingPlan.stripeProductId;
+        
+        // Ensure Stripe product exists
+        if (!productId) {
+            const product = await stripeServices.createProduct(data.name || existingPlan.name);
+            productId = product.id;
+            stripeProductId = product.id;
+        }
+
+        const interval = (data.duration || existingPlan.duration) === SubscriptionDuration.MONTHLY 
+            ? "month" 
+            : (data.duration || existingPlan.duration) === SubscriptionDuration.HALF_YEARLY 
+                ? "month" 
+                : "year";
+                
+        const amount = data.price * 100; // Stripe cents
+
+        // Create new Price object in Stripe (in CHF)
+        const price = await stripeServices.createPrice(productId, amount, "chf", interval);
+        stripePriceId = price.id;
+    }
+
     if (data.isFreeTrial === false) {
         delete data.freeTrialDays;
+    }
+
+    const updateQuery: any = { 
+        $set: { 
+            ...data, 
+            ...(stripePriceId && { stripePriceId }),
+            ...(stripeProductId && { stripeProductId }),
+        } 
+    };
+
+    if (data.isFreeTrial === false) {
         updateQuery.$unset = { freeTrialDays: "" };
     }
 
     const plan = await SubscriptionPlanModel.findByIdAndUpdate(id, updateQuery, { returnDocument: 'after', runValidators: true });
-    if (!plan) throw new ApiError(httpStatus.NOT_FOUND, "Subscription plan not found");
     return plan;
 };
 
