@@ -25,6 +25,8 @@ const UserSubscriptionSchema = new Schema<IUserSubscription>(
         endDate: { type: Date, required: true },
         isTrial: { type: Boolean, default: false },
         coupon: { type: String },
+        actualPrice: { type: Number, required: true },
+        paidPrice: { type: Number, required: true },
         commissionAmount: { type: Number },
         commissionUser: {
             type: Schema.Types.ObjectId,

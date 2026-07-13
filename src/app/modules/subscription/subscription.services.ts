@@ -142,17 +142,25 @@ const getAdminSubscriptionStats = async () => {
 
     let thisMonthRevenue = 0;
     for (const sub of thisMonthSubscriptions) {
-        const plan = sub.subscriptionPlanId as any;
-        if (plan && typeof plan.price === "number") {
-            thisMonthRevenue += plan.price;
+        if (typeof sub.paidPrice === "number") {
+            thisMonthRevenue += sub.paidPrice;
+        } else {
+            const plan = sub.subscriptionPlanId as any;
+            if (plan && typeof plan.price === "number") {
+                thisMonthRevenue += plan.price;
+            }
         }
     }
 
     let lastMonthRevenue = 0;
     for (const sub of lastMonthSubscriptions) {
-        const plan = sub.subscriptionPlanId as any;
-        if (plan && typeof plan.price === "number") {
-            lastMonthRevenue += plan.price;
+        if (typeof sub.paidPrice === "number") {
+            lastMonthRevenue += sub.paidPrice;
+        } else {
+            const plan = sub.subscriptionPlanId as any;
+            if (plan && typeof plan.price === "number") {
+                lastMonthRevenue += plan.price;
+            }
         }
     }
 

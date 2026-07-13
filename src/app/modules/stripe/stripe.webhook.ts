@@ -70,6 +70,11 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                         }
                     }
 
+                    const actualPrice = subscriptionPlan.price;
+                    const paidPrice = (session as any).amount_total !== undefined && (session as any).amount_total !== null
+                        ? (session as any).amount_total / 100
+                        : subscriptionPlan.price;
+
                     // Create user subscription
                     await UserSubscriptionModel.create({
                         userId,
@@ -81,6 +86,8 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                         endDate,
                         isTrial: false,
                         coupon: coupon || undefined,
+                        actualPrice,
+                        paidPrice,
                         commissionUser: referredBy || undefined,
                         commissionAmount,
                     });
@@ -156,6 +163,11 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                                     }
                                 }
 
+                                const actualPrice = subscriptionPlan.price;
+                                const paidPrice = (invoice as any).amount_paid !== undefined && (invoice as any).amount_paid !== null
+                                    ? (invoice as any).amount_paid / 100
+                                    : subscriptionPlan.price;
+
                                 userSubscription = await UserSubscriptionModel.create({
                                     userId,
                                     subscriptionPlanId: subscriptionPlan._id,
@@ -166,6 +178,8 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                                     endDate,
                                     isTrial: false,
                                     coupon: coupon || undefined,
+                                    actualPrice,
+                                    paidPrice,
                                     commissionUser: referredBy || undefined,
                                     commissionAmount,
                                 });
@@ -196,10 +210,17 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                             } else if (plan.duration === "YEARLY") {
                                 newEndDate.setFullYear(newEndDate.getFullYear() + 1);
                             }
+                            const actualPrice = plan.price;
+                            const paidPrice = (invoice as any).amount_paid !== undefined && (invoice as any).amount_paid !== null
+                                ? (invoice as any).amount_paid / 100
+                                : plan.price;
+
                             await UserSubscriptionModel.findByIdAndUpdate(userSubscription._id, {
                                 $set: {
                                     endDate: newEndDate,
                                     status: UserSubscriptionStatus.ACTIVE,
+                                    actualPrice,
+                                    paidPrice,
                                 },
                             });
                             // Update User model as well

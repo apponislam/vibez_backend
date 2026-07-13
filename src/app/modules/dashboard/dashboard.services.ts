@@ -62,12 +62,13 @@ const getAdminDashboardStats = async () => {
     for (const sub of activeSubscriptions) {
         if (sub.isTrial || !sub.subscriptionPlanId) continue;
         const plan = sub.subscriptionPlanId as any;
-        if (plan && typeof plan.price === "number") {
-            totalRevenue += plan.price;
+        const price = typeof sub.paidPrice === "number" ? sub.paidPrice : (plan?.price || 0);
+        totalRevenue += price;
+        if (plan) {
             if (plan.duration === SubscriptionDuration.MONTHLY) {
-                monthlyRevenue += plan.price;
+                monthlyRevenue += price;
             } else if (plan.duration === SubscriptionDuration.YEARLY) {
-                annualRevenue += plan.price;
+                annualRevenue += price;
             }
         }
     }
@@ -84,14 +85,18 @@ const getAdminDashboardStats = async () => {
 
     let thisMonthRevenue = 0;
     for (const sub of thisMonthSubs) {
-        if (sub.subscriptionPlanId) {
+        if (typeof sub.paidPrice === "number") {
+            thisMonthRevenue += sub.paidPrice;
+        } else if (sub.subscriptionPlanId) {
             thisMonthRevenue += (sub.subscriptionPlanId as any).price || 0;
         }
     }
 
     let lastMonthRevenue = 0;
     for (const sub of lastMonthSubs) {
-        if (sub.subscriptionPlanId) {
+        if (typeof sub.paidPrice === "number") {
+            lastMonthRevenue += sub.paidPrice;
+        } else if (sub.subscriptionPlanId) {
             lastMonthRevenue += (sub.subscriptionPlanId as any).price || 0;
         }
     }
@@ -121,7 +126,7 @@ const getAdminDashboardStats = async () => {
     let totalReferralRevenue = 0;
     for (const sub of activeSubscriptions) {
         if (sub.commissionUser && !sub.isTrial && sub.subscriptionPlanId) {
-            totalReferralRevenue += (sub.subscriptionPlanId as any).price || 0;
+            totalReferralRevenue += typeof sub.paidPrice === "number" ? sub.paidPrice : ((sub.subscriptionPlanId as any).price || 0);
         }
     }
 
@@ -133,14 +138,14 @@ const getAdminDashboardStats = async () => {
     let thisMonthReferralRevenue = 0;
     for (const sub of thisMonthSubs) {
         if (sub.commissionUser && sub.subscriptionPlanId) {
-            thisMonthReferralRevenue += (sub.subscriptionPlanId as any).price || 0;
+            thisMonthReferralRevenue += typeof sub.paidPrice === "number" ? sub.paidPrice : ((sub.subscriptionPlanId as any).price || 0);
         }
     }
 
     let lastMonthReferralRevenue = 0;
     for (const sub of lastMonthSubs) {
         if (sub.commissionUser && sub.subscriptionPlanId) {
-            lastMonthReferralRevenue += (sub.subscriptionPlanId as any).price || 0;
+            lastMonthReferralRevenue += typeof sub.paidPrice === "number" ? sub.paidPrice : ((sub.subscriptionPlanId as any).price || 0);
         }
     }
 
@@ -278,7 +283,7 @@ const getAffiliateStats = async () => {
     let lastMonthReferralRevenue = 0;
 
     for (const sub of paidReferredSubscriptions) {
-        const price = (sub.subscriptionPlanId as any)?.price || 0;
+        const price = typeof sub.paidPrice === "number" ? sub.paidPrice : ((sub.subscriptionPlanId as any)?.price || 0);
         totalReferralRevenue += price;
 
         const createdAt = new Date((sub as any).createdAt);

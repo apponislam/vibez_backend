@@ -12,6 +12,8 @@ export interface IUserSubscription {
     endDate: Date;
     isTrial: boolean;
     coupon?: string;
+    actualPrice: number;
+    paidPrice: number;
     // Commission details
     commissionAmount?: number;
     commissionUser?: Types.ObjectId;

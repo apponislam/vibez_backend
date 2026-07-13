@@ -78,11 +78,16 @@ const createUserSubscription = async (data: Partial<IUserSubscription>, userId: 
         }
     }
 
+    const actualPrice = subscriptionData.actualPrice !== undefined ? subscriptionData.actualPrice : plan.price;
+    const paidPrice = subscriptionData.paidPrice !== undefined ? subscriptionData.paidPrice : plan.price;
+
     const userSubscription = await UserSubscriptionModel.create({
         ...subscriptionData,
         userId,
         startDate,
         endDate,
+        actualPrice,
+        paidPrice,
         commissionAmount,
     });
 
