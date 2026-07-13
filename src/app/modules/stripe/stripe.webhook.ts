@@ -253,7 +253,7 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
             }
             case "customer.subscription.updated": {
                 const subscription = event.data.object;
-                console.log("Subscription updated:", subscription);
+                // console.log("Subscription updated:", subscription);
 
                 // Update user subscription
                 const userSubscription = await UserSubscriptionModel.findOne({
