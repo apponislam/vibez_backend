@@ -60,20 +60,20 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                     // Cancel any previous active subscriptions first
                     await userSubscriptionServices.cancelPreviousActiveSubscriptions(userId, (session as any).subscription);
 
+                    const actualPrice = subscriptionPlan.price;
+                    const paidPrice = (session as any).amount_total !== undefined && (session as any).amount_total !== null
+                        ? (session as any).amount_total / 100
+                        : subscriptionPlan.price;
+
                     // Calculate commissionAmount if referred
                     let commissionAmount = undefined;
                     if (referredBy) {
                         const referrer = await UserModel.findById(referredBy);
                         if (referrer) {
                             const commissionPercentage = referrer.commissionPercentage || 0;
-                            commissionAmount = Number((subscriptionPlan.price * (commissionPercentage / 100)).toFixed(2));
+                            commissionAmount = Number((paidPrice * (commissionPercentage / 100)).toFixed(2));
                         }
                     }
-
-                    const actualPrice = subscriptionPlan.price;
-                    const paidPrice = (session as any).amount_total !== undefined && (session as any).amount_total !== null
-                        ? (session as any).amount_total / 100
-                        : subscriptionPlan.price;
 
                     // Create user subscription
                     await UserSubscriptionModel.create({
@@ -153,20 +153,20 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                                 // Cancel any previous active subscriptions first
                                 await userSubscriptionServices.cancelPreviousActiveSubscriptions(userId, subscriptionId);
 
+                                const actualPrice = subscriptionPlan.price;
+                                const paidPrice = (invoice as any).amount_paid !== undefined && (invoice as any).amount_paid !== null
+                                    ? (invoice as any).amount_paid / 100
+                                    : subscriptionPlan.price;
+
                                 // Calculate commissionAmount if referred
                                 let commissionAmount = undefined;
                                 if (referredBy) {
                                     const referrer = await UserModel.findById(referredBy);
                                     if (referrer) {
                                         const commissionPercentage = referrer.commissionPercentage || 0;
-                                        commissionAmount = Number((subscriptionPlan.price * (commissionPercentage / 100)).toFixed(2));
+                                        commissionAmount = Number((paidPrice * (commissionPercentage / 100)).toFixed(2));
                                     }
                                 }
-
-                                const actualPrice = subscriptionPlan.price;
-                                const paidPrice = (invoice as any).amount_paid !== undefined && (invoice as any).amount_paid !== null
-                                    ? (invoice as any).amount_paid / 100
-                                    : subscriptionPlan.price;
 
                                 userSubscription = await UserSubscriptionModel.create({
                                     userId,

@@ -68,18 +68,18 @@ const createUserSubscription = async (data: Partial<IUserSubscription>, userId: 
         delete subscriptionData.referralCode;
     }
 
+    const actualPrice = subscriptionData.actualPrice !== undefined ? subscriptionData.actualPrice : plan.price;
+    const paidPrice = subscriptionData.paidPrice !== undefined ? subscriptionData.paidPrice : plan.price;
+
     // Calculate commissionAmount if referred
     let commissionAmount = undefined;
     if (subscriptionData.commissionUser) {
         const referrer = await UserModel.findById(subscriptionData.commissionUser);
         if (referrer) {
             const commissionPercentage = referrer.commissionPercentage || 0;
-            commissionAmount = Number((plan.price * (commissionPercentage / 100)).toFixed(2));
+            commissionAmount = Number((paidPrice * (commissionPercentage / 100)).toFixed(2));
         }
     }
-
-    const actualPrice = subscriptionData.actualPrice !== undefined ? subscriptionData.actualPrice : plan.price;
-    const paidPrice = subscriptionData.paidPrice !== undefined ? subscriptionData.paidPrice : plan.price;
 
     const userSubscription = await UserSubscriptionModel.create({
         ...subscriptionData,
