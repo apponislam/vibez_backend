@@ -60,7 +60,7 @@ export interface IDeal {
     dealType: DealType;
     title: string;
     description?: string;
-    day: DayOfWeek;
+    day: DayOfWeek[];
     mealTime: MealTimeType;
     start?: string;
     end?: string;

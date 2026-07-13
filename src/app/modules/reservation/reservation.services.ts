@@ -40,8 +40,9 @@ const createReservation = async (data: Partial<IReservation>, userId: string) =>
 
         // Check day of week matches
         const reservationDay = reservationDate.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase() as DayOfWeek;
-        if (deal.day !== reservationDay) {
-            throw new ApiError(httpStatus.BAD_REQUEST, `Deal is only available on ${deal.day}`);
+        const dealDays = Array.isArray(deal.day) ? deal.day : [deal.day as unknown as DayOfWeek];
+        if (!dealDays.includes(reservationDay)) {
+            throw new ApiError(httpStatus.BAD_REQUEST, `Deal is only available on ${dealDays.join(", ")}`);
         }
 
         // Check reservation time falls within deal's meal time

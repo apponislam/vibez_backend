@@ -32,7 +32,7 @@ const DealSchema = new Schema<DealDocument>(
             trim: true,
         },
         day: {
-            type: String,
+            type: [String],
             enum: Object.values(DayOfWeek),
             required: true,
         },
