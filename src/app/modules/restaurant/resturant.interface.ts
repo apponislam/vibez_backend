@@ -58,7 +58,7 @@ export interface IRestaurant {
     restaurantName: string;
     restaurantDescription: string;
     restaurantType: RestaurantType;
-    cuisineType: CuisineType;
+    cuisineType: CuisineType[];
     restaurantOwner: Types.ObjectId;
     restaurantWebsite: string;
     restaurantAddress: {

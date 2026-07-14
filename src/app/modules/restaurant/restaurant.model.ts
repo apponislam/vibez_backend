@@ -38,7 +38,7 @@ const RestaurantSchema = new Schema<IRestaurant>(
             required: [true, "Restaurant type is required"],
         },
         cuisineType: {
-            type: String,
+            type: [String],
             enum: Object.values(CuisineType),
             required: [true, "Cuisine type is required"],
         },

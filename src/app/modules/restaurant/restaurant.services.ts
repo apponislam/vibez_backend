@@ -13,7 +13,14 @@ const getAllRestaurants = async (filters: any = {}, userId?: string) => {
     let query: any = { approved: true };
 
     if (filters.cuisineType) {
-        query.cuisineType = filters.cuisineType;
+        if (typeof filters.cuisineType === "string") {
+            const cuisines = filters.cuisineType.split(",").map((c: string) => c.trim().toUpperCase());
+            query.cuisineType = { $in: cuisines };
+        } else if (Array.isArray(filters.cuisineType)) {
+            query.cuisineType = { $in: filters.cuisineType };
+        } else {
+            query.cuisineType = filters.cuisineType;
+        }
     }
     if (filters.restaurantType) {
         query.restaurantType = filters.restaurantType;
@@ -234,7 +241,14 @@ const getAllRestaurantsForAdmin = async (filters: any = {}) => {
         query.approved = filters.approved === "true";
     }
     if (filters.cuisineType) {
-        query.cuisineType = filters.cuisineType;
+        if (typeof filters.cuisineType === "string") {
+            const cuisines = filters.cuisineType.split(",").map((c: string) => c.trim().toUpperCase());
+            query.cuisineType = { $in: cuisines };
+        } else if (Array.isArray(filters.cuisineType)) {
+            query.cuisineType = { $in: filters.cuisineType };
+        } else {
+            query.cuisineType = filters.cuisineType;
+        }
     }
     if (filters.restaurantType) {
         query.restaurantType = filters.restaurantType;
@@ -419,6 +433,15 @@ const getRestaurantByOwner = async (ownerId: string) => {
 const updateRestaurant = async (id: string, data: any, ownerId: string) => {
     const existingRestaurant = await RestaurantModel.findOne({ _id: id, restaurantOwner: ownerId });
     if (!existingRestaurant) throw new ApiError(httpStatus.NOT_FOUND, "Restaurant not found or not authorized");
+
+    let cuisineType = data.cuisineType;
+    if (cuisineType && typeof cuisineType === "string") {
+        try {
+            data.cuisineType = JSON.parse(cuisineType);
+        } catch (error) {
+            data.cuisineType = cuisineType.split(",").map((c: string) => c.trim().toUpperCase());
+        }
+    }
 
     let address = data.restaurantAddress;
     if (address) {
