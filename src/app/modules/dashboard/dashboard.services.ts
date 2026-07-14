@@ -31,7 +31,11 @@ const getAffiliatesCountUpToDate = async (endDate: Date) => {
 
     const normalCount = await UserModel.countDocuments({
         _id: { $in: referredIds },
-        isInfluencer: { $ne: true },
+        $or: [
+            { isInfluencer: false },
+            { isInfluencer: { $exists: false } },
+            { isInfluencer: null }
+        ],
         isDeleted: false,
         createdAt: { $lte: endDate }
     });
@@ -314,7 +318,11 @@ const getAffiliateStats = async () => {
 
     const normalAffiliates = await UserModel.countDocuments({
         _id: { $in: referredByIds },
-        isInfluencer: { $ne: true },
+        $or: [
+            { isInfluencer: false },
+            { isInfluencer: { $exists: false } },
+            { isInfluencer: null }
+        ],
         isDeleted: false
     });
 

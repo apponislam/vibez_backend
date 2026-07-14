@@ -16,10 +16,7 @@ const getAllUsers = async (query: any) => {
     const filters: any = {};
 
     if (search) {
-        filters.$or = [
-            { name: { $regex: search, $options: "i" } },
-            { email: { $regex: search, $options: "i" } }
-        ];
+        filters.$or = [{ name: { $regex: search, $options: "i" } }, { email: { $regex: search, $options: "i" } }];
     }
     if (role) {
         filters.role = role;
@@ -35,29 +32,18 @@ const getAllUsers = async (query: any) => {
     const parsedLimit = Number(limit);
     const skip = (parsedPage - 1) * parsedLimit;
 
-    const [users, total] = await Promise.all([
-        UserModel.find(filters)
-            .populate("referredBy", "name email")
-            .populate("subscriptionPlanId", "name price duration isFreeTrial freeTrialDays")
-            .skip(skip)
-            .limit(parsedLimit)
-            .lean(),
-        UserModel.countDocuments(filters),
-    ]);
+    const [users, total] = await Promise.all([UserModel.find(filters).populate("referredBy", "name email").populate("subscriptionPlanId", "name price duration isFreeTrial freeTrialDays").skip(skip).limit(parsedLimit).lean(), UserModel.countDocuments(filters)]);
 
     // Populate referrals count and active subscriptions count for each user
     const usersWithCounts = await Promise.all(
         users.map(async (user: any) => {
-            const [referralsTotalCount, activeSubscriptionFromHimTotal] = await Promise.all([
-                UserModel.countDocuments({ referredBy: user._id }),
-                UserSubscriptionModel.countDocuments({ commissionUser: user._id, status: UserSubscriptionStatus.ACTIVE }),
-            ]);
+            const [referralsTotalCount, activeSubscriptionFromHimTotal] = await Promise.all([UserModel.countDocuments({ referredBy: user._id }), UserSubscriptionModel.countDocuments({ commissionUser: user._id, status: UserSubscriptionStatus.ACTIVE })]);
             return {
                 ...user,
                 referralsTotalCount,
                 activeSubscriptionFromHimTotal,
             };
-        })
+        }),
     );
 
     const totalPages = Math.ceil(total / parsedLimit);
@@ -78,23 +64,13 @@ const getAllUsers = async (query: any) => {
 };
 
 const getUserActivity = async (userId: string) => {
-    const user = await UserModel.findById(userId)
-        .populate("referredBy", "name email")
-        .populate("subscriptionPlanId")
-        .lean();
+    const user = await UserModel.findById(userId).populate("referredBy", "name email").populate("subscriptionPlanId").lean();
 
     if (!user) {
         throw new ApiError(httpStatus.NOT_FOUND, "User not found");
     }
 
-    const [
-        referralsTotalCount,
-        activeSubscriptionFromHimTotal,
-        referrals,
-        commissions,
-        withdrawals,
-        subscriptions
-    ] = await Promise.all([
+    const [referralsTotalCount, activeSubscriptionFromHimTotal, referrals, commissions, withdrawals, subscriptions] = await Promise.all([
         UserModel.countDocuments({ referredBy: userId }),
         UserSubscriptionModel.countDocuments({ commissionUser: userId, status: UserSubscriptionStatus.ACTIVE }),
         UserModel.find({ referredBy: userId }).select("name email isActive isInfluencer createdAt").lean(),
@@ -126,11 +102,7 @@ const updateUserByAdmin = async (userId: string, data: any) => {
         }
     }
 
-    const user = await UserModel.findByIdAndUpdate(
-        userId,
-        { $set: updateData },
-        { returnDocument: 'after', runValidators: true }
-    ).select("-password").populate("referredBy", "name email").populate("subscriptionPlanId", "name price duration isFreeTrial freeTrialDays");
+    const user = await UserModel.findByIdAndUpdate(userId, { $set: updateData }, { returnDocument: "after", runValidators: true }).select("-password").populate("referredBy", "name email").populate("subscriptionPlanId", "name price duration isFreeTrial freeTrialDays");
 
     if (!user) {
         throw new ApiError(httpStatus.NOT_FOUND, "User not found");
@@ -157,11 +129,14 @@ const getUserStats = async () => {
     const now = new Date();
     const [totalUser, regularCustomer, influencer, premiumUser] = await Promise.all([
         UserModel.countDocuments(),
-        UserModel.countDocuments({ role: "USER", isInfluencer: { $ne: true } }),
+        UserModel.countDocuments({
+            role: "USER",
+            $or: [{ isInfluencer: false }, { isInfluencer: { $exists: false } }, { isInfluencer: null }],
+        }),
         UserModel.countDocuments({ isInfluencer: true }),
         UserModel.countDocuments({
             subscriptionPlanId: { $ne: null },
-            subscriptionEndDate: { $gt: now }
+            subscriptionEndDate: { $gt: now },
         }),
     ]);
 
@@ -218,10 +193,7 @@ const getStaffByOwner = async (ownerId: string, query: any) => {
 
     const filter = { restaurantId: restaurant._id, role: "STAFF" as const, isDeleted: false };
 
-    const [staff, total] = await Promise.all([
-        UserModel.find(filter).select("-password").skip(skip).limit(limit),
-        UserModel.countDocuments(filter),
-    ]);
+    const [staff, total] = await Promise.all([UserModel.find(filter).select("-password").skip(skip).limit(limit), UserModel.countDocuments(filter)]);
 
     const totalPages = Math.ceil(total / limit);
     const hasNext = page < totalPages;
@@ -271,10 +243,7 @@ const toggleAllStaffLoginStatus = async (ownerId: string, enable?: boolean) => {
         targetStatus = !activeStaff;
     }
 
-    await UserModel.updateMany(
-        { restaurantId: restaurant._id, role: "STAFF", isDeleted: false },
-        { $set: { enableStaffLogin: targetStatus } }
-    );
+    await UserModel.updateMany({ restaurantId: restaurant._id, role: "STAFF", isDeleted: false }, { $set: { enableStaffLogin: targetStatus } });
 
     return { enableStaffLogin: targetStatus };
 };
