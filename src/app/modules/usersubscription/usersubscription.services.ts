@@ -242,10 +242,14 @@ const getRevenueBreakdown = async () => {
             breakdown[monthIndex].referrals++;
         }
 
-        if (!sub.isTrial && sub.subscriptionPlanId) {
-            const plan = sub.subscriptionPlanId as any;
-            if (plan && typeof plan.price === "number") {
-                breakdown[monthIndex].revenue += plan.price;
+        if (!sub.isTrial) {
+            if (typeof sub.paidPrice === "number") {
+                breakdown[monthIndex].revenue += sub.paidPrice;
+            } else if (sub.subscriptionPlanId) {
+                const plan = sub.subscriptionPlanId as any;
+                if (plan && typeof plan.price === "number") {
+                    breakdown[monthIndex].revenue += plan.price;
+                }
             }
         }
     }
