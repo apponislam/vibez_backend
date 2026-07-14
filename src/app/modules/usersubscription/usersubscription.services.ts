@@ -55,6 +55,9 @@ const createUserSubscription = async (data: Partial<IUserSubscription>, userId: 
     } else if (plan.duration === SubscriptionDuration.YEARLY) {
         endDate = new Date(startDate);
         endDate.setFullYear(endDate.getFullYear() + 1);
+    } else if (plan.duration === SubscriptionDuration.TWO_YEARLY) {
+        endDate = new Date(startDate);
+        endDate.setFullYear(endDate.getFullYear() + 2);
     } else {
         throw new ApiError(httpStatus.BAD_REQUEST, "Invalid subscription duration");
     }

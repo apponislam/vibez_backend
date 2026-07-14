@@ -46,6 +46,8 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                         endDate.setMonth(endDate.getMonth() + 6);
                     } else if (subscriptionPlan.duration === "YEARLY") {
                         endDate.setFullYear(endDate.getFullYear() + 1);
+                    } else if (subscriptionPlan.duration === "TWO_YEARLY") {
+                        endDate.setFullYear(endDate.getFullYear() + 2);
                     }
 
                     // Resolve referrer from metadata if provided
@@ -140,6 +142,8 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                                     endDate.setMonth(endDate.getMonth() + 6);
                                 } else if (subscriptionPlan.duration === "YEARLY") {
                                     endDate.setFullYear(endDate.getFullYear() + 1);
+                                } else if (subscriptionPlan.duration === "TWO_YEARLY") {
+                                    endDate.setFullYear(endDate.getFullYear() + 2);
                                 }
 
                                 let referredBy = undefined;
@@ -209,6 +213,8 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                                 newEndDate.setMonth(newEndDate.getMonth() + 6);
                             } else if (plan.duration === "YEARLY") {
                                 newEndDate.setFullYear(newEndDate.getFullYear() + 1);
+                            } else if (plan.duration === "TWO_YEARLY") {
+                                newEndDate.setFullYear(newEndDate.getFullYear() + 2);
                             }
                             const actualPrice = plan.price;
                             const paidPrice = (invoice as any).amount_paid !== undefined && (invoice as any).amount_paid !== null

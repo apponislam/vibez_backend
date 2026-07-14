@@ -19,10 +19,24 @@ const createSubscriptionPlan = async (data: Partial<ISubscriptionPlan>) => {
         const product = await stripeServices.createProduct(data.name as string);
         stripeProductId = product.id;
 
-        const interval = data.duration === SubscriptionDuration.MONTHLY ? "month" : data.duration === SubscriptionDuration.HALF_YEARLY ? "month" : "year";
+        let interval: "month" | "year" = "month";
+        let intervalCount: number | undefined = undefined;
+
+        if (data.duration === SubscriptionDuration.MONTHLY) {
+            interval = "month";
+        } else if (data.duration === SubscriptionDuration.HALF_YEARLY) {
+            interval = "month";
+            intervalCount = 6;
+        } else if (data.duration === SubscriptionDuration.YEARLY) {
+            interval = "year";
+        } else if (data.duration === SubscriptionDuration.TWO_YEARLY) {
+            interval = "year";
+            intervalCount = 2;
+        }
+
         const amount = data.price * 100; // Stripe uses cents
 
-        const price = await stripeServices.createPrice(stripeProductId, amount, "chf", interval);
+        const price = await stripeServices.createPrice(stripeProductId, amount, "chf", interval, intervalCount);
         stripePriceId = price.id;
     }
 
@@ -64,16 +78,26 @@ const updateSubscriptionPlan = async (id: string, data: Partial<ISubscriptionPla
             stripeProductId = product.id;
         }
 
-        const interval = (data.duration || existingPlan.duration) === SubscriptionDuration.MONTHLY 
-            ? "month" 
-            : (data.duration || existingPlan.duration) === SubscriptionDuration.HALF_YEARLY 
-                ? "month" 
-                : "year";
+        const duration = data.duration || existingPlan.duration;
+        let interval: "month" | "year" = "month";
+        let intervalCount: number | undefined = undefined;
+
+        if (duration === SubscriptionDuration.MONTHLY) {
+            interval = "month";
+        } else if (duration === SubscriptionDuration.HALF_YEARLY) {
+            interval = "month";
+            intervalCount = 6;
+        } else if (duration === SubscriptionDuration.YEARLY) {
+            interval = "year";
+        } else if (duration === SubscriptionDuration.TWO_YEARLY) {
+            interval = "year";
+            intervalCount = 2;
+        }
                 
         const amount = data.price * 100; // Stripe cents
 
         // Create new Price object in Stripe (in CHF)
-        const price = await stripeServices.createPrice(productId, amount, "chf", interval);
+        const price = await stripeServices.createPrice(productId, amount, "chf", interval, intervalCount);
         stripePriceId = price.id;
     }
 

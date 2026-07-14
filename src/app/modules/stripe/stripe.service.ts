@@ -63,12 +63,15 @@ const createProduct = async (name: string) => {
     return product;
 };
 
-const createPrice = async (productId: string, amount: number, currency: string = "chf", interval: "month" | "year") => {
+const createPrice = async (productId: string, amount: number, currency: string = "chf", interval: "month" | "year", intervalCount?: number) => {
     const price = await stripe.prices.create({
         product: productId,
         unit_amount: amount,
         currency,
-        recurring: { interval },
+        recurring: { 
+            interval,
+            ...(intervalCount && { interval_count: intervalCount }),
+        },
     });
     return price;
 };

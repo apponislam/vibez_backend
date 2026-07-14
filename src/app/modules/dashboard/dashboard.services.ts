@@ -67,7 +67,7 @@ const getAdminDashboardStats = async () => {
         if (plan) {
             if (plan.duration === SubscriptionDuration.MONTHLY) {
                 monthlyRevenue += price;
-            } else if (plan.duration === SubscriptionDuration.YEARLY) {
+            } else if (plan.duration === SubscriptionDuration.YEARLY || plan.duration === SubscriptionDuration.TWO_YEARLY) {
                 annualRevenue += price;
             }
         }

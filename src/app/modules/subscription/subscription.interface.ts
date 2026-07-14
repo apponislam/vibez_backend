@@ -4,6 +4,7 @@ export enum SubscriptionDuration {
     MONTHLY = "MONTHLY",
     HALF_YEARLY = "HALF_YEARLY",
     YEARLY = "YEARLY",
+    TWO_YEARLY = "TWO_YEARLY",
 }
 
 export enum UserSubscriptionStatus {
