@@ -111,6 +111,16 @@ const verifyReferralCodeAndGetCoupon = async (referralCode: string, currentUserI
         throw new ApiError(httpStatus.BAD_REQUEST, "Referral code is required");
     }
 
+    if (currentUserId) {
+        const currentUser = await UserModel.findById(currentUserId);
+        if (!currentUser) {
+            throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+        }
+        if (!currentUser.isNewUser) {
+            throw new ApiError(httpStatus.BAD_REQUEST, "Referral discounts are only valid for first-time subscribers");
+        }
+    }
+
     // Check if referrer exists
     const referrer = await UserModel.findOne({ referralCode });
     if (!referrer) {
