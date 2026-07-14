@@ -19,6 +19,7 @@ router.patch("/my/restaurant", auth, authorize(["RESTAURANT_OWNER"]), uploadRest
 router.delete("/:id", auth, authorize(["ADMIN", "RESTAURANT_OWNER"]), restaurantControllers.deleteRestaurant);
 
 // Admin only routes for restaurant approval
+router.patch("/admin/:id", auth, authorize(["ADMIN"]), uploadRestaurantImage, restaurantControllers.updateRestaurantByAdmin);
 router.patch("/:id/approve", auth, authorize(["ADMIN"]), restaurantControllers.approveRestaurant);
 router.patch("/:id/revoke-approval", auth, authorize(["ADMIN"]), restaurantControllers.revokeRestaurantApproval);
 

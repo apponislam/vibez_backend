@@ -110,6 +110,19 @@ const revokeRestaurantApproval = catchAsync(async (req: Request, res: Response) 
     });
 });
 
+const updateRestaurantByAdmin = catchAsync(async (req: Request, res: Response) => {
+    const data = parseRequestBody(req);
+    const restaurantId = req.params.id as string;
+    const adminId = req.user._id as string;
+    const result = await restaurantServices.updateRestaurantByAdmin(restaurantId, data, adminId);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Restaurant updated successfully by admin",
+        data: result,
+    });
+});
+
 const getAllRestaurantsForAdmin = catchAsync(async (req: Request, res: Response) => {
     const result = await restaurantServices.getAllRestaurantsForAdmin(req.query);
     sendResponse(res, {
@@ -141,5 +154,6 @@ export const restaurantControllers = {
     deleteRestaurant,
     approveRestaurant,
     revokeRestaurantApproval,
+    updateRestaurantByAdmin,
     getPendingRestaurantsForAdmin,
 };

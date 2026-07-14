@@ -528,6 +528,96 @@ const revokeRestaurantApproval = async (id: string) => {
     return restaurant;
 };
 
+const updateRestaurantByAdmin = async (id: string, data: any, adminId: string) => {
+    const existingRestaurant = await RestaurantModel.findById(id);
+    if (!existingRestaurant) throw new ApiError(httpStatus.NOT_FOUND, "Restaurant not found");
+
+    let cuisineType = data.cuisineType;
+    if (cuisineType && typeof cuisineType === "string") {
+        try {
+            data.cuisineType = JSON.parse(cuisineType);
+        } catch (error) {
+            data.cuisineType = cuisineType.split(",").map((c: string) => c.trim().toUpperCase());
+        }
+    }
+
+    let address = data.restaurantAddress;
+    if (address) {
+        if (typeof address === "string") {
+            try {
+                address = JSON.parse(address);
+            } catch (error) {
+                throw new ApiError(httpStatus.BAD_REQUEST, "Invalid restaurant address format");
+            }
+        }
+
+        const mergedAddress = {
+            ...existingRestaurant.restaurantAddress,
+            ...address,
+        };
+
+        const latVal = address.lat;
+        const lngVal = address.lng !== undefined ? address.lng : address.lan;
+
+        if (latVal !== undefined && lngVal !== undefined && latVal !== "" && lngVal !== "") {
+            const lat = parseFloat(latVal);
+            const lng = parseFloat(lngVal);
+            mergedAddress.lat = lat.toString();
+            mergedAddress.lng = lng.toString();
+            mergedAddress.location = {
+                type: "Point",
+                coordinates: [lng, lat],
+            };
+        } else {
+            const coords = await getLatLngFromAddress(mergedAddress, data.restaurantName || existingRestaurant.restaurantName);
+            if (coords) {
+                mergedAddress.lat = coords.lat.toString();
+                mergedAddress.lng = coords.lng.toString();
+                mergedAddress.location = {
+                    type: "Point",
+                    coordinates: [coords.lng, coords.lat],
+                };
+            }
+        }
+        data.restaurantAddress = mergedAddress;
+    }
+
+    if (Array.isArray(data.restaurantOpenHours)) {
+        data.restaurantOpenHours = data.restaurantOpenHours.map((hour: any) => {
+            if (!hour.isOpen || !Array.isArray(hour.slots) || hour.slots.length === 0) {
+                return hour;
+            }
+            const lunch = hour.slots.find((s: any) => s.type === "LUNCH");
+            const dinner = hour.slots.find((s: any) => s.type === "DINNER");
+
+            hour.openTime = lunch ? lunch.openTime : hour.slots[0].openTime;
+            hour.closeTime = dinner ? dinner.closeTime : lunch ? lunch.closeTime : hour.slots[hour.slots.length - 1].closeTime;
+
+            return hour;
+        });
+    }
+
+    if (data.approved !== undefined) {
+        const approvedBool = data.approved === true || data.approved === "true";
+        data.approved = approvedBool;
+        if (approvedBool) {
+            data.approvedBy = adminId;
+            data.approvedAt = new Date();
+        } else {
+            data.approvedBy = null;
+            data.approvedAt = null;
+        }
+    }
+
+    const restaurant = await RestaurantModel.findByIdAndUpdate(
+        id,
+        { $set: data },
+        { returnDocument: "after", runValidators: true }
+    ).populate("restaurantOwner", "name email phone");
+
+    return restaurant;
+};
+
 const getPendingRestaurantsForAdmin = async (filters: any = {}) => {
     const page = parseInt(filters.page as string) || 1;
     const limit = parseInt(filters.limit as string) || 10;
@@ -572,5 +662,6 @@ export const restaurantServices = {
     deleteRestaurant,
     approveRestaurant,
     revokeRestaurantApproval,
+    updateRestaurantByAdmin,
     getPendingRestaurantsForAdmin,
 };
