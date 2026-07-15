@@ -93,22 +93,16 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                         const referrer = await UserModel.findById(referredBy);
                         if (referrer) {
                             const commissionPercentage = referrer.commissionPercentage || 0;
-                            commissionAmount = Number((paidPrice * (commissionPercentage / 100)).toFixed(2));
+                            const calculatedCommission = paidPrice * (commissionPercentage / 100);
+                            commissionAmount = Number(Math.min(calculatedCommission, referrer.maxPayout || 0).toFixed(2));
 
-                            // Create the commission record in CommissionModel
-                            await commissionServices.createCommission({
-                                commissionPercentage,
-                                maxPayout: referrer.maxPayout || 0,
-                                commissionDuration: referrer.commissionDuration || 0,
-                                commissionUser: referrer._id,
-                                commissionFrom: new Types.ObjectId(userId),
-                                startDate,
-                                isActive: true,
-                            });
-
-                            // Also increment the referrer's balance
-                            await UserModel.findByIdAndUpdate(referredBy, {
-                                $inc: { balance: commissionAmount },
+                            const invoiceId = (session as any).invoice || (session as any).id;
+                            await commissionServices.handleSubscriptionPayment({
+                                userId,
+                                referredBy: referredBy.toString(),
+                                invoiceId,
+                                subscriptionId,
+                                invoiceAmount: paidPrice,
                             });
                         }
                     }
@@ -204,22 +198,16 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                                     const referrer = await UserModel.findById(referredBy);
                                     if (referrer) {
                                         const commissionPercentage = referrer.commissionPercentage || 0;
-                                        commissionAmount = Number((paidPrice * (commissionPercentage / 100)).toFixed(2));
+                                        const calculatedCommission = paidPrice * (commissionPercentage / 100);
+                                        commissionAmount = Number(Math.min(calculatedCommission, referrer.maxPayout || 0).toFixed(2));
 
-                                        // Create the commission record in CommissionModel
-                                        await commissionServices.createCommission({
-                                            commissionPercentage,
-                                            maxPayout: referrer.maxPayout || 0,
-                                            commissionDuration: referrer.commissionDuration || 0,
-                                            commissionUser: referrer._id,
-                                            commissionFrom: new Types.ObjectId(userId),
-                                            startDate,
-                                            isActive: true,
-                                        });
-
-                                        // Also increment the referrer's balance
-                                        await UserModel.findByIdAndUpdate(referredBy, {
-                                            $inc: { balance: commissionAmount },
+                                        const invoiceId = (invoice as any).id;
+                                        await commissionServices.handleSubscriptionPayment({
+                                            userId,
+                                            referredBy: referredBy.toString(),
+                                            invoiceId,
+                                            subscriptionId,
+                                            invoiceAmount: paidPrice,
                                         });
                                     }
                                 }
@@ -287,6 +275,18 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                                     subscriptionEndDate: newEndDate,
                                 },
                             });
+
+                            // Process renewal commission if referred
+                            if (userSubscription.commissionUser) {
+                                const invoiceId = (invoice as any).id;
+                                await commissionServices.handleSubscriptionPayment({
+                                    userId: userSubscription.userId.toString(),
+                                    referredBy: userSubscription.commissionUser.toString(),
+                                    invoiceId,
+                                    subscriptionId,
+                                    invoiceAmount: paidPrice,
+                                });
+                            }
                         }
                     }
                 }

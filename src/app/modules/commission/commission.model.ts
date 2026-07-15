@@ -3,20 +3,19 @@ import { ICommission } from "./commission.interface";
 
 export interface CommissionDocument extends Omit<ICommission, "_id">, Document {}
 
-const CommissionGetByMonthSchema = new Schema(
+const CommissionHistorySchema = new Schema(
     {
-        count: {
-            type: Number,
-            required: [true, "Month count is required"],
+        invoiceId: {
+            type: String,
+            required: [true, "Invoice ID is required"],
         },
-        commission: {
+        amount: {
             type: Number,
             required: [true, "Commission amount is required"],
             min: [0, "Commission amount cannot be negative"],
         },
-        time: {
+        createdAt: {
             type: Date,
-            required: [true, "Commission time is required"],
             default: Date.now,
         },
     },
@@ -41,6 +40,10 @@ const CommissionSchema = new Schema<CommissionDocument>(
             required: [true, "Commission duration in months is required"],
             min: [1, "Commission duration must be at least 1 month"],
         },
+        commissionPaidCount: {
+            type: Number,
+            default: 0,
+        },
         commissionUser: {
             type: Schema.Types.ObjectId,
             ref: "User",
@@ -51,21 +54,12 @@ const CommissionSchema = new Schema<CommissionDocument>(
             ref: "User",
             required: [true, "Commission from (source user) is required"],
         },
-        startDate: {
-            type: Date,
-            required: [true, "Start date is required"],
-            default: Date.now,
+        subscriptionId: {
+            type: String,
+            required: [true, "Stripe subscription ID is required"],
         },
-        endDate: {
-            type: Date,
-            required: [true, "End date is required"],
-        },
-        totalCount: {
-            type: Number,
-            default: 0,
-        },
-        commissionGetByMonth: {
-            type: [CommissionGetByMonthSchema],
+        history: {
+            type: [CommissionHistorySchema],
             default: [],
         },
         isActive: {

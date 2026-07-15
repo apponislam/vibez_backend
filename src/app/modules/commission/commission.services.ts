@@ -2,6 +2,8 @@ import httpStatus from "http-status";
 import ApiError from "../../../errors/ApiError";
 import { CommissionModel } from "./commission.model";
 import { ICommission } from "./commission.interface";
+import { UserModel } from "../auth/auth.model";
+import { Types } from "mongoose";
 
 const populateOptions = [
     { path: "commissionUser", select: "name email" },
@@ -9,40 +11,94 @@ const populateOptions = [
 ];
 
 const createCommission = async (data: Partial<ICommission>) => {
-    const startDate = data.startDate ? new Date(data.startDate) : new Date();
-    data.startDate = startDate;
-
-    if (data.commissionDuration) {
-        const endDate = new Date(startDate);
-        endDate.setMonth(endDate.getMonth() + Number(data.commissionDuration));
-        data.endDate = endDate;
-    }
-
-    // Auto-generate commissionGetByMonth array and totalCount if not provided in the creation payload
-    if (!data.commissionGetByMonth && data.commissionDuration && data.maxPayout) {
-        const duration = Number(data.commissionDuration);
-        const maxPayout = Number(data.maxPayout);
-        const monthlyAmount = Number((maxPayout / duration).toFixed(2));
-        
-        const list = [];
-        let remaining = maxPayout;
-        for (let i = 1; i <= duration; i++) {
-            // Distribute precisely (putting any division roundoff in the last month)
-            const currentAmount = i === duration ? Number(remaining.toFixed(2)) : monthlyAmount;
-            remaining -= currentAmount;
-
-            list.push({
-                count: i,
-                commission: currentAmount,
-                time: new Date(new Date(startDate).setMonth(startDate.getMonth() + i - 1)),
-            });
-        }
-        data.totalCount = duration;
-        data.commissionGetByMonth = list;
-    }
-
     const commission = await CommissionModel.create(data);
     return commission.populate(populateOptions);
+};
+
+const handleSubscriptionPayment = async (payload: {
+    userId: string;
+    referredBy: string;
+    invoiceId: string;
+    subscriptionId: string;
+    invoiceAmount: number;
+}) => {
+    const { userId, referredBy, invoiceId, subscriptionId, invoiceAmount } = payload;
+
+    // Find the referrer to get their commission configuration
+    const referrer = await UserModel.findById(referredBy);
+    if (!referrer) {
+        throw new ApiError(httpStatus.NOT_FOUND, "Referrer user not found");
+    }
+
+    const commissionPercentage = referrer.commissionPercentage || 0;
+    const maxPayout = referrer.maxPayout || 0;
+    const commissionDuration = referrer.commissionDuration || 0;
+
+    // Find or create the Commission document for this referred user
+    let commission = await CommissionModel.findOne({
+        commissionFrom: userId,
+        commissionUser: referredBy,
+    });
+
+    if (!commission) {
+        commission = await CommissionModel.create({
+            commissionPercentage,
+            maxPayout,
+            commissionDuration,
+            commissionPaidCount: 0,
+            commissionUser: referredBy,
+            commissionFrom: userId,
+            subscriptionId,
+            history: [],
+            isActive: true,
+        });
+    } else if (commission.subscriptionId !== subscriptionId) {
+        commission.subscriptionId = subscriptionId;
+        await commission.save();
+    }
+
+    // Check if this invoice has already been processed to prevent double payout
+    const isAlreadyProcessed = commission.history.some((h) => h.invoiceId === invoiceId);
+    if (isAlreadyProcessed) {
+        console.log(`Invoice ${invoiceId} has already been processed for commission.`);
+        return commission;
+    }
+
+    // Calculate total already paid to this referred user
+    const totalAlreadyPaid = commission.history.reduce((sum, h) => sum + h.amount, 0);
+    const remainingLimit = Math.max(0, commission.maxPayout - totalAlreadyPaid);
+
+    // Verify if paid count and remaining limit are not reached
+    if (commission.commissionPaidCount < commission.commissionDuration && remainingLimit > 0) {
+        const calculatedCommission = invoiceAmount * (commission.commissionPercentage / 100);
+        const finalCommission = Number(Math.min(calculatedCommission, remainingLimit).toFixed(2));
+
+        if (finalCommission > 0) {
+            // Add history entry
+            commission.history.push({
+                invoiceId,
+                amount: finalCommission,
+                createdAt: new Date(),
+            });
+
+            // Increment paid count
+            commission.commissionPaidCount += 1;
+            await commission.save();
+
+            // Increment referrer's balance
+            await UserModel.findByIdAndUpdate(referredBy, {
+                $inc: { balance: finalCommission },
+            });
+
+            console.log(`Commission of ${finalCommission} CHF credited to user ${referredBy} for invoice ${invoiceId}`);
+        } else {
+            console.log(`Calculated commission amount is 0 or remaining limit is reached.`);
+        }
+    } else {
+        console.log(`Commission duration limit of ${commission.commissionDuration} or maxPayout limit of ${commission.maxPayout} reached for user ${userId}`);
+    }
+
+    return commission;
 };
 
 const getAllCommissions = async (query: any = {}) => {
@@ -105,6 +161,7 @@ const updateCommission = async (id: string, data: Partial<ICommission>) => {
 
 const getMonthlyCommissionStats = async () => {
     const stats = await CommissionModel.aggregate([
+        { $unwind: { path: "$history", preserveNullAndEmptyArrays: true } },
         {
             $group: {
                 _id: {
@@ -112,7 +169,7 @@ const getMonthlyCommissionStats = async () => {
                     month: { $month: "$createdAt" },
                 },
                 count: { $sum: 1 },
-                totalMaxPayout: { $sum: "$maxPayout" },
+                totalMaxPayout: { $sum: { $ifNull: ["$history.amount", 0] } },
                 avgPercentage: { $avg: "$commissionPercentage" },
             },
         },
@@ -134,7 +191,8 @@ const getMonthlyCommissionStats = async () => {
 };
 
 export const commissionServices = {
-    createCommission, // Exposing internally for programmatic creations (e.g. triggers, webhooks)
+    createCommission,
+    handleSubscriptionPayment,
     getAllCommissions,
     getCommissionById,
     updateCommission,

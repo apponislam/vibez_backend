@@ -135,7 +135,8 @@ const getAdminDashboardStats = async () => {
     }
 
     const commissionStats = await CommissionModel.aggregate([
-        { $group: { _id: null, total: { $sum: "$maxPayout" } } }
+        { $unwind: "$history" },
+        { $group: { _id: null, total: { $sum: "$history.amount" } } }
     ]);
     const totalCommissionPaid = commissionStats[0]?.total || 0;
 
