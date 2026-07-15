@@ -171,6 +171,59 @@ const updateStaffDetailsByOwner = catchAsync(async (req: Request, res: Response)
         data: result,
     });
 });
+const getUserActivitySummary = catchAsync(async (req: Request, res: Response) => {
+    const result = await userServices.getUserActivitySummary(req.params.id as string);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "User activity summary retrieved successfully",
+        data: result,
+    });
+});
+
+const getUserReferrals = catchAsync(async (req: Request, res: Response) => {
+    const result = await userServices.getUserReferrals(req.params.id as string, req.query);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "User referrals retrieved successfully",
+        data: result.data,
+        meta: result.meta,
+    });
+});
+
+const getUserCommissions = catchAsync(async (req: Request, res: Response) => {
+    const result = await userServices.getUserCommissions(req.params.id as string, req.query);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "User commissions retrieved successfully",
+        data: result.data,
+        meta: result.meta,
+    });
+});
+
+const getUserWithdrawals = catchAsync(async (req: Request, res: Response) => {
+    const result = await userServices.getUserWithdrawals(req.params.id as string, req.query);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "User withdrawals retrieved successfully",
+        data: result.data,
+        meta: result.meta,
+    });
+});
+
+const getUserSubscriptions = catchAsync(async (req: Request, res: Response) => {
+    const result = await userServices.getUserSubscriptions(req.params.id as string, req.query);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "User subscriptions retrieved successfully",
+        data: result.data,
+        meta: result.meta,
+    });
+});
 
 export const userControllers = {
     getAllUsers,
@@ -184,4 +237,9 @@ export const userControllers = {
     toggleAllStaffLoginStatus,
     changeStaffPasswordByOwner,
     updateStaffDetailsByOwner,
+    getUserActivitySummary,
+    getUserReferrals,
+    getUserCommissions,
+    getUserWithdrawals,
+    getUserSubscriptions,
 };

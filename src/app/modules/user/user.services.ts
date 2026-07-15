@@ -322,6 +322,157 @@ const updateStaffDetailsByOwner = async (callerId: string, callerRole: string, s
     const { password, ...staffWithoutPassword } = staffObject;
     return staffWithoutPassword;
 };
+const getUserActivitySummary = async (userId: string) => {
+    const user = await UserModel.findById(userId).lean();
+    if (!user) {
+        throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+    }
+
+    const [totalReferrals, activeSubsFromReferrals, totalWithdrawals, totalSubscriptions] = await Promise.all([
+        UserModel.countDocuments({ referredBy: userId }),
+        UserSubscriptionModel.countDocuments({ commissionUser: userId, status: UserSubscriptionStatus.ACTIVE }),
+        WithdrawModel.countDocuments({ userId: userId }),
+        UserSubscriptionModel.countDocuments({ userId: userId }),
+    ]);
+
+    return {
+        totalReferrals,
+        activeSubsFromReferrals,
+        totalWithdrawals,
+        totalSubscriptions,
+    };
+};
+
+const getUserReferrals = async (userId: string, query: any) => {
+    const page = parseInt(query.page as string) || 1;
+    const limit = parseInt(query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    const filter = { referredBy: userId };
+
+    const [referrals, total] = await Promise.all([
+        UserModel.find(filter)
+            .select("name email isActive isInfluencer createdAt")
+            .skip(skip)
+            .limit(limit)
+            .lean(),
+        UserModel.countDocuments(filter),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+    const hasNext = page < totalPages;
+    const hasPrev = page > 1;
+
+    return {
+        data: referrals,
+        meta: {
+            page,
+            limit,
+            total,
+            totalPages,
+            hasNext,
+            hasPrev,
+        },
+    };
+};
+
+const getUserCommissions = async (userId: string, query: any) => {
+    const page = parseInt(query.page as string) || 1;
+    const limit = parseInt(query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    const filter = { commissionUser: userId };
+
+    const [commissions, total] = await Promise.all([
+        CommissionModel.find(filter)
+            .populate("commissionFrom", "name email")
+            .skip(skip)
+            .limit(limit)
+            .lean(),
+        CommissionModel.countDocuments(filter),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+    const hasNext = page < totalPages;
+    const hasPrev = page > 1;
+
+    return {
+        data: commissions,
+        meta: {
+            page,
+            limit,
+            total,
+            totalPages,
+            hasNext,
+            hasPrev,
+        },
+    };
+};
+
+const getUserWithdrawals = async (userId: string, query: any) => {
+    const page = parseInt(query.page as string) || 1;
+    const limit = parseInt(query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    const filter = { userId: userId };
+
+    const [withdrawals, total] = await Promise.all([
+        WithdrawModel.find(filter)
+            .skip(skip)
+            .limit(limit)
+            .lean(),
+        WithdrawModel.countDocuments(filter),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+    const hasNext = page < totalPages;
+    const hasPrev = page > 1;
+
+    return {
+        data: withdrawals,
+        meta: {
+            page,
+            limit,
+            total,
+            totalPages,
+            hasNext,
+            hasPrev,
+        },
+    };
+};
+
+const getUserSubscriptions = async (userId: string, query: any) => {
+    const page = parseInt(query.page as string) || 1;
+    const limit = parseInt(query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    const filter = { userId: userId };
+
+    const [subscriptions, total] = await Promise.all([
+        UserSubscriptionModel.find(filter)
+            .populate("subscriptionPlanId")
+            .skip(skip)
+            .limit(limit)
+            .lean(),
+        UserSubscriptionModel.countDocuments(filter),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+    const hasNext = page < totalPages;
+    const hasPrev = page > 1;
+
+    return {
+        data: subscriptions,
+        meta: {
+            page,
+            limit,
+            total,
+            totalPages,
+            hasNext,
+            hasPrev,
+        },
+    };
+};
 
 export const userServices = {
     getAllUsers,
@@ -335,4 +486,9 @@ export const userServices = {
     toggleAllStaffLoginStatus,
     changeStaffPasswordByOwner,
     updateStaffDetailsByOwner,
+    getUserActivitySummary,
+    getUserReferrals,
+    getUserCommissions,
+    getUserWithdrawals,
+    getUserSubscriptions,
 };

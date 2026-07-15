@@ -21,4 +21,11 @@ router.get("/:id/activity", auth, authorize(["ADMIN"]), userControllers.getUserA
 router.patch("/:id/edit", auth, authorize(["ADMIN"]), userControllers.updateUserByAdmin);
 router.patch("/:id/toggle-status", auth, authorize(["ADMIN"]), userControllers.toggleUserActiveStatus);
 
+// New paginated activity endpoints
+router.get("/:id/activity-summary", auth, authorize(["ADMIN"]), userControllers.getUserActivitySummary);
+router.get("/:id/referrals", auth, authorize(["ADMIN"]), userControllers.getUserReferrals);
+router.get("/:id/commissions", auth, authorize(["ADMIN"]), userControllers.getUserCommissions);
+router.get("/:id/withdrawals", auth, authorize(["ADMIN"]), userControllers.getUserWithdrawals);
+router.get("/:id/subscriptions", auth, authorize(["ADMIN"]), userControllers.getUserSubscriptions);
+
 export const userRoutes = router;
