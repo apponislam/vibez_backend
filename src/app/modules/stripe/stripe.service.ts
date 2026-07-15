@@ -49,11 +49,12 @@ const createCheckoutSession = async (
         } : {
             allow_promotion_codes: true,
         }),
-        ...(trialPeriodDays && {
-            subscription_data: {
+        subscription_data: {
+            metadata,
+            ...(trialPeriodDays && {
                 trial_period_days: trialPeriodDays,
-            },
-        }),
+            }),
+        },
     });
     return session;
 };

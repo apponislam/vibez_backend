@@ -29,13 +29,33 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                 const session = event.data.object;
                 console.log("Checkout completed:", session);
 
-                // Find subscription plan by stripe price id
-                const subscriptionPlan = await SubscriptionPlanModel.findOne({
-                    stripePriceId: (session as any).line_items?.data[0].price.id,
+                const subscriptionId = (session as any).subscription;
+                if (!subscriptionId) {
+                    break;
+                }
+
+                // Check if userSubscription already exists
+                let userSubscription = await UserSubscriptionModel.findOne({
+                    stripeSubscriptionId: subscriptionId,
                 });
-                const userId = (session as any).metadata?.userId;
-                const coupon = (session as any).metadata?.coupon;
-                const referralCode = (session as any).metadata?.referralCode;
+
+                if (userSubscription) {
+                    console.log("Subscription already created:", subscriptionId);
+                    break;
+                }
+
+                // Retrieve subscription from Stripe to get price and metadata
+                const stripeSub = await stripeServices.stripe.subscriptions.retrieve(subscriptionId);
+                const stripePriceId = stripeSub.items.data[0].price.id;
+
+                const subscriptionPlan = await SubscriptionPlanModel.findOne({
+                    stripePriceId: stripePriceId,
+                });
+
+                const userId = (session as any).metadata?.userId || stripeSub.metadata?.userId;
+                const coupon = (session as any).metadata?.coupon || stripeSub.metadata?.coupon;
+                const referralCode = (session as any).metadata?.referralCode || stripeSub.metadata?.referralCode;
+
                 if (subscriptionPlan && userId) {
                     // Calculate end date based on plan duration
                     const startDate = new Date();
@@ -54,13 +74,13 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                     let referredBy = undefined;
                     if (referralCode) {
                         const referrer = await UserModel.findOne({ referralCode });
-                        if (referrer && referrer._id.toString() !== userId) {
+                        if (referrer && referrer._id.toString() !== userId.toString()) {
                             referredBy = referrer._id;
                         }
                     }
 
                     // Cancel any previous active subscriptions first
-                    await userSubscriptionServices.cancelPreviousActiveSubscriptions(userId, (session as any).subscription);
+                    await userSubscriptionServices.cancelPreviousActiveSubscriptions(userId, subscriptionId);
 
                     const actualPrice = subscriptionPlan.price;
                     const paidPrice = (session as any).amount_total !== undefined && (session as any).amount_total !== null
@@ -74,6 +94,22 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                         if (referrer) {
                             const commissionPercentage = referrer.commissionPercentage || 0;
                             commissionAmount = Number((paidPrice * (commissionPercentage / 100)).toFixed(2));
+
+                            // Create the commission record in CommissionModel
+                            await commissionServices.createCommission({
+                                commissionPercentage,
+                                maxPayout: referrer.maxPayout || 0,
+                                commissionDuration: referrer.commissionDuration || 0,
+                                commissionUser: referrer._id,
+                                commissionFrom: new Types.ObjectId(userId),
+                                startDate,
+                                isActive: true,
+                            });
+
+                            // Also increment the referrer's balance
+                            await UserModel.findByIdAndUpdate(referredBy, {
+                                $inc: { balance: commissionAmount },
+                            });
                         }
                     }
 
@@ -81,7 +117,7 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                     await UserSubscriptionModel.create({
                         userId,
                         subscriptionPlanId: subscriptionPlan._id,
-                        stripeSubscriptionId: (session as any).subscription,
+                        stripeSubscriptionId: subscriptionId,
                         stripeCustomerId: (session as any).customer,
                         status: UserSubscriptionStatus.ACTIVE,
                         startDate,
@@ -169,6 +205,22 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                                     if (referrer) {
                                         const commissionPercentage = referrer.commissionPercentage || 0;
                                         commissionAmount = Number((paidPrice * (commissionPercentage / 100)).toFixed(2));
+
+                                        // Create the commission record in CommissionModel
+                                        await commissionServices.createCommission({
+                                            commissionPercentage,
+                                            maxPayout: referrer.maxPayout || 0,
+                                            commissionDuration: referrer.commissionDuration || 0,
+                                            commissionUser: referrer._id,
+                                            commissionFrom: new Types.ObjectId(userId),
+                                            startDate,
+                                            isActive: true,
+                                        });
+
+                                        // Also increment the referrer's balance
+                                        await UserModel.findByIdAndUpdate(referredBy, {
+                                            $inc: { balance: commissionAmount },
+                                        });
                                     }
                                 }
 
