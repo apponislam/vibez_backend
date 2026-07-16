@@ -32,7 +32,7 @@ const getAllUsers = async (query: any) => {
     const parsedLimit = Number(limit);
     const skip = (parsedPage - 1) * parsedLimit;
 
-    const [users, total] = await Promise.all([UserModel.find(filters).populate("referredBy", "name email").populate("subscriptionPlanId", "name price duration isFreeTrial freeTrialDays").skip(skip).limit(parsedLimit).lean(), UserModel.countDocuments(filters)]);
+    const [users, total] = await Promise.all([UserModel.find(filters).populate("referredBy", "name email").populate("subscriptionPlanId", "name price duration isFreeTrial freeTrialDays").sort({ createdAt: -1 }).skip(skip).limit(parsedLimit).lean(), UserModel.countDocuments(filters)]);
 
     // Populate referrals count and active subscriptions count for each user
     const usersWithCounts = await Promise.all(
