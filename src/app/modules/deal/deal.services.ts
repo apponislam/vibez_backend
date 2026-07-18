@@ -2,6 +2,7 @@ import httpStatus from "http-status";
 import { Types } from "mongoose";
 import ApiError from "../../../errors/ApiError";
 import { DealModel } from "./deal.model";
+import { DealType } from "./deal.interface";
 
 import { UserModel } from "../auth/auth.model";
 import { RestaurantModel } from "../restaurant/restaurant.model";
@@ -10,7 +11,53 @@ import { ReservationModel } from "../reservation/reservation.model";
 import { ReservationStatus } from "../reservation/reservation.interface";
 import { dashboardServices } from "../dashboard/dashboard.services";
 
+const validateFixedDiscount = (payload: any) => {
+    if (payload.dealType === DealType.FIXED_DISCOUNT) {
+        if (!payload.fixedDiscount) {
+            throw new ApiError(httpStatus.BAD_REQUEST, "Fixed discount details are required");
+        }
+
+        const minSpend = Number(payload.fixedDiscount.minSpend);
+        const amount = Number(payload.fixedDiscount.amount);
+
+        if (isNaN(minSpend) || minSpend < 0 || minSpend > 100) {
+            throw new ApiError(httpStatus.BAD_REQUEST, "Minimum spending amount must be from CHF 0 to CHF 100");
+        }
+
+        if (isNaN(amount) || amount < 10) {
+            throw new ApiError(httpStatus.BAD_REQUEST, "The minimum discount should be CHF 10.");
+        }
+    }
+};
+
+const validateFixedDiscountUpdate = (existingDeal: any, payload: any) => {
+    const dealType = payload.dealType || existingDeal.dealType;
+    if (dealType === DealType.FIXED_DISCOUNT) {
+        const existingFixed = existingDeal.fixedDiscount || {};
+        const payloadFixed = payload.fixedDiscount || {};
+
+        const mergedFixed = {
+            ...existingFixed,
+            ...payloadFixed,
+        };
+
+        if (payload.fixedDiscount !== undefined || payload.dealType !== undefined) {
+            const minSpend = Number(mergedFixed.minSpend);
+            const amount = Number(mergedFixed.amount);
+
+            if (isNaN(minSpend) || minSpend < 0 || minSpend > 100) {
+                throw new ApiError(httpStatus.BAD_REQUEST, "Minimum spending amount must be from CHF 0 to CHF 100");
+            }
+
+            if (isNaN(amount) || amount < 10) {
+                throw new ApiError(httpStatus.BAD_REQUEST, "The minimum discount should be CHF 10.");
+            }
+        }
+    }
+};
+
 const createDeal = async (userId: string, payload: any) => {
+    validateFixedDiscount(payload);
     const user = await UserModel.findById(userId);
     if (!user) {
         throw new ApiError(httpStatus.NOT_FOUND, "User not found");
@@ -74,6 +121,7 @@ const getAllDeals = async (filters: any = {}) => {
     const [deals, total] = await Promise.all([
         DealModel.find(query)
             .populate("restaurantId", "restaurantName restaurantImage restaurantDescription")
+            .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit),
         DealModel.countDocuments(query),
@@ -230,29 +278,34 @@ const getDealById = async (dealId: string, userId?: string) => {
 };
 
 const updateDeal = async (dealId: string, payload: any, userId: string, userRole: string) => {
+    const deal = await DealModel.findOne({ _id: dealId, isDeleted: false });
+    if (!deal) throw new ApiError(httpStatus.NOT_FOUND, "Deal not found");
+
     if (userRole !== "ADMIN") {
         const restaurant = await RestaurantModel.findOne({ restaurantOwner: userId });
         if (!restaurant) {
             throw new ApiError(httpStatus.NOT_FOUND, "You don't have a restaurant registered yet.");
-        }
-        const deal = await DealModel.findOne({ _id: dealId, isDeleted: false });
-        if (!deal) {
-            throw new ApiError(httpStatus.NOT_FOUND, "Deal not found");
         }
         if (deal.restaurantId.toString() !== restaurant._id.toString()) {
             throw new ApiError(httpStatus.FORBIDDEN, "You do not have permission to modify this deal.");
         }
     }
 
-    const deal = await DealModel.findOneAndUpdate({ _id: dealId, isDeleted: false }, { $set: payload }, { returnDocument: "after", runValidators: true });
-    if (!deal) throw new ApiError(httpStatus.NOT_FOUND, "Deal not found");
+    validateFixedDiscountUpdate(deal, payload);
+
+    const updatedDeal = await DealModel.findOneAndUpdate(
+        { _id: dealId, isDeleted: false },
+        { $set: payload },
+        { returnDocument: "after", runValidators: true }
+    );
+    if (!updatedDeal) throw new ApiError(httpStatus.NOT_FOUND, "Deal not found");
 
     // Broadcast stats update
-    if (deal.restaurantId) {
-        dashboardServices.broadcastRestaurantStats(deal.restaurantId.toString()).catch(console.error);
+    if (updatedDeal.restaurantId) {
+        dashboardServices.broadcastRestaurantStats(updatedDeal.restaurantId.toString()).catch(console.error);
     }
 
-    return deal;
+    return updatedDeal;
 };
 
 const toggleDealStatus = async (dealId: string, userId: string, userRole: string) => {

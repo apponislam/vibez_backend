@@ -47,3 +47,17 @@ No custom rules
 No combinations of deal types
 Only predefined options (dropdowns / buttons)
 Everything must be deterministic and structured
+
+
+
+this is new 
+
+2. Fixed Discount Deal
+•	For a Fixed Discount Deal, the restaurant should be able to choose: 
+1.	Minimum spending amount: from CHF 0 to CHF 100 
+2.	Discount amount: the restaurant chooses the value of the discount 
+•	Please remove the fixed CHF 5 minimum discount. 
+•	The minimum discount should be CHF 10. 
+Example:  Fixdiscount Spent 50 get 10
+•	Minimum spend: CHF 50 
+•	Discount: CHF 10 

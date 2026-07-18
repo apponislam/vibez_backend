@@ -80,6 +80,7 @@ export interface IDeal {
         category?: PercentDiscountCategory;
     };
     fixedDiscount?: {
+        minSpend?: number;
         amount: number;
     };
     createdAt?: Date;

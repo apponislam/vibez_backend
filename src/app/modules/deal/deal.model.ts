@@ -85,6 +85,7 @@ const DealSchema = new Schema<DealDocument>(
             },
         },
         fixedDiscount: {
+            minSpend: { type: Number, default: 0 },
             amount: { type: Number },
         },
     },
