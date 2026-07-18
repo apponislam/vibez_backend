@@ -466,11 +466,16 @@ const getRestaurantByOwner = async (ownerId: string) => {
 };
 
 const updateRestaurant = async (id: string, data: any, ownerId: string) => {
+    console.log("updateRestaurant - Incoming Data:", JSON.stringify(data, null, 2));
     const existingRestaurant = await RestaurantModel.findOne({ _id: id, restaurantOwner: ownerId });
     if (!existingRestaurant) throw new ApiError(httpStatus.NOT_FOUND, "Restaurant not found or not authorized");
 
+    // Sync restaurantImages in memory using existingRestaurant
+    let currentImages = existingRestaurant.restaurantImages || [];
+
     if (data.removedImages) {
         let removedImages = data.removedImages;
+        console.log("updateRestaurant - removedImages found:", removedImages);
         if (typeof removedImages === "string") {
             try {
                 removedImages = JSON.parse(removedImages);
@@ -495,16 +500,11 @@ const updateRestaurant = async (id: string, data: any, ownerId: string) => {
                 cleanedRemovedImages.push(slashed, unslashed);
             });
 
-            await RestaurantModel.updateOne(
-                { _id: id, restaurantOwner: ownerId },
-                { $pull: { restaurantImages: { $in: cleanedRemovedImages } } }
+            console.log("updateRestaurant - Cleaned removed images:", cleanedRemovedImages);
+            currentImages = currentImages.filter(
+                (img: string) => !cleanedRemovedImages.includes(img)
             );
-
-            if (existingRestaurant.restaurantImages) {
-                existingRestaurant.restaurantImages = existingRestaurant.restaurantImages.filter(
-                    (img: string) => !cleanedRemovedImages.includes(img)
-                );
-            }
+            data.restaurantImages = currentImages;
         }
         delete data.removedImages;
     }
@@ -519,11 +519,13 @@ const updateRestaurant = async (id: string, data: any, ownerId: string) => {
             }
         }
         if (Array.isArray(newImages) && newImages.length > 0) {
-            const currentImages = existingRestaurant.restaurantImages || [];
-            data.restaurantImages = [...currentImages, ...newImages];
+            currentImages = [...currentImages, ...newImages];
+            data.restaurantImages = currentImages;
         }
         delete data.newRestaurantImages;
     }
+
+    console.log("updateRestaurant - Final restaurantImages to save:", data.restaurantImages);
 
     let cuisineType = data.cuisineType;
     if (cuisineType && typeof cuisineType === "string") {
@@ -629,11 +631,16 @@ const revokeRestaurantApproval = async (id: string) => {
 };
 
 const updateRestaurantByAdmin = async (id: string, data: any, adminId: string) => {
+    console.log("updateRestaurantByAdmin - Incoming Data:", JSON.stringify(data, null, 2));
     const existingRestaurant = await RestaurantModel.findById(id);
     if (!existingRestaurant) throw new ApiError(httpStatus.NOT_FOUND, "Restaurant not found");
 
+    // Sync restaurantImages in memory using existingRestaurant
+    let currentImages = existingRestaurant.restaurantImages || [];
+
     if (data.removedImages) {
         let removedImages = data.removedImages;
+        console.log("updateRestaurantByAdmin - removedImages found:", removedImages);
         if (typeof removedImages === "string") {
             try {
                 removedImages = JSON.parse(removedImages);
@@ -658,16 +665,11 @@ const updateRestaurantByAdmin = async (id: string, data: any, adminId: string) =
                 cleanedRemovedImages.push(slashed, unslashed);
             });
 
-            await RestaurantModel.updateOne(
-                { _id: id },
-                { $pull: { restaurantImages: { $in: cleanedRemovedImages } } }
+            console.log("updateRestaurantByAdmin - Cleaned removed images:", cleanedRemovedImages);
+            currentImages = currentImages.filter(
+                (img: string) => !cleanedRemovedImages.includes(img)
             );
-
-            if (existingRestaurant.restaurantImages) {
-                existingRestaurant.restaurantImages = existingRestaurant.restaurantImages.filter(
-                    (img: string) => !cleanedRemovedImages.includes(img)
-                );
-            }
+            data.restaurantImages = currentImages;
         }
         delete data.removedImages;
     }
@@ -682,11 +684,13 @@ const updateRestaurantByAdmin = async (id: string, data: any, adminId: string) =
             }
         }
         if (Array.isArray(newImages) && newImages.length > 0) {
-            const currentImages = existingRestaurant.restaurantImages || [];
-            data.restaurantImages = [...currentImages, ...newImages];
+            currentImages = [...currentImages, ...newImages];
+            data.restaurantImages = currentImages;
         }
         delete data.newRestaurantImages;
     }
+
+    console.log("updateRestaurantByAdmin - Final restaurantImages to save:", data.restaurantImages);
 
     let cuisineType = data.cuisineType;
     if (cuisineType && typeof cuisineType === "string") {
