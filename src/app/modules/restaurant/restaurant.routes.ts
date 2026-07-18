@@ -9,6 +9,7 @@ const router = Router();
 
 // Public routes
 router.get("/", checkAuth, restaurantControllers.getAllRestaurants);
+router.get("/map-points", checkAuth, restaurantControllers.getRestaurantMapPoints);
 router.get("/admin/all", auth, authorize(["ADMIN"]), restaurantControllers.getAllRestaurantsForAdmin);
 router.get("/admin/pending", auth, authorize(["ADMIN"]), restaurantControllers.getPendingRestaurantsForAdmin);
 router.get("/:id", checkAuth, restaurantControllers.getRestaurantById);

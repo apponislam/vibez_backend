@@ -653,6 +653,99 @@ const getPendingRestaurantsForAdmin = async (filters: any = {}) => {
     };
 };
 
+const getRestaurantMapPoints = async (filters: any = {}) => {
+    let query: any = { approved: true };
+
+    // Apply basic filters if provided
+    if (filters.cuisineType) {
+        if (typeof filters.cuisineType === "string") {
+            const cuisines = filters.cuisineType.split(",").map((c: string) => c.trim().toUpperCase());
+            query.cuisineType = { $in: cuisines };
+        } else if (Array.isArray(filters.cuisineType)) {
+            query.cuisineType = { $in: filters.cuisineType };
+        }
+    }
+    if (filters.restaurantType) {
+        query.restaurantType = filters.restaurantType;
+    }
+    if (filters.search) {
+        query.$or = [
+            { restaurantName: { $regex: filters.search, $options: "i" } },
+            { restaurantDescription: { $regex: filters.search, $options: "i" } }
+        ];
+    }
+
+    const selectFields = "restaurantName restaurantDescription restaurantImage restaurantType cuisineType restaurantAddress.location restaurantAddress.street restaurantAddress.city";
+
+    const hasBoundingBox = filters.neLat && filters.neLng && filters.swLat && filters.swLng;
+    let restaurants: any[] = [];
+
+    // 1. Try bounding box query if parameters are passed
+    if (hasBoundingBox) {
+        const neLat = parseFloat(filters.neLat as string);
+        const neLng = parseFloat(filters.neLng as string);
+        const swLat = parseFloat(filters.swLat as string);
+        const swLng = parseFloat(filters.swLng as string);
+
+        if (!isNaN(neLat) && !isNaN(neLng) && !isNaN(swLat) && !isNaN(swLng)) {
+            const boxQuery = {
+                ...query,
+                "restaurantAddress.location": {
+                    $geoWithin: {
+                        $box: [
+                            [swLng, swLat], // sw (lng, lat)
+                            [neLng, neLat], // ne (lng, lat)
+                        ],
+                    },
+                },
+            };
+            restaurants = await RestaurantModel.find(boxQuery).select(selectFields).limit(200);
+        }
+    }
+
+    // 2. Fallback: If no bounding box was provided OR it returned empty, fallback to "nearest restaurants"
+    if (restaurants.length === 0) {
+        let centerLat: number | null = null;
+        let centerLng: number | null = null;
+
+        if (filters.lat && filters.lng) {
+            centerLat = parseFloat(filters.lat as string);
+            centerLng = parseFloat(filters.lng as string);
+        } else if (hasBoundingBox) {
+            const neLat = parseFloat(filters.neLat as string);
+            const neLng = parseFloat(filters.neLng as string);
+            const swLat = parseFloat(filters.swLat as string);
+            const swLng = parseFloat(filters.swLng as string);
+
+            if (!isNaN(neLat) && !isNaN(neLng) && !isNaN(swLat) && !isNaN(swLng)) {
+                centerLat = (neLat + swLat) / 2;
+                centerLng = (neLng + swLng) / 2;
+            }
+        }
+
+        // If we have valid coordinates, retrieve nearest restaurants
+        if (centerLat !== null && centerLng !== null && !isNaN(centerLat) && !isNaN(centerLng)) {
+            const nearQuery = {
+                ...query,
+                "restaurantAddress.location": {
+                    $near: {
+                        $geometry: {
+                            type: "Point",
+                            coordinates: [centerLng, centerLat],
+                        },
+                    },
+                },
+            };
+            restaurants = await RestaurantModel.find(nearQuery).select(selectFields).limit(30);
+        } else {
+            // 3. Absolute Fallback: No coordinates whatsoever, just return some approved restaurants
+            restaurants = await RestaurantModel.find(query).select(selectFields).limit(30);
+        }
+    }
+
+    return restaurants;
+};
+
 export const restaurantServices = {
     getAllRestaurants,
     getAllRestaurantsForAdmin,
@@ -664,4 +757,5 @@ export const restaurantServices = {
     revokeRestaurantApproval,
     updateRestaurantByAdmin,
     getPendingRestaurantsForAdmin,
+    getRestaurantMapPoints,
 };

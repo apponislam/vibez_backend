@@ -145,6 +145,16 @@ const getPendingRestaurantsForAdmin = catchAsync(async (req: Request, res: Respo
     });
 });
 
+const getRestaurantMapPoints = catchAsync(async (req: Request, res: Response) => {
+    const result = await restaurantServices.getRestaurantMapPoints(req.query);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Restaurant map points retrieved successfully",
+        data: result,
+    });
+});
+
 export const restaurantControllers = {
     getAllRestaurants,
     getAllRestaurantsForAdmin,
@@ -156,4 +166,5 @@ export const restaurantControllers = {
     revokeRestaurantApproval,
     updateRestaurantByAdmin,
     getPendingRestaurantsForAdmin,
+    getRestaurantMapPoints,
 };
