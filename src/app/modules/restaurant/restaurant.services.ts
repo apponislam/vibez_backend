@@ -33,7 +33,14 @@ const getAllRestaurants = async (filters: any = {}, userId?: string) => {
         }
     }
     if (filters.restaurantType) {
-        query.restaurantType = filters.restaurantType;
+        if (typeof filters.restaurantType === "string") {
+            const types = filters.restaurantType.split(",").map((t: string) => t.trim().toUpperCase());
+            query.restaurantType = { $in: types };
+        } else if (Array.isArray(filters.restaurantType)) {
+            query.restaurantType = { $in: filters.restaurantType };
+        } else {
+            query.restaurantType = filters.restaurantType;
+        }
     }
     if (filters.search) {
         query.$or = [{ restaurantName: { $regex: filters.search, $options: "i" } }, { restaurantDescription: { $regex: filters.search, $options: "i" } }];
@@ -261,7 +268,24 @@ const getAllRestaurantsForAdmin = async (filters: any = {}) => {
         }
     }
     if (filters.restaurantType) {
-        query.restaurantType = filters.restaurantType;
+        if (typeof filters.restaurantType === "string") {
+            const types = filters.restaurantType.split(",").map((t: string) => t.trim().toUpperCase());
+            query.restaurantType = { $in: types };
+        } else if (Array.isArray(filters.restaurantType)) {
+            query.restaurantType = { $in: filters.restaurantType };
+        } else {
+            query.restaurantType = filters.restaurantType;
+        }
+    }
+    if (filters.foodType) {
+        if (typeof filters.foodType === "string") {
+            const foods = filters.foodType.split(",").map((f: string) => f.trim().toUpperCase());
+            query.foodType = { $in: foods };
+        } else if (Array.isArray(filters.foodType)) {
+            query.foodType = { $in: filters.foodType };
+        } else {
+            query.foodType = filters.foodType;
+        }
     }
     if (filters.search) {
         query.$or = [{ restaurantName: { $regex: filters.search, $options: "i" } }, { restaurantDescription: { $regex: filters.search, $options: "i" } }];

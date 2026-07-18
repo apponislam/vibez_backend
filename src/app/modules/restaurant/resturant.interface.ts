@@ -2,27 +2,22 @@ import { Types } from "mongoose";
 
 export enum RestaurantType {
     RESTAURANT = "RESTAURANT",
+    BAR = "BAR",
+    BISTRO = "BISTRO",
     CAFE = "CAFE",
-    NIGHT_CLUB = "NIGHT_CLUB",
-    STREET_FOOD = "STREET_FOOD",
     BAKERY = "BAKERY",
-    FINE_DINING = "FINE_DINING",
 }
 
 export enum CuisineType {
+    AMERICAN = "AMERICAN",
     ITALIAN = "ITALIAN",
-    CHINESE = "CHINESE",
-    JAPANESE = "JAPANESE",
+    SWISS_CUISINE = "SWISS_CUISINE",
     INDIAN = "INDIAN",
+    CHINESE = "CHINESE",
     THAI = "THAI",
-    FAST_FOOD = "FAST_FOOD",
-    BBQ = "BBQ",
-    SEAFOOD = "SEAFOOD",
-    VEGAN = "VEGAN",
-    DESSERTS = "DESSERTS",
-    COFFEE_BAKERY = "COFFEE_BAKERY",
-    FINE_DINING = "FINE_DINING",
-    LOCAL_FOOD = "LOCAL_FOOD",
+    VIETNAMESE = "VIETNAMESE",
+    TURKISH = "TURKISH",
+    MEXICAN = "MEXICAN",
 }
 
 export enum FoodType {
