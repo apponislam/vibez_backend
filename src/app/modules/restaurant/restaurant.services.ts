@@ -286,6 +286,7 @@ const getAllRestaurantsForAdmin = async (filters: any = {}) => {
         RestaurantModel.find(query)
             .select("restaurantName restaurantImage approved createdAt restaurantOwner")
             .populate("restaurantOwner", "name email phone profileImage")
+            .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit),
         RestaurantModel.countDocuments(countQuery)
