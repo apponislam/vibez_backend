@@ -38,9 +38,7 @@ app.get("/", (req: Request, res: Response) => {
         const port = config.port || "5000";
         const formattedEnv = env.charAt(0).toUpperCase() + env.slice(1).toLowerCase();
 
-        const modifiedHtml = html
-            .replace("{{NODE_ENV}}", formattedEnv)
-            .replace("{{PORT}}", String(port));
+        const modifiedHtml = html.replace("{{NODE_ENV}}", formattedEnv).replace("{{PORT}}", String(port));
 
         res.send(modifiedHtml);
     });
@@ -52,4 +50,3 @@ app.use(notFound);
 app.use(globalErrorHandler);
 
 export default app;
-

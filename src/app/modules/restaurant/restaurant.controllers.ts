@@ -1,4 +1,6 @@
 import httpStatus from "http-status";
+import fs from "fs";
+import path from "path";
 import ApiError from "../../../errors/ApiError";
 import catchAsync from "../../../utils/catchAsync";
 import sendResponse from "../../../utils/sendResponse";
@@ -25,11 +27,10 @@ const parseRequestBody = (req: Request): any => {
         data.restaurantImage = req.body.restaurantImage;
     }
     if (req.body.restaurantImages) {
-        if (Array.isArray(data.restaurantImages)) {
-            data.restaurantImages = [...data.restaurantImages, ...req.body.restaurantImages];
-        } else {
-            data.restaurantImages = req.body.restaurantImages;
-        }
+        data.newRestaurantImages = req.body.restaurantImages;
+    }
+    if (req.body.removedImages) {
+        data.removedImages = req.body.removedImages;
     }
     if (req.body.foodType) {
         data.foodType = req.body.foodType;
@@ -72,6 +73,18 @@ const getMyRestaurant = catchAsync(async (req: Request, res: Response) => {
 
 const updateRestaurant = catchAsync(async (req: Request, res: Response) => {
     const data = parseRequestBody(req);
+
+    try {
+        fs.writeFileSync(
+            path.join(process.cwd(), "debug.json"),
+            JSON.stringify({
+                body: req.body,
+                parsedData: data,
+                files: req.files ? Object.keys(req.files) : null
+            }, null, 2)
+        );
+    } catch (e) {}
+
     const restaurantId = (req.user as any).restaurantId?.toString();
     if (!restaurantId) {
         throw new ApiError(httpStatus.NOT_FOUND, "No restaurant associated with this user");
@@ -122,6 +135,18 @@ const revokeRestaurantApproval = catchAsync(async (req: Request, res: Response) 
 
 const updateRestaurantByAdmin = catchAsync(async (req: Request, res: Response) => {
     const data = parseRequestBody(req);
+
+    try {
+        fs.writeFileSync(
+            path.join(process.cwd(), "debug.json"),
+            JSON.stringify({
+                body: req.body,
+                parsedData: data,
+                files: req.files ? Object.keys(req.files) : null
+            }, null, 2)
+        );
+    } catch (e) {}
+
     const restaurantId = req.params.id as string;
     const adminId = req.user._id as string;
     const result = await restaurantServices.updateRestaurantByAdmin(restaurantId, data, adminId);

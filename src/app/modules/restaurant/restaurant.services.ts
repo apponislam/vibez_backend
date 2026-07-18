@@ -469,6 +469,62 @@ const updateRestaurant = async (id: string, data: any, ownerId: string) => {
     const existingRestaurant = await RestaurantModel.findOne({ _id: id, restaurantOwner: ownerId });
     if (!existingRestaurant) throw new ApiError(httpStatus.NOT_FOUND, "Restaurant not found or not authorized");
 
+    if (data.removedImages) {
+        let removedImages = data.removedImages;
+        if (typeof removedImages === "string") {
+            try {
+                removedImages = JSON.parse(removedImages);
+            } catch (error) {
+                removedImages = removedImages.split(",").map((img: string) => img.trim());
+            }
+        }
+        if (Array.isArray(removedImages) && removedImages.length > 0) {
+            const cleanedRemovedImages: string[] = [];
+            removedImages.forEach((img: string) => {
+                let path = img;
+                if (img.startsWith("http")) {
+                    try {
+                        const parsedUrl = new URL(img);
+                        path = parsedUrl.pathname;
+                    } catch (e) {
+                        path = img;
+                    }
+                }
+                const slashed = path.startsWith("/") ? path : `/${path}`;
+                const unslashed = path.startsWith("/") ? path.slice(1) : path;
+                cleanedRemovedImages.push(slashed, unslashed);
+            });
+
+            await RestaurantModel.updateOne(
+                { _id: id, restaurantOwner: ownerId },
+                { $pull: { restaurantImages: { $in: cleanedRemovedImages } } }
+            );
+
+            if (existingRestaurant.restaurantImages) {
+                existingRestaurant.restaurantImages = existingRestaurant.restaurantImages.filter(
+                    (img: string) => !cleanedRemovedImages.includes(img)
+                );
+            }
+        }
+        delete data.removedImages;
+    }
+
+    if (data.newRestaurantImages) {
+        let newImages = data.newRestaurantImages;
+        if (typeof newImages === "string") {
+            try {
+                newImages = JSON.parse(newImages);
+            } catch (error) {
+                newImages = newImages.split(",").map((img: string) => img.trim());
+            }
+        }
+        if (Array.isArray(newImages) && newImages.length > 0) {
+            const currentImages = existingRestaurant.restaurantImages || [];
+            data.restaurantImages = [...currentImages, ...newImages];
+        }
+        delete data.newRestaurantImages;
+    }
+
     let cuisineType = data.cuisineType;
     if (cuisineType && typeof cuisineType === "string") {
         try {
@@ -575,6 +631,62 @@ const revokeRestaurantApproval = async (id: string) => {
 const updateRestaurantByAdmin = async (id: string, data: any, adminId: string) => {
     const existingRestaurant = await RestaurantModel.findById(id);
     if (!existingRestaurant) throw new ApiError(httpStatus.NOT_FOUND, "Restaurant not found");
+
+    if (data.removedImages) {
+        let removedImages = data.removedImages;
+        if (typeof removedImages === "string") {
+            try {
+                removedImages = JSON.parse(removedImages);
+            } catch (error) {
+                removedImages = removedImages.split(",").map((img: string) => img.trim());
+            }
+        }
+        if (Array.isArray(removedImages) && removedImages.length > 0) {
+            const cleanedRemovedImages: string[] = [];
+            removedImages.forEach((img: string) => {
+                let path = img;
+                if (img.startsWith("http")) {
+                    try {
+                        const parsedUrl = new URL(img);
+                        path = parsedUrl.pathname;
+                    } catch (e) {
+                        path = img;
+                    }
+                }
+                const slashed = path.startsWith("/") ? path : `/${path}`;
+                const unslashed = path.startsWith("/") ? path.slice(1) : path;
+                cleanedRemovedImages.push(slashed, unslashed);
+            });
+
+            await RestaurantModel.updateOne(
+                { _id: id },
+                { $pull: { restaurantImages: { $in: cleanedRemovedImages } } }
+            );
+
+            if (existingRestaurant.restaurantImages) {
+                existingRestaurant.restaurantImages = existingRestaurant.restaurantImages.filter(
+                    (img: string) => !cleanedRemovedImages.includes(img)
+                );
+            }
+        }
+        delete data.removedImages;
+    }
+
+    if (data.newRestaurantImages) {
+        let newImages = data.newRestaurantImages;
+        if (typeof newImages === "string") {
+            try {
+                newImages = JSON.parse(newImages);
+            } catch (error) {
+                newImages = newImages.split(",").map((img: string) => img.trim());
+            }
+        }
+        if (Array.isArray(newImages) && newImages.length > 0) {
+            const currentImages = existingRestaurant.restaurantImages || [];
+            data.restaurantImages = [...currentImages, ...newImages];
+        }
+        delete data.newRestaurantImages;
+    }
 
     let cuisineType = data.cuisineType;
     if (cuisineType && typeof cuisineType === "string") {
