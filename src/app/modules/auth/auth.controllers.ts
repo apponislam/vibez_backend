@@ -341,12 +341,15 @@ const registerRestaurant = catchAsync(async (req: Request, res: Response) => {
         data = req.body;
     }
 
-    // Attach profileImage and restaurantImage from req.body (populated by multer uploadRestaurantRegistration middleware)
+    // Attach profileImage, restaurantImage and restaurantImages from req.body (populated by multer uploadRestaurantRegistration middleware)
     if (req.body.profileImage) {
         data.profileImage = req.body.profileImage;
     }
     if (req.body.restaurantImage) {
         data.restaurantImage = req.body.restaurantImage;
+    }
+    if (req.body.restaurantImages) {
+        data.restaurantImages = req.body.restaurantImages;
     }
 
     // Basic validation

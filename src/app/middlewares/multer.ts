@@ -157,11 +157,12 @@ export const uploadShorts = (req: Request, res: Response, next: NextFunction) =>
 const restaurantImageDir = path.join(process.cwd(), "uploads", "restaurant-images");
 if (!fs.existsSync(restaurantImageDir)) fs.mkdirSync(restaurantImageDir, { recursive: true });
 
-// Middleware for restaurant registration (profile image + restaurant image)
+// Middleware for restaurant registration (profile image + restaurant image + multiple restaurant images)
 export const uploadRestaurantRegistration = (req: Request, res: Response, next: NextFunction) => {
     const uploadFields = imageUpload.fields([
         { name: "profileImage", maxCount: 1 },
         { name: "restaurantImage", maxCount: 1 },
+        { name: "restaurantImages", maxCount: 20 },
     ]);
 
     uploadFields(req, res, async (err) => {
@@ -197,26 +198,72 @@ export const uploadRestaurantRegistration = (req: Request, res: Response, next: 
             }
         }
 
+        // Process restaurantImages
+        if (req.files && !Array.isArray(req.files) && req.files["restaurantImages"]) {
+            try {
+                const files = req.files["restaurantImages"];
+                const processedFiles: string[] = [];
+
+                for (const file of files) {
+                    const newName = generateImageFileName("restaurant", file.originalname);
+                    const outputPath = path.join(restaurantImageDir, newName);
+
+                    await sharp(file.buffer).webp({ quality: 80 }).toFile(outputPath);
+
+                    processedFiles.push(`/uploads/restaurant-images/${newName}`);
+                }
+
+                req.body.restaurantImages = processedFiles;
+            } catch (error) {
+                return next(error);
+            }
+        }
+
         next();
     });
 };
 
-// Middleware for single restaurant image upload
+// Middleware for restaurant image upload (single cover and/or multiple gallery images)
 export const uploadRestaurantImage = (req: Request, res: Response, next: NextFunction) => {
-    const uploadSingle = imageUpload.single("restaurantImage");
+    const uploadFields = imageUpload.fields([
+        { name: "restaurantImage", maxCount: 1 },
+        { name: "restaurantImages", maxCount: 10 },
+    ]);
 
-    uploadSingle(req, res, async (err) => {
+    uploadFields(req, res, async (err) => {
         if (err) return next(err);
 
-        if (req.file) {
+        // Process single restaurantImage if uploaded
+        if (req.files && !Array.isArray(req.files) && req.files["restaurantImage"]) {
             try {
-                const file = req.file;
+                const file = req.files["restaurantImage"][0];
                 const newName = generateImageFileName("restaurant", file.originalname);
                 const outputPath = path.join(restaurantImageDir, newName);
 
                 await sharp(file.buffer).webp({ quality: 80 }).toFile(outputPath);
 
                 req.body.restaurantImage = `/uploads/restaurant-images/${newName}`;
+            } catch (error) {
+                return next(error);
+            }
+        }
+
+        // Process multiple restaurantImages if uploaded
+        if (req.files && !Array.isArray(req.files) && req.files["restaurantImages"]) {
+            try {
+                const files = req.files["restaurantImages"];
+                const processedFiles: string[] = [];
+
+                for (const file of files) {
+                    const newName = generateImageFileName("restaurant", file.originalname);
+                    const outputPath = path.join(restaurantImageDir, newName);
+
+                    await sharp(file.buffer).webp({ quality: 80 }).toFile(outputPath);
+
+                    processedFiles.push(`/uploads/restaurant-images/${newName}`);
+                }
+
+                req.body.restaurantImages = processedFiles;
             } catch (error) {
                 return next(error);
             }

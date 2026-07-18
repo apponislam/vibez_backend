@@ -588,6 +588,7 @@ const registerRestaurant = async (data: any) => {
         restaurantAddress: address,
         restaurantOpenHours: openHours,
         restaurantImage: data.restaurantImage,
+        restaurantImages: data.restaurantImages || [],
         approved: autoApprove,
         approvedAt: autoApprove ? new Date() : undefined,
     };

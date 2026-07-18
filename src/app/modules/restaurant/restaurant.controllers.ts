@@ -24,6 +24,13 @@ const parseRequestBody = (req: Request): any => {
     if (req.body.restaurantImage) {
         data.restaurantImage = req.body.restaurantImage;
     }
+    if (req.body.restaurantImages) {
+        if (Array.isArray(data.restaurantImages)) {
+            data.restaurantImages = [...data.restaurantImages, ...req.body.restaurantImages];
+        } else {
+            data.restaurantImages = req.body.restaurantImages;
+        }
+    }
     return data;
 };
 

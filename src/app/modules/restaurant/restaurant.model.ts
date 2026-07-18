@@ -76,6 +76,10 @@ const RestaurantSchema = new Schema<IRestaurant>(
         restaurantImage: {
             type: String,
         },
+        restaurantImages: {
+            type: [String],
+            default: [],
+        },
         approved: {
             type: Boolean,
             default: false,

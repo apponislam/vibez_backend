@@ -76,6 +76,7 @@ export interface IRestaurant {
     };
     restaurantOpenHours: RestaurantOpenHour[];
     restaurantImage?: string;
+    restaurantImages?: string[];
     approved: boolean;
     approvedBy?: Types.ObjectId | null;
     approvedAt?: Date;
