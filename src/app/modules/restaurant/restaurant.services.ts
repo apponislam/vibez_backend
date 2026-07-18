@@ -22,6 +22,16 @@ const getAllRestaurants = async (filters: any = {}, userId?: string) => {
             query.cuisineType = filters.cuisineType;
         }
     }
+    if (filters.foodType) {
+        if (typeof filters.foodType === "string") {
+            const foods = filters.foodType.split(",").map((f: string) => f.trim().toUpperCase());
+            query.foodType = { $in: foods };
+        } else if (Array.isArray(filters.foodType)) {
+            query.foodType = { $in: filters.foodType };
+        } else {
+            query.foodType = filters.foodType;
+        }
+    }
     if (filters.restaurantType) {
         query.restaurantType = filters.restaurantType;
     }
@@ -444,6 +454,15 @@ const updateRestaurant = async (id: string, data: any, ownerId: string) => {
         }
     }
 
+    let foodType = data.foodType;
+    if (foodType && typeof foodType === "string") {
+        try {
+            data.foodType = JSON.parse(foodType);
+        } catch (error) {
+            data.foodType = foodType.split(",").map((f: string) => f.trim().toUpperCase());
+        }
+    }
+
     let address = data.restaurantAddress;
     if (address) {
         if (typeof address === "string") {
@@ -539,6 +558,15 @@ const updateRestaurantByAdmin = async (id: string, data: any, adminId: string) =
             data.cuisineType = JSON.parse(cuisineType);
         } catch (error) {
             data.cuisineType = cuisineType.split(",").map((c: string) => c.trim().toUpperCase());
+        }
+    }
+
+    let foodType = data.foodType;
+    if (foodType && typeof foodType === "string") {
+        try {
+            data.foodType = JSON.parse(foodType);
+        } catch (error) {
+            data.foodType = foodType.split(",").map((f: string) => f.trim().toUpperCase());
         }
     }
 
@@ -666,6 +694,14 @@ const getRestaurantMapPoints = async (filters: any = {}) => {
             query.cuisineType = { $in: filters.cuisineType };
         }
     }
+    if (filters.foodType) {
+        if (typeof filters.foodType === "string") {
+            const foods = filters.foodType.split(",").map((f: string) => f.trim().toUpperCase());
+            query.foodType = { $in: foods };
+        } else if (Array.isArray(filters.foodType)) {
+            query.foodType = { $in: filters.foodType };
+        }
+    }
     if (filters.restaurantType) {
         query.restaurantType = filters.restaurantType;
     }
@@ -676,7 +712,7 @@ const getRestaurantMapPoints = async (filters: any = {}) => {
         ];
     }
 
-    const selectFields = "restaurantName restaurantDescription restaurantImage restaurantType cuisineType restaurantAddress.location restaurantAddress.street restaurantAddress.city";
+    const selectFields = "restaurantName restaurantDescription restaurantImage restaurantType cuisineType foodType restaurantAddress.location restaurantAddress.street restaurantAddress.city";
 
     const hasBoundingBox = filters.neLat && filters.neLng && filters.swLat && filters.swLng;
     let restaurants: any[] = [];

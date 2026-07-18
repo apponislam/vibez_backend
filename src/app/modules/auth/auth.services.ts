@@ -578,12 +578,26 @@ const registerRestaurant = async (data: any) => {
         }
     }
 
+    let foodType = data.foodType;
+    if (foodType) {
+        if (typeof foodType === "string") {
+            try {
+                foodType = JSON.parse(foodType);
+            } catch (error) {
+                foodType = foodType.split(",").map((f: string) => f.trim().toUpperCase());
+            }
+        }
+    } else {
+        foodType = [];
+    }
+
     // Prepare Restaurant Data
     const restaurantData: any = {
         restaurantName: data.restaurantName,
         restaurantDescription: data.restaurantDescription,
         restaurantType: data.restaurantType,
         cuisineType: cuisineType,
+        foodType: foodType,
         restaurantWebsite: data.restaurantWebsite,
         restaurantAddress: address,
         restaurantOpenHours: openHours,

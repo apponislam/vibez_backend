@@ -25,6 +25,19 @@ export enum CuisineType {
     LOCAL_FOOD = "LOCAL_FOOD",
 }
 
+export enum FoodType {
+    PIZZA = "PIZZA",
+    BURGER = "BURGER",
+    SUSHI = "SUSHI",
+    PASTA = "PASTA",
+    MEAT = "MEAT",
+    FISH = "FISH",
+    SEAFOOD = "SEAFOOD",
+    KEBAB = "KEBAB",
+    VEGAN = "VEGAN",
+    VEGETARIAN = "VEGETARIAN",
+}
+
 export enum DayOfWeek {
     MONDAY = "MONDAY",
     TUESDAY = "TUESDAY",
@@ -59,6 +72,7 @@ export interface IRestaurant {
     restaurantDescription: string;
     restaurantType: RestaurantType;
     cuisineType: CuisineType[];
+    foodType?: FoodType[];
     restaurantOwner: Types.ObjectId;
     restaurantWebsite: string;
     restaurantAddress: {

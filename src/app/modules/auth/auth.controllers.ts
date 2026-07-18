@@ -351,6 +351,9 @@ const registerRestaurant = catchAsync(async (req: Request, res: Response) => {
     if (req.body.restaurantImages) {
         data.restaurantImages = req.body.restaurantImages;
     }
+    if (req.body.foodType) {
+        data.foodType = req.body.foodType;
+    }
 
     // Basic validation
     if (!data.email || !data.password || !data.name || !data.restaurantName || !data.restaurantType || !data.cuisineType || !data.restaurantAddress) {

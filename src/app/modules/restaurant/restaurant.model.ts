@@ -1,5 +1,5 @@
 import mongoose, { Schema } from "mongoose";
-import { IRestaurant, RestaurantType, CuisineType, DayOfWeek, MealTimeType } from "./resturant.interface";
+import { IRestaurant, RestaurantType, CuisineType, FoodType, DayOfWeek, MealTimeType } from "./resturant.interface";
 
 export const DEFAULT_MEAL_TIMES = {
     [MealTimeType.LUNCH]: { openTime: "11:00", closeTime: "15:00" },
@@ -41,6 +41,11 @@ const RestaurantSchema = new Schema<IRestaurant>(
             type: [String],
             enum: Object.values(CuisineType),
             required: [true, "Cuisine type is required"],
+        },
+        foodType: {
+            type: [String],
+            enum: Object.values(FoodType),
+            default: [],
         },
         restaurantOwner: {
             type: Schema.Types.ObjectId,

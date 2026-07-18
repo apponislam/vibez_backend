@@ -31,6 +31,9 @@ const parseRequestBody = (req: Request): any => {
             data.restaurantImages = req.body.restaurantImages;
         }
     }
+    if (req.body.foodType) {
+        data.foodType = req.body.foodType;
+    }
     return data;
 };
 
