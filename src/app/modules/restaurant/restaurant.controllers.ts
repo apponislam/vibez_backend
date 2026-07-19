@@ -181,7 +181,8 @@ const getPendingRestaurantsForAdmin = catchAsync(async (req: Request, res: Respo
 });
 
 const getRestaurantMapPoints = catchAsync(async (req: Request, res: Response) => {
-    const result = await restaurantServices.getRestaurantMapPoints(req.query);
+    const userId = req.user?._id?.toString();
+    const result = await restaurantServices.getRestaurantMapPoints(req.query, userId);
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,

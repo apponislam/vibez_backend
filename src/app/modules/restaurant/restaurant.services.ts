@@ -82,10 +82,7 @@ const getAllRestaurants = async (filters: any = {}, userId?: string) => {
         restaurants = await RestaurantModel.find(query).populate("restaurantOwner", "name email phone");
     } else {
         // Normal fast paginated query
-        [restaurants, total] = await Promise.all([
-            RestaurantModel.find(query).populate("restaurantOwner", "name email phone").skip(skip).limit(limit),
-            RestaurantModel.countDocuments(countQuery),
-        ]);
+        [restaurants, total] = await Promise.all([RestaurantModel.find(query).populate("restaurantOwner", "name email phone").skip(skip).limit(limit), RestaurantModel.countDocuments(countQuery)]);
     }
 
     let resultData: any[] = [];
@@ -144,10 +141,7 @@ const getAllRestaurants = async (filters: any = {}, userId?: string) => {
 
     // Batch fetch average ratings for all restaurants
     const restaurantIds = resultData.map((r: any) => r._id);
-    const ratingAggregates = await ReviewModel.aggregate([
-        { $match: { restaurantId: { $in: restaurantIds }, isActive: true, isDeleted: false } },
-        { $group: { _id: "$restaurantId", averageRating: { $avg: "$rating" }, totalReviews: { $sum: 1 } } },
-    ]);
+    const ratingAggregates = await ReviewModel.aggregate([{ $match: { restaurantId: { $in: restaurantIds }, isActive: true, isDeleted: false } }, { $group: { _id: "$restaurantId", averageRating: { $avg: "$rating" }, totalReviews: { $sum: 1 } } }]);
     const ratingMap = new Map(ratingAggregates.map((r: any) => [r._id.toString(), r]));
 
     resultData = resultData.map((restaurantObj: any) => ({
@@ -201,9 +195,7 @@ const getAllRestaurants = async (filters: any = {}, userId?: string) => {
         };
 
         resultData = resultData.filter((restaurantObj: any) => {
-            const todayHours = restaurantObj.restaurantOpenHours?.find(
-                (h: any) => h.day === currentDayName
-            );
+            const todayHours = restaurantObj.restaurantOpenHours?.find((h: any) => h.day === currentDayName);
             if (!todayHours || !todayHours.isOpen) {
                 return false;
             }
@@ -317,13 +309,8 @@ const getAllRestaurantsForAdmin = async (filters: any = {}) => {
     const skip = (page - 1) * limit;
 
     const [restaurants, total] = await Promise.all([
-        RestaurantModel.find(query)
-            .select("restaurantName restaurantImage approved createdAt restaurantOwner")
-            .populate("restaurantOwner", "name email phone profileImage")
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit),
-        RestaurantModel.countDocuments(countQuery)
+        RestaurantModel.find(query).select("restaurantName restaurantImage approved createdAt restaurantOwner").populate("restaurantOwner", "name email phone profileImage").sort({ createdAt: -1 }).skip(skip).limit(limit),
+        RestaurantModel.countDocuments(countQuery),
     ]);
 
     const formattedRestaurants = await Promise.all(
@@ -340,17 +327,17 @@ const getAllRestaurantsForAdmin = async (filters: any = {}) => {
             // 2. Count Total Bookings (reservations not cancelled)
             const totalBookings = await ReservationModel.countDocuments({
                 restaurantId,
-                status: { $ne: ReservationStatus.CANCELLED }
+                status: { $ne: ReservationStatus.CANCELLED },
             });
 
             // 3. Calculate Redemption Rate
             const deals = await DealModel.find({ restaurantId }).select("_id");
-            const dealIds = deals.map(d => d._id);
+            const dealIds = deals.map((d) => d._id);
             const totalSaved = await SavedDealModel.countDocuments({ dealId: { $in: dealIds } });
             const totalUsed = await ReservationModel.countDocuments({
                 restaurantId,
                 dealId: { $ne: null },
-                status: { $ne: ReservationStatus.CANCELLED }
+                status: { $ne: ReservationStatus.CANCELLED },
             });
             const totalClaims = totalSaved + totalUsed;
             const redemptionRate = totalClaims > 0 ? Number(((totalUsed / totalClaims) * 100).toFixed(1)) : 0;
@@ -422,10 +409,7 @@ const getRestaurantById = async (id: string, userId?: string) => {
         };
     });
 
-    const ratingAggregate = await ReviewModel.aggregate([
-        { $match: { restaurantId: restaurant._id, isActive: true, isDeleted: false } },
-        { $group: { _id: null, averageRating: { $avg: "$rating" }, totalReviews: { $sum: 1 } } },
-    ]);
+    const ratingAggregate = await ReviewModel.aggregate([{ $match: { restaurantId: restaurant._id, isActive: true, isDeleted: false } }, { $group: { _id: null, averageRating: { $avg: "$rating" }, totalReviews: { $sum: 1 } } }]);
     const averageRating = parseFloat((ratingAggregate[0]?.averageRating || 0).toFixed(1));
     const totalReviews = ratingAggregate[0]?.totalReviews || 0;
 
@@ -501,9 +485,7 @@ const updateRestaurant = async (id: string, data: any, ownerId: string) => {
             });
 
             console.log("updateRestaurant - Cleaned removed images:", cleanedRemovedImages);
-            currentImages = currentImages.filter(
-                (img: string) => !cleanedRemovedImages.includes(img)
-            );
+            currentImages = currentImages.filter((img: string) => !cleanedRemovedImages.includes(img));
             data.restaurantImages = currentImages;
         }
         delete data.removedImages;
@@ -605,7 +587,7 @@ const updateRestaurant = async (id: string, data: any, ownerId: string) => {
         });
     }
 
-    const restaurant = await RestaurantModel.findOneAndUpdate({ _id: id, restaurantOwner: ownerId }, { $set: data }, { returnDocument: 'after', runValidators: true }).populate("restaurantOwner", "name email phone");
+    const restaurant = await RestaurantModel.findOneAndUpdate({ _id: id, restaurantOwner: ownerId }, { $set: data }, { returnDocument: "after", runValidators: true }).populate("restaurantOwner", "name email phone");
 
     return restaurant;
 };
@@ -617,14 +599,14 @@ const deleteRestaurant = async (id: string, ownerId: string) => {
 };
 
 const approveRestaurant = async (id: string, approvedBy: string) => {
-    const restaurant = await RestaurantModel.findByIdAndUpdate(id, { $set: { approved: true, approvedBy, approvedAt: new Date() } }, { returnDocument: 'after', runValidators: true }).populate("restaurantOwner", "name email phone");
+    const restaurant = await RestaurantModel.findByIdAndUpdate(id, { $set: { approved: true, approvedBy, approvedAt: new Date() } }, { returnDocument: "after", runValidators: true }).populate("restaurantOwner", "name email phone");
 
     if (!restaurant) throw new ApiError(httpStatus.NOT_FOUND, "Restaurant not found");
     return restaurant;
 };
 
 const revokeRestaurantApproval = async (id: string) => {
-    const restaurant = await RestaurantModel.findByIdAndUpdate(id, { $set: { approved: false, approvedBy: null, approvedAt: undefined } }, { returnDocument: 'after', runValidators: true }).populate("restaurantOwner", "name email phone");
+    const restaurant = await RestaurantModel.findByIdAndUpdate(id, { $set: { approved: false, approvedBy: null, approvedAt: undefined } }, { returnDocument: "after", runValidators: true }).populate("restaurantOwner", "name email phone");
 
     if (!restaurant) throw new ApiError(httpStatus.NOT_FOUND, "Restaurant not found");
     return restaurant;
@@ -666,9 +648,7 @@ const updateRestaurantByAdmin = async (id: string, data: any, adminId: string) =
             });
 
             console.log("updateRestaurantByAdmin - Cleaned removed images:", cleanedRemovedImages);
-            currentImages = currentImages.filter(
-                (img: string) => !cleanedRemovedImages.includes(img)
-            );
+            currentImages = currentImages.filter((img: string) => !cleanedRemovedImages.includes(img));
             data.restaurantImages = currentImages;
         }
         delete data.removedImages;
@@ -778,11 +758,7 @@ const updateRestaurantByAdmin = async (id: string, data: any, adminId: string) =
         }
     }
 
-    const restaurant = await RestaurantModel.findByIdAndUpdate(
-        id,
-        { $set: data },
-        { returnDocument: "after", runValidators: true }
-    ).populate("restaurantOwner", "name email phone");
+    const restaurant = await RestaurantModel.findByIdAndUpdate(id, { $set: data }, { returnDocument: "after", runValidators: true }).populate("restaurantOwner", "name email phone");
 
     return restaurant;
 };
@@ -795,13 +771,7 @@ const getPendingRestaurantsForAdmin = async (filters: any = {}) => {
     const query = { approved: false };
 
     const [restaurants, total] = await Promise.all([
-        RestaurantModel.find(query)
-            .select("restaurantName restaurantDescription restaurantImage cuisineType restaurantType createdAt restaurantOwner")
-            .populate("restaurantOwner", "name email phone profileImage")
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit)
-            .lean(),
+        RestaurantModel.find(query).select("restaurantName restaurantDescription restaurantImage cuisineType restaurantType createdAt restaurantOwner").populate("restaurantOwner", "name email phone profileImage").sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
         RestaurantModel.countDocuments(query),
     ]);
 
@@ -822,7 +792,7 @@ const getPendingRestaurantsForAdmin = async (filters: any = {}) => {
     };
 };
 
-const getRestaurantMapPoints = async (filters: any = {}) => {
+const getRestaurantMapPoints = async (filters: any = {}, userId?: string) => {
     let query: any = { approved: true };
 
     // Apply basic filters if provided
@@ -846,13 +816,10 @@ const getRestaurantMapPoints = async (filters: any = {}) => {
         query.restaurantType = filters.restaurantType;
     }
     if (filters.search) {
-        query.$or = [
-            { restaurantName: { $regex: filters.search, $options: "i" } },
-            { restaurantDescription: { $regex: filters.search, $options: "i" } }
-        ];
+        query.$or = [{ restaurantName: { $regex: filters.search, $options: "i" } }, { restaurantDescription: { $regex: filters.search, $options: "i" } }];
     }
 
-    const selectFields = "restaurantName restaurantDescription restaurantImage restaurantType cuisineType foodType restaurantAddress.location restaurantAddress.street restaurantAddress.city";
+    const selectFields = "restaurantName restaurantDescription restaurantImage restaurantType cuisineType foodType restaurantAddress";
 
     const hasBoundingBox = filters.neLat && filters.neLng && filters.swLat && filters.swLng;
     let restaurants: any[] = [];
@@ -920,7 +887,39 @@ const getRestaurantMapPoints = async (filters: any = {}) => {
         }
     }
 
-    return restaurants;
+    let resultData: any[] = [];
+    if (userId) {
+        const favorites = await FavoriteModel.find({ userId });
+        const favoriteRestaurantIds = new Set(favorites.map((f) => f.restaurantId.toString()));
+        resultData = restaurants.map((restaurant: any) => {
+            const restaurantObj = restaurant.toObject ? restaurant.toObject() : restaurant;
+            return {
+                ...restaurantObj,
+                isFavorite: favoriteRestaurantIds.has(restaurantObj._id.toString()),
+            };
+        });
+    } else {
+        resultData = restaurants.map((restaurant: any) => {
+            const restaurantObj = restaurant.toObject ? restaurant.toObject() : restaurant;
+            return {
+                ...restaurantObj,
+                isFavorite: false,
+            };
+        });
+    }
+
+    // Batch fetch average ratings for all restaurants
+    const restaurantIds = resultData.map((r: any) => r._id);
+    const ratingAggregates = await ReviewModel.aggregate([{ $match: { restaurantId: { $in: restaurantIds }, isActive: true, isDeleted: false } }, { $group: { _id: "$restaurantId", averageRating: { $avg: "$rating" }, totalReviews: { $sum: 1 } } }]);
+    const ratingMap = new Map(ratingAggregates.map((r: any) => [r._id.toString(), r]));
+
+    resultData = resultData.map((restaurantObj: any) => ({
+        ...restaurantObj,
+        averageRating: parseFloat((ratingMap.get(restaurantObj._id.toString())?.averageRating || 0).toFixed(1)),
+        totalReviews: ratingMap.get(restaurantObj._id.toString())?.totalReviews || 0,
+    }));
+
+    return resultData;
 };
 
 export const restaurantServices = {
