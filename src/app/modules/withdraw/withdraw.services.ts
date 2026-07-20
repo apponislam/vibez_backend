@@ -204,7 +204,14 @@ const getUserWithdrawals = async (userId: string, query: Record<string, any> = {
     const limit = parseInt(query.limit as string) || 10;
     const skip = (page - 1) * limit;
 
-    const [withdrawals, total] = await Promise.all([WithdrawModel.find({ userId }).sort({ createdAt: -1 }).skip(skip).limit(limit), WithdrawModel.countDocuments({ userId })]);
+    const [withdrawals, total] = await Promise.all([
+        WithdrawModel.find({ userId })
+            .populate("userId", "name email role profileImage balance")
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit),
+        WithdrawModel.countDocuments({ userId }),
+    ]);
 
     const totalPages = Math.ceil(total / limit);
     const hasNext = page < totalPages;
@@ -234,7 +241,7 @@ const getAllWithdrawals = async (query: Record<string, any> = {}) => {
     const limit = parseInt(query.limit as string) || 10;
     const skip = (page - 1) * limit;
 
-    const [withdrawals, total] = await Promise.all([WithdrawModel.find(filter).populate("userId", "name email role image balance").sort({ createdAt: -1 }).skip(skip).limit(limit), WithdrawModel.countDocuments(filter)]);
+    const [withdrawals, total] = await Promise.all([WithdrawModel.find(filter).populate("userId", "name email role profileImage balance").sort({ createdAt: -1 }).skip(skip).limit(limit), WithdrawModel.countDocuments(filter)]);
 
     const totalPages = Math.ceil(total / limit);
     const hasNext = page < totalPages;
