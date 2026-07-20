@@ -1,6 +1,7 @@
 import express, { Application, Request, Response } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import morgan from "morgan";
 import path from "path";
 import fs from "fs";
 import notFound from "./errors/notFound";
@@ -10,6 +11,8 @@ import { stripeWebhooks } from "./app/modules/stripe/stripe.webhook";
 import config from "./app/config";
 
 const app: Application = express();
+
+app.use(morgan("dev"));
 
 app.post("/api/v1/subscription/webhook", express.raw({ type: "application/json" }), stripeWebhooks.handleStripeWebhook);
 
