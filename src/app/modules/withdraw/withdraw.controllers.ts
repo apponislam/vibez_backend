@@ -101,6 +101,17 @@ const getAllWithdrawals = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const getWithdrawalStats = catchAsync(async (req: Request, res: Response) => {
+    const result = await withdrawServices.getWithdrawalStats();
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Withdrawal stats retrieved successfully",
+        data: result,
+    });
+});
+
 export const withdrawControllers = {
     createConnectAccount,
     getConnectAccountStatus,
@@ -111,4 +122,5 @@ export const withdrawControllers = {
     rejectWithdrawal,
     getUserWithdrawals,
     getAllWithdrawals,
+    getWithdrawalStats,
 };

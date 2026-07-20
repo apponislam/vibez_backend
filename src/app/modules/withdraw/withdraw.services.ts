@@ -1,4 +1,5 @@
 import httpStatus from "http-status";
+import { Types } from "mongoose";
 import ApiError from "../../../errors/ApiError";
 import { UserModel } from "../auth/auth.model";
 import { WithdrawModel } from "./withdraw.model";
@@ -204,14 +205,7 @@ const getUserWithdrawals = async (userId: string, query: Record<string, any> = {
     const limit = parseInt(query.limit as string) || 10;
     const skip = (page - 1) * limit;
 
-    const [withdrawals, total] = await Promise.all([
-        WithdrawModel.find({ userId })
-            .populate("userId", "name email role profileImage balance")
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit),
-        WithdrawModel.countDocuments({ userId }),
-    ]);
+    const [withdrawals, total] = await Promise.all([WithdrawModel.find({ userId }).populate("userId", "name email role profileImage balance").sort({ createdAt: -1 }).skip(skip).limit(limit), WithdrawModel.countDocuments({ userId })]);
 
     const totalPages = Math.ceil(total / limit);
     const hasNext = page < totalPages;
@@ -260,6 +254,63 @@ const getAllWithdrawals = async (query: Record<string, any> = {}) => {
     };
 };
 
+// Get withdrawal stats for Admin (total, pending, approved, rejected amounts & counts)
+const getWithdrawalStats = async () => {
+    const stats = await WithdrawModel.aggregate([
+        {
+            $group: {
+                _id: null,
+                totalAmount: { $sum: "$amount" },
+                totalCount: { $sum: 1 },
+                pendingAmount: {
+                    $sum: {
+                        $cond: [{ $eq: ["$status", WithdrawStatus.PENDING] }, "$amount", 0],
+                    },
+                },
+                pendingCount: {
+                    $sum: {
+                        $cond: [{ $eq: ["$status", WithdrawStatus.PENDING] }, 1, 0],
+                    },
+                },
+                approvedAmount: {
+                    $sum: {
+                        $cond: [{ $eq: ["$status", WithdrawStatus.APPROVED] }, "$amount", 0],
+                    },
+                },
+                approvedCount: {
+                    $sum: {
+                        $cond: [{ $eq: ["$status", WithdrawStatus.APPROVED] }, 1, 0],
+                    },
+                },
+                rejectedAmount: {
+                    $sum: {
+                        $cond: [{ $eq: ["$status", WithdrawStatus.REJECTED] }, "$amount", 0],
+                    },
+                },
+                rejectedCount: {
+                    $sum: {
+                        $cond: [{ $eq: ["$status", WithdrawStatus.REJECTED] }, 1, 0],
+                    },
+                },
+            },
+        },
+    ]);
+
+    const result = stats[0] || {
+        totalAmount: 0,
+        totalCount: 0,
+        pendingAmount: 0,
+        pendingCount: 0,
+        approvedAmount: 0,
+        approvedCount: 0,
+        rejectedAmount: 0,
+        rejectedCount: 0,
+    };
+
+    delete result._id;
+    return result;
+};
+
 export const withdrawServices = {
     createConnectAccount,
     getConnectAccountStatus,
@@ -268,4 +319,5 @@ export const withdrawServices = {
     rejectWithdrawal,
     getUserWithdrawals,
     getAllWithdrawals,
+    getWithdrawalStats,
 };

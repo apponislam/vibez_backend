@@ -16,6 +16,7 @@ router.post("/request", auth, withdrawControllers.requestWithdrawal);
 router.get("/my-withdrawals", auth, withdrawControllers.getUserWithdrawals);
 
 // Admin (Authorized) Routes
+router.get("/stats", auth, authorize(["ADMIN"]), withdrawControllers.getWithdrawalStats);
 router.get("/all", auth, authorize(["ADMIN"]), withdrawControllers.getAllWithdrawals);
 router.patch("/:id/approve", auth, authorize(["ADMIN"]), withdrawControllers.approveWithdrawal);
 router.patch("/:id/reject", auth, authorize(["ADMIN"]), withdrawControllers.rejectWithdrawal);
