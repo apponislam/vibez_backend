@@ -6,8 +6,11 @@ import config from "./app/config";
 import { seedAdmin } from "./app/modules/auth/auth.seed";
 import { initSocket } from "./app/socket/socket";
 import { cronJobs } from "./utils/cronJobs";
+import dns from "dns";
 
 let server: Server;
+
+dns.setServers(["8.8.8.8", "8.8.4.4"]);
 
 async function main() {
     try {
