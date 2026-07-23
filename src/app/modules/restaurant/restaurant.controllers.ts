@@ -1,6 +1,4 @@
 import httpStatus from "http-status";
-import fs from "fs";
-import path from "path";
 import ApiError from "../../../errors/ApiError";
 import catchAsync from "../../../utils/catchAsync";
 import sendResponse from "../../../utils/sendResponse";
