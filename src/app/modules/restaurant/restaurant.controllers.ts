@@ -74,16 +74,16 @@ const getMyRestaurant = catchAsync(async (req: Request, res: Response) => {
 const updateRestaurant = catchAsync(async (req: Request, res: Response) => {
     const data = parseRequestBody(req);
 
-    try {
-        fs.writeFileSync(
-            path.join(process.cwd(), "debug.json"),
-            JSON.stringify({
-                body: req.body,
-                parsedData: data,
-                files: req.files ? Object.keys(req.files) : null
-            }, null, 2)
-        );
-    } catch (e) {}
+    // try {
+    //     fs.writeFileSync(
+    //         path.join(process.cwd(), "debug.json"),
+    //         JSON.stringify({
+    //             body: req.body,
+    //             parsedData: data,
+    //             files: req.files ? Object.keys(req.files) : null
+    //         }, null, 2)
+    //     );
+    // } catch (e) {}
 
     const restaurantId = (req.user as any).restaurantId?.toString();
     if (!restaurantId) {
@@ -136,16 +136,16 @@ const revokeRestaurantApproval = catchAsync(async (req: Request, res: Response) 
 const updateRestaurantByAdmin = catchAsync(async (req: Request, res: Response) => {
     const data = parseRequestBody(req);
 
-    try {
-        fs.writeFileSync(
-            path.join(process.cwd(), "debug.json"),
-            JSON.stringify({
-                body: req.body,
-                parsedData: data,
-                files: req.files ? Object.keys(req.files) : null
-            }, null, 2)
-        );
-    } catch (e) {}
+    // try {
+    //     fs.writeFileSync(
+    //         path.join(process.cwd(), "debug.json"),
+    //         JSON.stringify({
+    //             body: req.body,
+    //             parsedData: data,
+    //             files: req.files ? Object.keys(req.files) : null
+    //         }, null, 2)
+    //     );
+    // } catch (e) {}
 
     const restaurantId = req.params.id as string;
     const adminId = req.user._id as string;
