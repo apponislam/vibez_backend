@@ -1,21 +1,34 @@
 import { sendMail } from "./nodemailer";
 
-export const sendVerificationEmail = (email: string, name: string, verificationUrl: string, otp?: string) => {
+export const sendVerificationEmail = (email: string, name: string, otp: string) => {
     const html = `
-        <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 5px;">
-            <h2 style="color: #333;">Hello ${name},</h2>
-            <p style="color: #666;">Please verify your email address by clicking the button below:</p>
-            <div style="text-align: center; margin: 30px 0;">
-                <a href="${verificationUrl}" style="background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">Verify Email</a>
+        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; padding: 40px 20px; text-align: center;">
+            <div style="max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); border: 1px solid #e5e7eb; text-align: left;">
+                <!-- Header Gradient -->
+                <div style="background: linear-gradient(135deg, #cf0738 0%, #ff4d6d 100%); padding: 30px 20px; text-align: center;">
+                    <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 800; letter-spacing: 2px;">VIBEZ</h1>
+                </div>
+                <!-- Body Content -->
+                <div style="padding: 40px 30px; color: #1f2937;">
+                    <h2 style="font-size: 20px; font-weight: 700; color: #111827; margin-top: 0; margin-bottom: 16px;">Hello ${name},</h2>
+                    <p style="font-size: 16px; line-height: 1.6; color: #4b5563; margin-bottom: 24px;">
+                        Thank you for registering with <strong>VIBEZ</strong>. To complete your sign-up and verify your email address, please use the verification code below:
+                    </p>
+                    <!-- OTP Display -->
+                    <div style="background-color: #fdf2f4; border: 1px solid #fecdd3; border-radius: 12px; padding: 24px; text-align: center; margin: 28px 0;">
+                        <span style="font-size: 36px; font-weight: 800; letter-spacing: 8px; color: #cf0738; display: block; font-family: monospace; margin-left: 8px;">${otp}</span>
+                        <span style="font-size: 12px; color: #6b7280; display: block; margin-top: 8px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px;">Verification Code</span>
+                    </div>
+                    <p style="font-size: 14px; line-height: 1.6; color: #6b7280; margin-bottom: 0;">
+                        This code is valid for <strong>10 minutes</strong>. If you did not request this, please ignore this email or contact support.
+                    </p>
+                </div>
+                <!-- Footer -->
+                <div style="background-color: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #f3f4f6; font-size: 12px; color: #9ca3af;">
+                    <p style="margin: 0 0 8px 0;">Please do not reply directly to this email.</p>
+                    <p style="margin: 0;">&copy; ${new Date().getFullYear()} VIBEZ. All rights reserved.</p>
+                </div>
             </div>
-            <p style="color: #999; font-size: 12px;">Or copy this link: ${verificationUrl}</p>
-            ${
-                otp
-                    ? `<p style="color: #666; font-size: 16px; text-align: center; margin-top: 20px;">Or enter this 6-digit code in the app: <strong>${otp}</strong></p>
-                       <p style="color: #999; font-size: 12px; text-align: center;">OTP expires in 10 minutes.</p>`
-                    : ""
-            }
-            <p style="color: #999; font-size: 12px;">This link expires in 24 hours.</p>
         </div>
     `;
     sendMail(email, "Verify Your Email", html);
@@ -23,13 +36,33 @@ export const sendVerificationEmail = (email: string, name: string, verificationU
 
 export const sendOtpEmail = (email: string, otp: string, name?: string) => {
     const html = `
-        <div style="font-family: Arial, sans-serif; max-width: 400px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 5px;">
-            <h2 style="color: #333;">${name ? `Hello ${name},` : "Hello,"}</h2>
-            <p style="color: #666;">Your OTP code is:</p>
-            <div style="background: #f5f5f5; padding: 15px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 5px; border-radius: 5px;">
-                ${otp}
+        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; padding: 40px 20px; text-align: center;">
+            <div style="max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); border: 1px solid #e5e7eb; text-align: left;">
+                <!-- Header Gradient -->
+                <div style="background: linear-gradient(135deg, #cf0738 0%, #ff4d6d 100%); padding: 30px 20px; text-align: center;">
+                    <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 800; letter-spacing: 2px;">VIBEZ</h1>
+                </div>
+                <!-- Body Content -->
+                <div style="padding: 40px 30px; color: #1f2937;">
+                    <h2 style="font-size: 20px; font-weight: 700; color: #111827; margin-top: 0; margin-bottom: 16px;">${name ? `Hello ${name},` : "Hello,"}</h2>
+                    <p style="font-size: 16px; line-height: 1.6; color: #4b5563; margin-bottom: 24px;">
+                        You requested a verification code. Please use the following One-Time Password (OTP) to proceed:
+                    </p>
+                    <!-- OTP Display -->
+                    <div style="background-color: #fdf2f4; border: 1px solid #fecdd3; border-radius: 12px; padding: 24px; text-align: center; margin: 28px 0;">
+                        <span style="font-size: 36px; font-weight: 800; letter-spacing: 8px; color: #cf0738; display: block; font-family: monospace; margin-left: 8px;">${otp}</span>
+                        <span style="font-size: 12px; color: #6b7280; display: block; margin-top: 8px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px;">OTP Security Code</span>
+                    </div>
+                    <p style="font-size: 14px; line-height: 1.6; color: #6b7280; margin-bottom: 0;">
+                        This code is valid for <strong>10 minutes</strong>. For security, never share this code with anyone.
+                    </p>
+                </div>
+                <!-- Footer -->
+                <div style="background-color: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #f3f4f6; font-size: 12px; color: #9ca3af;">
+                    <p style="margin: 0 0 8px 0;">Please do not reply directly to this email.</p>
+                    <p style="margin: 0;">&copy; ${new Date().getFullYear()} VIBEZ. All rights reserved.</p>
+                </div>
             </div>
-            <p style="color: #999; font-size: 12px; margin-top: 20px;">This code expires in 10 minutes.</p>
         </div>
     `;
     sendMail(email, "Your OTP Code", html);
@@ -37,9 +70,34 @@ export const sendOtpEmail = (email: string, otp: string, name?: string) => {
 
 export const sendWelcomeEmail = (email: string, name: string) => {
     const html = `
-        <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 5px;">
-            <h2 style="color: #333;">Welcome ${name}!</h2>
-            <p style="color: #666;">Thank you for registering. Please verify your email to get started.</p>
+        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; padding: 40px 20px; text-align: center;">
+            <div style="max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); border: 1px solid #e5e7eb; text-align: left;">
+                <!-- Header Gradient -->
+                <div style="background: linear-gradient(135deg, #cf0738 0%, #ff4d6d 100%); padding: 30px 20px; text-align: center;">
+                    <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 800; letter-spacing: 2px;">VIBEZ</h1>
+                </div>
+                <!-- Body Content -->
+                <div style="padding: 40px 30px; color: #1f2937;">
+                    <h2 style="font-size: 22px; font-weight: 700; color: #111827; margin-top: 0; margin-bottom: 16px; text-align: center;">Welcome ${name}! 🎉</h2>
+                    <p style="font-size: 16px; line-height: 1.6; color: #4b5563; margin-bottom: 24px; text-align: center;">
+                        We are thrilled to welcome you to our platform.
+                    </p>
+                    <p style="font-size: 16px; line-height: 1.6; color: #4b5563; margin-bottom: 24px;">
+                        VIBEZ is designed to help you manage operations seamlessly and elevate your dining or business experience. Take a moment to set up your profile and explore your dashboard.
+                    </p>
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="#" style="background: linear-gradient(135deg, #cf0738 0%, #ff4d6d 100%); color: white; padding: 14px 35px; text-decoration: none; border-radius: 10px; display: inline-block; font-weight: bold; box-shadow: 0 4px 12px rgba(207, 7, 56, 0.35);">Get Started</a>
+                    </div>
+                    <p style="font-size: 14px; line-height: 1.6; color: #6b7280; margin-bottom: 0; text-align: center;">
+                        If you have any questions, our support team is available 24/7.
+                    </p>
+                </div>
+                <!-- Footer -->
+                <div style="background-color: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #f3f4f6; font-size: 12px; color: #9ca3af;">
+                    <p style="margin: 0 0 8px 0;">Please do not reply directly to this email.</p>
+                    <p style="margin: 0;">&copy; ${new Date().getFullYear()} VIBEZ. All rights reserved.</p>
+                </div>
+            </div>
         </div>
     `;
     sendMail(email, "Welcome to Our Platform", html);
@@ -47,63 +105,64 @@ export const sendWelcomeEmail = (email: string, name: string) => {
 
 export const sendEmailUpdateVerification = (email: string, name: string, verificationUrl: string) => {
     const html = `
-        <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 5px;">
-            <h2 style="color: #333;">Hello ${name},</h2>
-            <p style="color: #666;">Please verify your new email address by clicking the button below:</p>
-            <div style="text-align: center; margin: 30px 0;">
-                <a href="${verificationUrl}" style="background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">Verify New Email</a>
+        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; padding: 40px 20px; text-align: center;">
+            <div style="max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); border: 1px solid #e5e7eb; text-align: left;">
+                <!-- Header Gradient -->
+                <div style="background: linear-gradient(135deg, #cf0738 0%, #ff4d6d 100%); padding: 30px 20px; text-align: center;">
+                    <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 800; letter-spacing: 2px;">VIBEZ</h1>
+                </div>
+                <!-- Body Content -->
+                <div style="padding: 40px 30px; color: #1f2937;">
+                    <h2 style="font-size: 20px; font-weight: 700; color: #111827; margin-top: 0; margin-bottom: 16px;">Hello ${name},</h2>
+                    <p style="font-size: 16px; line-height: 1.6; color: #4b5563; margin-bottom: 24px;">
+                        We received a request to update the email address linked to your VIBEZ account. Please verify your new email address by clicking the button below:
+                    </p>
+                    <div style="text-align: center; margin: 35px 0;">
+                        <a href="${verificationUrl}" style="background: linear-gradient(135deg, #cf0738 0%, #ff4d6d 100%); color: white; padding: 14px 35px; text-decoration: none; border-radius: 10px; display: inline-block; font-weight: bold; box-shadow: 0 4px 12px rgba(207, 7, 56, 0.35);">Verify New Email</a>
+                    </div>
+                    <p style="font-size: 14px; line-height: 1.6; color: #6b7280; margin-bottom: 0;">
+                        This link expires in <strong>24 hours</strong>. If you did not request this update, your current email address remains safe and active. No action is required.
+                    </p>
+                </div>
+                <!-- Footer -->
+                <div style="background-color: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #f3f4f6; font-size: 12px; color: #9ca3af;">
+                    <p style="margin: 0 0 8px 0;">Please do not reply directly to this email.</p>
+                    <p style="margin: 0;">&copy; ${new Date().getFullYear()} VIBEZ. All rights reserved.</p>
+                </div>
             </div>
-            <p style="color: #999; font-size: 12px;">This link expires in 24 hours.</p>
         </div>
     `;
     sendMail(email, "Verify Your New Email", html);
 };
 
-export const sendZoomMeetingInvitation = (email: string, name: string, topic: string, meetingId: string, joinUrl: string, startTime: string) => {
-    const html = `
-        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 0; border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden; background-color: #ffffff;">
-            <div style="background-color: #2D8CFF; padding: 20px; text-align: center;">
-                <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Zoom Meeting Invitation</h1>
-            </div>
-            <div style="padding: 30px; color: #333333; line-height: 1.6;">
-                <h2 style="color: #2D8CFF; margin-top: 0;">Hello ${name},</h2>
-                <p style="font-size: 16px;">You have been invited to join a Zoom meeting for the class: <strong>${topic}</strong>.</p>
-                
-                <div style="background-color: #f8f9fa; border-left: 4px solid #2D8CFF; padding: 15px; margin: 25px 0;">
-                    <p style="margin: 5px 0;"><strong>Topic:</strong> ${topic}</p>
-                    <p style="margin: 5px 0;"><strong>Start Time:</strong> ${new Date(startTime).toLocaleString()}</p>
-                    <p style="margin: 5px 0;"><strong>Meeting ID:</strong> ${meetingId}</p>
-                </div>
-
-                <div style="text-align: center; margin: 35px 0;">
-                    <a href="${joinUrl}" style="background-color: #2D8CFF; color: #ffffff; padding: 14px 35px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block; box-shadow: 0 4px 6px rgba(45, 140, 255, 0.2);">Join Meeting</a>
-                </div>
-
-                <p style="font-size: 14px; color: #666666;">If the button doesn't work, you can copy and paste this link into your browser:</p>
-                <p style="font-size: 12px; word-break: break-all; color: #2D8CFF;">${joinUrl}</p>
-                
-                <hr style="border: 0; border-top: 1px solid #eeeeee; margin: 30px 0;">
-                <p style="font-size: 12px; color: #999999; text-align: center;">Please make sure you have Zoom installed on your device before the meeting starts.</p>
-            </div>
-            <div style="background-color: #f4f4f4; padding: 15px; text-align: center; font-size: 12px; color: #777777;">
-                &copy; ${new Date().getFullYear()} lolfortnite650. All rights reserved.
-            </div>
-        </div>
-    `;
-    sendMail(email, `Meeting Invitation: ${topic}`, html);
-};
-
 export const sendStaffWelcomeEmail = (email: string, name: string, passwordPlain: string, restaurantName: string) => {
     const html = `
-        <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 5px;">
-            <h2 style="color: #333;">Welcome ${name}!</h2>
-            <p style="color: #666;">You have been registered as a staff member for <strong>${restaurantName}</strong>.</p>
-            <p style="color: #666;">Here are your account credentials to log in:</p>
-            <div style="background-color: #f8f9fa; border-left: 4px solid #667eea; padding: 15px; margin: 20px 0;">
-                <p style="margin: 5px 0;"><strong>Email:</strong> ${email}</p>
-                <p style="margin: 5px 0;"><strong>Password:</strong> ${passwordPlain}</p>
+        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; padding: 40px 20px; text-align: center;">
+            <div style="max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); border: 1px solid #e5e7eb; text-align: left;">
+                <!-- Header Gradient -->
+                <div style="background: linear-gradient(135deg, #cf0738 0%, #ff4d6d 100%); padding: 30px 20px; text-align: center;">
+                    <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 800; letter-spacing: 2px;">VIBEZ</h1>
+                </div>
+                <!-- Body Content -->
+                <div style="padding: 40px 30px; color: #1f2937;">
+                    <h2 style="font-size: 20px; font-weight: 700; color: #111827; margin-top: 0; margin-bottom: 16px;">Welcome ${name}!</h2>
+                    <p style="font-size: 16px; line-height: 1.6; color: #4b5563; margin-bottom: 24px;">
+                        You have been registered as a staff member for <strong>${restaurantName}</strong>.
+                    </p>
+                    <p style="font-size: 16px; line-height: 1.6; color: #4b5563; margin-bottom: 16px;">
+                        Here are your account credentials to log in:
+                    </p>
+                    <div style="background-color: #f9fafb; border-left: 4px solid #cf0738; padding: 20px; margin: 24px 0; border-radius: 0 12px 12px 0;">
+                        <p style="margin: 0 0 10px 0; font-size: 15px; color: #374151;"><strong>Email:</strong> ${email}</p>
+                        <p style="margin: 0; font-size: 15px; color: #374151;"><strong>Password:</strong> ${passwordPlain}</p>
+                    </div>
+                </div>
+                <!-- Footer -->
+                <div style="background-color: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #f3f4f6; font-size: 12px; color: #9ca3af;">
+                    <p style="margin: 0 0 8px 0;">Please do not reply directly to this email.</p>
+                    <p style="margin: 0;">&copy; ${new Date().getFullYear()} VIBEZ. All rights reserved.</p>
+                </div>
             </div>
-            <p style="color: #666;">Please change your password after logging in for security reasons.</p>
         </div>
     `;
     sendMail(email, `Welcome to ${restaurantName} - Staff Account Details`, html);
@@ -111,15 +170,32 @@ export const sendStaffWelcomeEmail = (email: string, name: string, passwordPlain
 
 export const sendStaffPasswordResetEmail = (email: string, name: string, passwordPlain: string, restaurantName: string) => {
     const html = `
-        <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 5px;">
-            <h2 style="color: #333;">Hello ${name},</h2>
-            <p style="color: #666;">Your password has been reset by the restaurant owner${restaurantName ? ` of <strong>${restaurantName}</strong>` : ""}.</p>
-            <p style="color: #666;">Here are your new account credentials to log in:</p>
-            <div style="background-color: #f8f9fa; border-left: 4px solid #667eea; padding: 15px; margin: 20px 0;">
-                <p style="margin: 5px 0;"><strong>Email:</strong> ${email}</p>
-                <p style="margin: 5px 0;"><strong>Password:</strong> ${passwordPlain}</p>
+        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; padding: 40px 20px; text-align: center;">
+            <div style="max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); border: 1px solid #e5e7eb; text-align: left;">
+                <!-- Header Gradient -->
+                <div style="background: linear-gradient(135deg, #cf0738 0%, #ff4d6d 100%); padding: 30px 20px; text-align: center;">
+                    <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 800; letter-spacing: 2px;">VIBEZ</h1>
+                </div>
+                <!-- Body Content -->
+                <div style="padding: 40px 30px; color: #1f2937;">
+                    <h2 style="font-size: 20px; font-weight: 700; color: #111827; margin-top: 0; margin-bottom: 16px;">Hello ${name},</h2>
+                    <p style="font-size: 16px; line-height: 1.6; color: #4b5563; margin-bottom: 24px;">
+                        Your password has been reset by the restaurant owner${restaurantName ? ` of <strong>${restaurantName}</strong>` : ""}.
+                    </p>
+                    <p style="font-size: 16px; line-height: 1.6; color: #4b5563; margin-bottom: 16px;">
+                        Here are your new account credentials to log in:
+                    </p>
+                    <div style="background-color: #f9fafb; border-left: 4px solid #cf0738; padding: 20px; margin: 24px 0; border-radius: 0 12px 12px 0;">
+                        <p style="margin: 0 0 10px 0; font-size: 15px; color: #374151;"><strong>Email:</strong> ${email}</p>
+                        <p style="margin: 0; font-size: 15px; color: #374151;"><strong>Password:</strong> ${passwordPlain}</p>
+                    </div>
+                </div>
+                <!-- Footer -->
+                <div style="background-color: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #f3f4f6; font-size: 12px; color: #9ca3af;">
+                    <p style="margin: 0 0 8px 0;">Please do not reply directly to this email.</p>
+                    <p style="margin: 0;">&copy; ${new Date().getFullYear()} VIBEZ. All rights reserved.</p>
+                </div>
             </div>
-            <p style="color: #666;">Please change your password after logging in for security reasons.</p>
         </div>
     `;
     sendMail(email, `Your Staff Account Password Has Been Reset`, html);
