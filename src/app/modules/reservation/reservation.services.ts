@@ -4,7 +4,7 @@ import ApiError from "../../../errors/ApiError";
 import { ReservationModel } from "./reservation.model";
 import { IReservation, ReservationStatus } from "./reservation.interface";
 import { DealModel } from "../deal/deal.model";
-import { DayOfWeek, MealTimeType } from "../deal/deal.interface";
+import { DayOfWeek } from "../deal/deal.interface";
 import { restaurantServices } from "../restaurant/restaurant.services";
 import { SavedDealModel } from "../saved-deal/saved-deal.model";
 import { ReviewModel } from "../review/review.model";
@@ -38,25 +38,23 @@ const createReservation = async (data: Partial<IReservation>, userId: string) =>
             throw new ApiError(httpStatus.BAD_REQUEST, "Deal does not belong to this restaurant");
         }
 
-        // Check day of week matches
+        // Check day of week matches and time falls within hours
         const reservationDay = reservationDate.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase() as DayOfWeek;
-        const dealDays = Array.isArray(deal.day) ? deal.day : [deal.day as unknown as DayOfWeek];
-        if (!dealDays.includes(reservationDay)) {
-            throw new ApiError(httpStatus.BAD_REQUEST, `Deal is only available on ${dealDays.join(", ")}`);
+        const matchingHour = deal.resturantHours?.find((h) => h.day === reservationDay);
+        if (!matchingHour) {
+            const availableDays = deal.resturantHours?.map((h) => h.day).join(", ") || "";
+            throw new ApiError(httpStatus.BAD_REQUEST, `Deal is only available on ${availableDays}`);
         }
 
-        // Check reservation time falls within deal's meal time
         const reservationTime = data.reservationTime as string;
-        if (deal.mealTime !== MealTimeType.ALL_DAY) {
-            if (deal.mealTime === MealTimeType.LUNCH) {
-                if (reservationTime < "11:00" || reservationTime > "15:00") {
-                    throw new ApiError(httpStatus.BAD_REQUEST, "Deal is only available for lunch (11:00 - 15:00)");
-                }
-            } else if (deal.mealTime === MealTimeType.DINNER) {
-                if (reservationTime < "17:00" || reservationTime > "22:00") {
-                    throw new ApiError(httpStatus.BAD_REQUEST, "Deal is only available for dinner (17:00 - 22:00)");
-                }
-            }
+        const startTime = matchingHour.start || "00:00";
+        const endTime = matchingHour.end || "23:59";
+
+        if (reservationTime < startTime || reservationTime > endTime) {
+            throw new ApiError(
+                httpStatus.BAD_REQUEST,
+                `Deal is only available between ${startTime} and ${endTime} on ${reservationDay}`
+            );
         }
 
         // Check max claims per day (using reservations)

@@ -50,7 +50,12 @@ export enum DayOfWeek {
 export enum MealTimeType {
     LUNCH = "LUNCH",
     DINNER = "DINNER",
-    ALL_DAY = "ALL_DAY",
+}
+
+export interface IResturantHour {
+    day: DayOfWeek;
+    start?: string;
+    end?: string;
 }
 
 export interface IDeal {
@@ -62,8 +67,7 @@ export interface IDeal {
     description?: string;
     day: DayOfWeek[];
     mealTime: MealTimeType;
-    start?: string;
-    end?: string;
+    resturantHours: IResturantHour[];
     maxClaimsPerDay: number;
     isActive: boolean;
     isDeleted: boolean;

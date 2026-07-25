@@ -2,7 +2,7 @@ import httpStatus from "http-status";
 import { Types } from "mongoose";
 import ApiError from "../../../errors/ApiError";
 import { DealModel } from "./deal.model";
-import { DealType } from "./deal.interface";
+import { DealType, DayOfWeek, MealTimeType } from "./deal.interface";
 
 import { UserModel } from "../auth/auth.model";
 import { RestaurantModel } from "../restaurant/restaurant.model";
@@ -64,19 +64,66 @@ const createDeal = async (userId: string, payload: any) => {
     }
 
     const userRole = user.role as string;
+    let restaurantId = payload.restaurantId;
     if (userRole === "RESTAURANT_OWNER") {
-        const restaurant = await RestaurantModel.findOne({ restaurantOwner: userId });
-        if (!restaurant) {
+        const restaurantObj = await RestaurantModel.findOne({ restaurantOwner: userId });
+        if (!restaurantObj) {
             throw new ApiError(httpStatus.NOT_FOUND, "You don't have a restaurant registered yet.");
         }
-        payload.restaurantId = restaurant._id.toString();
+        restaurantId = restaurantObj._id.toString();
+        payload.restaurantId = restaurantId;
     } else if (userRole === "ADMIN") {
-        if (!payload.restaurantId) {
+        if (!restaurantId) {
             throw new ApiError(httpStatus.BAD_REQUEST, "restaurantId is required for admins");
         }
     } else {
         throw new ApiError(httpStatus.FORBIDDEN, "Only restaurant owners and admins can create deals.");
     }
+
+    const restaurant = await RestaurantModel.findById(restaurantId);
+    if (!restaurant) {
+        throw new ApiError(httpStatus.NOT_FOUND, "Restaurant not found");
+    }
+
+    const resturantHours = [];
+    const days = Array.isArray(payload.day) ? payload.day : [];
+    
+    const DEFAULT_DEAL_TIMES = {
+        [MealTimeType.LUNCH]: { start: "11:00", end: "15:00" },
+        [MealTimeType.DINNER]: { start: "17:00", end: "22:00" },
+    };
+
+    for (const d of days) {
+        const openHour = restaurant.restaurantOpenHours?.find((h) => h.day === d);
+        let start = "";
+        let end = "";
+        
+        if (openHour && openHour.isOpen) {
+            const slot = openHour.slots?.find((s) => s.type === payload.mealTime);
+            if (slot) {
+                start = slot.openTime;
+                end = slot.closeTime;
+            } else if (openHour.openTime && openHour.closeTime) {
+                start = openHour.openTime;
+                end = openHour.closeTime;
+            }
+        }
+        
+        if (!start || !end) {
+            const defaults = DEFAULT_DEAL_TIMES[payload.mealTime as MealTimeType];
+            if (defaults) {
+                start = start || defaults.start;
+                end = end || defaults.end;
+            }
+        }
+        
+        resturantHours.push({
+            day: d,
+            start,
+            end,
+        });
+    }
+    payload.resturantHours = resturantHours;
 
     const deal = await DealModel.create({
         ...payload,
@@ -292,6 +339,54 @@ const updateDeal = async (dealId: string, payload: any, userId: string, userRole
     }
 
     validateFixedDiscountUpdate(deal, payload);
+
+    if (payload.day || payload.mealTime) {
+        const restaurantId = deal.restaurantId.toString();
+        const restaurant = await RestaurantModel.findById(restaurantId);
+        if (!restaurant) {
+            throw new ApiError(httpStatus.NOT_FOUND, "Restaurant not found");
+        }
+        const days = payload.day || deal.day || [];
+        const mealTime = payload.mealTime || deal.mealTime;
+        
+        const DEFAULT_DEAL_TIMES = {
+            [MealTimeType.LUNCH]: { start: "11:00", end: "15:00" },
+            [MealTimeType.DINNER]: { start: "17:00", end: "22:00" },
+        };
+        
+        const resturantHours = [];
+        for (const d of days) {
+            const openHour = restaurant.restaurantOpenHours?.find((h) => h.day === d);
+            let start = "";
+            let end = "";
+            
+            if (openHour && openHour.isOpen) {
+                const slot = openHour.slots?.find((s) => s.type === mealTime);
+                if (slot) {
+                    start = slot.openTime;
+                    end = slot.closeTime;
+                } else if (openHour.openTime && openHour.closeTime) {
+                    start = openHour.openTime;
+                    end = openHour.closeTime;
+                }
+            }
+            
+            if (!start || !end) {
+                const defaults = DEFAULT_DEAL_TIMES[mealTime as MealTimeType];
+                if (defaults) {
+                    start = start || defaults.start;
+                    end = end || defaults.end;
+                }
+            }
+            
+            resturantHours.push({
+                day: d,
+                start,
+                end,
+            });
+        }
+        payload.resturantHours = resturantHours;
+    }
 
     const updatedDeal = await DealModel.findOneAndUpdate(
         { _id: dealId, isDeleted: false },

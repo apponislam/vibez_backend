@@ -6,7 +6,6 @@ export interface DealDocument extends Omit<IDeal, "_id">, Document {}
 const DEFAULT_DEAL_TIMES = {
     [MealTimeType.LUNCH]: { start: "11:00", end: "15:00" },
     [MealTimeType.DINNER]: { start: "17:00", end: "22:00" },
-    [MealTimeType.ALL_DAY]: { start: "00:00", end: "23:59" },
 };
 
 const DealSchema = new Schema<DealDocument>(
@@ -41,11 +40,23 @@ const DealSchema = new Schema<DealDocument>(
             enum: Object.values(MealTimeType),
             required: true,
         },
-        start: {
-            type: String,
-        },
-        end: {
-            type: String,
+        resturantHours: {
+            type: [
+                {
+                    day: {
+                        type: String,
+                        enum: Object.values(DayOfWeek),
+                        required: true,
+                    },
+                    start: {
+                        type: String,
+                    },
+                    end: {
+                        type: String,
+                    },
+                },
+            ],
+            required: true,
         },
         maxClaimsPerDay: {
             type: Number,
@@ -97,12 +108,16 @@ const DealSchema = new Schema<DealDocument>(
 
 DealSchema.pre("save", function () {
     const doc = this as any;
-    if (!doc.start || !doc.end) {
-        const defaults = DEFAULT_DEAL_TIMES[doc.mealTime as MealTimeType];
-        if (defaults) {
-            doc.start = doc.start || defaults.start;
-            doc.end = doc.end || defaults.end;
-        }
+    if (doc.resturantHours && Array.isArray(doc.resturantHours)) {
+        doc.resturantHours.forEach((hour: any) => {
+            if (!hour.start || !hour.end) {
+                const defaults = DEFAULT_DEAL_TIMES[doc.mealTime as MealTimeType];
+                if (defaults) {
+                    hour.start = hour.start || defaults.start;
+                    hour.end = hour.end || defaults.end;
+                }
+            }
+        });
     }
 });
 
