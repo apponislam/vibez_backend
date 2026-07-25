@@ -94,19 +94,28 @@ const createDeal = async (userId: string, payload: any) => {
     };
 
     for (const d of days) {
-        const openHour = restaurant.restaurantOpenHours?.find((h) => h.day === d);
+        const openHour = restaurant.restaurantOpenHours?.find((h) => h.day.toString() === d.toString());
         let start = "";
         let end = "";
         
-        if (openHour && openHour.isOpen) {
-            const slot = openHour.slots?.find((s) => s.type === payload.mealTime);
-            if (slot) {
-                start = slot.openTime;
-                end = slot.closeTime;
-            } else if (openHour.openTime && openHour.closeTime) {
-                start = openHour.openTime;
-                end = openHour.closeTime;
-            }
+        console.log(`[DEBUG createDeal] Day: ${d}, mealTime: ${payload.mealTime}`);
+        console.log(`[DEBUG createDeal] Found openHour:`, JSON.stringify(openHour));
+        
+        if (!openHour || !openHour.isOpen) {
+            throw new ApiError(
+                httpStatus.BAD_REQUEST,
+                `Restaurant is closed on ${d}`
+            );
+        }
+
+        const slot = openHour.slots?.find((s) => s.type.toString() === payload.mealTime.toString());
+        console.log(`[DEBUG createDeal] Found slot matching ${payload.mealTime}:`, JSON.stringify(slot));
+        if (slot) {
+            start = slot.openTime;
+            end = slot.closeTime;
+        } else if (openHour.openTime && openHour.closeTime) {
+            start = openHour.openTime;
+            end = openHour.closeTime;
         }
         
         if (!start || !end) {
@@ -115,6 +124,7 @@ const createDeal = async (userId: string, payload: any) => {
                 start = start || defaults.start;
                 end = end || defaults.end;
             }
+            console.log(`[DEBUG createDeal] Fell back to defaults: ${start} - ${end}`);
         }
         
         resturantHours.push({
@@ -124,6 +134,7 @@ const createDeal = async (userId: string, payload: any) => {
         });
     }
     payload.resturantHours = resturantHours;
+    console.log(`[DEBUG createDeal] Final resturantHours:`, JSON.stringify(resturantHours));
 
     const deal = await DealModel.create({
         ...payload,
@@ -349,6 +360,10 @@ const updateDeal = async (dealId: string, payload: any, userId: string, userRole
         const days = payload.day || deal.day || [];
         const mealTime = payload.mealTime || deal.mealTime;
         
+        console.log(`[DEBUG updateDeal] Days:`, days);
+        console.log(`[DEBUG updateDeal] mealTime:`, mealTime);
+        console.log(`[DEBUG updateDeal] restaurantOpenHours:`, JSON.stringify(restaurant.restaurantOpenHours));
+        
         const DEFAULT_DEAL_TIMES = {
             [MealTimeType.LUNCH]: { start: "11:00", end: "15:00" },
             [MealTimeType.DINNER]: { start: "17:00", end: "22:00" },
@@ -356,19 +371,28 @@ const updateDeal = async (dealId: string, payload: any, userId: string, userRole
         
         const resturantHours = [];
         for (const d of days) {
-            const openHour = restaurant.restaurantOpenHours?.find((h) => h.day === d);
+            const openHour = restaurant.restaurantOpenHours?.find((h) => h.day.toString() === d.toString());
             let start = "";
             let end = "";
             
-            if (openHour && openHour.isOpen) {
-                const slot = openHour.slots?.find((s) => s.type === mealTime);
-                if (slot) {
-                    start = slot.openTime;
-                    end = slot.closeTime;
-                } else if (openHour.openTime && openHour.closeTime) {
-                    start = openHour.openTime;
-                    end = openHour.closeTime;
-                }
+            console.log(`[DEBUG updateDeal] Day: ${d}`);
+            console.log(`[DEBUG updateDeal] Found openHour:`, JSON.stringify(openHour));
+            
+            if (!openHour || !openHour.isOpen) {
+                throw new ApiError(
+                    httpStatus.BAD_REQUEST,
+                    `Restaurant is closed on ${d}`
+                );
+            }
+
+            const slot = openHour.slots?.find((s) => s.type.toString() === mealTime.toString());
+            console.log(`[DEBUG updateDeal] Found slot matching ${mealTime}:`, JSON.stringify(slot));
+            if (slot) {
+                start = slot.openTime;
+                end = slot.closeTime;
+            } else if (openHour.openTime && openHour.closeTime) {
+                start = openHour.openTime;
+                end = openHour.closeTime;
             }
             
             if (!start || !end) {
@@ -377,6 +401,7 @@ const updateDeal = async (dealId: string, payload: any, userId: string, userRole
                     start = start || defaults.start;
                     end = end || defaults.end;
                 }
+                console.log(`[DEBUG updateDeal] Fell back to defaults: ${start} - ${end}`);
             }
             
             resturantHours.push({
