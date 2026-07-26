@@ -108,7 +108,8 @@ RestaurantSchema.index({ restaurantOwner: 1 }, { unique: true });
 RestaurantSchema.index({ restaurantName: 1 });
 RestaurantSchema.index({ cuisineType: 1 });
 RestaurantSchema.index({ restaurantType: 1 });
+RestaurantSchema.index({ foodType: 1 });
+RestaurantSchema.index({ approved: 1, restaurantType: 1, cuisineType: 1, foodType: 1 });
 RestaurantSchema.index({ "restaurantAddress.location": "2dsphere" });
 
 export const RestaurantModel = mongoose.model<IRestaurant>("Restaurant", RestaurantSchema);
-
