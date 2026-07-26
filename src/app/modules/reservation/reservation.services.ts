@@ -39,10 +39,16 @@ const createReservation = async (data: Partial<IReservation>, userId: string) =>
         }
 
         // Check day of week matches and time falls within hours
-        const reservationDay = reservationDate.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase() as DayOfWeek;
+        const rawReservationDate = new Date(data.reservationDate as Date);
+        const reservationDay = rawReservationDate.toLocaleDateString("en-US", { weekday: "long", timeZone: "UTC" }).toUpperCase() as DayOfWeek;
         const matchingHour = deal.resturantHours?.find((h) => h.day === reservationDay);
+        
+        const formatDay = (day: string) => day.charAt(0) + day.slice(1).toLowerCase();
+
         if (!matchingHour) {
-            const availableDays = deal.resturantHours?.map((h) => h.day).join(", ") || "";
+            const availableDays = deal.resturantHours
+                ?.map((h) => `${formatDay(h.day)} (${h.start || "00:00"} - ${h.end || "23:59"})`)
+                .join(", ") || "";
             throw new ApiError(httpStatus.BAD_REQUEST, `Deal is only available on ${availableDays}`);
         }
 
@@ -53,7 +59,7 @@ const createReservation = async (data: Partial<IReservation>, userId: string) =>
         if (reservationTime < startTime || reservationTime > endTime) {
             throw new ApiError(
                 httpStatus.BAD_REQUEST,
-                `Deal is only available between ${startTime} and ${endTime} on ${reservationDay}`
+                `Deal is only available between ${startTime} and ${endTime} on ${formatDay(reservationDay)}`
             );
         }
 
