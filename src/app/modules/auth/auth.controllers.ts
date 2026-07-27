@@ -227,6 +227,8 @@ const updateProfile = catchAsync(async (req: Request, res: Response) => {
         ...(data.address && { address: data.address }),
         ...(data.availabilityLocation && { availabilityLocation: data.availabilityLocation }),
         ...(data.preferences && { preferences: data.preferences }),
+        ...(data.favoriteCuisines && { favoriteCuisines: data.favoriteCuisines }),
+        ...(data.dietaryPreferences && { dietaryPreferences: data.dietaryPreferences }),
         ...(data.aboutme && { aboutme: data.aboutme }),
     };
 

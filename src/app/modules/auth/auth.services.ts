@@ -101,18 +101,12 @@ const loginUser = async (data: { email: string; password: string }) => {
 
     // Check if active
     if (!user.isActive) {
-        throw new ApiError(
-            httpStatus.FORBIDDEN,
-            "Your account has been deactivated. Please contact support for assistance."
-        );
+        throw new ApiError(httpStatus.FORBIDDEN, "Your account has been deactivated. Please contact support for assistance.");
     }
 
     // Check if staff login is enabled
     if (user.role === "STAFF" && user.enableStaffLogin === false) {
-        throw new ApiError(
-            httpStatus.FORBIDDEN,
-            "Staff login is disabled by the restaurant owner. Please contact your manager."
-        );
+        throw new ApiError(httpStatus.FORBIDDEN, "Staff login is disabled by the restaurant owner. Please contact your manager.");
     }
 
     // Update last login
@@ -305,6 +299,7 @@ const resetPassword = async (token: string, newPassword: string) => {
 };
 
 const updateProfile = async (userId: string, data: any) => {
+    console.log(data);
     // Prevent manual balance update
     if (data.balance !== undefined) {
         delete data.balance;
@@ -565,7 +560,6 @@ const registerRestaurant = async (data: any) => {
             }
         }
     }
-
 
     let cuisineType = data.cuisineType;
     if (typeof cuisineType === "string") {
