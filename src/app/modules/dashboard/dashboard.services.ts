@@ -648,7 +648,7 @@ const getRestaurantOwnerOverview = async (user: { _id: string; role: string; res
     const deals = await DealModel.find({ restaurantId: restaurantObjectId }).select("_id");
     const dealIds = deals.map(d => d._id);
 
-    const totalSaved = await SavedDealModel.countDocuments({ dealId: { $in: dealIds } });
+    const totalSaved = await SavedDealModel.countDocuments({ dealId: { $in: dealIds }, isUsed: false });
     
     const totalUsed = await ReservationModel.countDocuments({
         restaurantId: restaurantObjectId,
@@ -671,10 +671,12 @@ const getRestaurantOwnerOverview = async (user: { _id: string; role: string; res
     const [savedThisWeek, savedLastWeek] = await Promise.all([
         SavedDealModel.countDocuments({
             dealId: { $in: dealIds },
+            isUsed: false,
             createdAt: { $gte: startOfThisWeek }
         }),
         SavedDealModel.countDocuments({
             dealId: { $in: dealIds },
+            isUsed: false,
             createdAt: { $gte: startOfLastWeek, $lt: startOfThisWeek }
         })
     ]);
@@ -830,7 +832,7 @@ const getRestaurantOwnerOverview = async (user: { _id: string; role: string; res
         const deal = await DealModel.findById(dealId);
 
         if (deal) {
-            const totalSavedClaims = await SavedDealModel.countDocuments({ dealId });
+            const totalSavedClaims = await SavedDealModel.countDocuments({ dealId, isUsed: false });
             mostPopularDeal = {
                 title: deal.title,
                 claims: totalUsedClaims + totalSavedClaims,
@@ -991,7 +993,7 @@ const getRestaurantOwnerInsights = async (user: { _id: string; role: string; res
     for (const stat of dealStats) {
         const deal = await DealModel.findById(stat._id);
         if (deal) {
-            const savedClaims = await SavedDealModel.countDocuments({ dealId: stat._id });
+            const savedClaims = await SavedDealModel.countDocuments({ dealId: stat._id, isUsed: false });
             topPerformingDeals.push({
                 title: deal.title,
                 claims: stat.usedClaims + savedClaims,
@@ -1249,7 +1251,7 @@ const getAdminRestaurantStats = async () => {
     const pendingChangeStr = pendingApprovalsCount > 0 ? "Requires attention" : "Stable";
 
     // 3. Avg Performance (Redemption rate: claims to reservations ratio)
-    const totalSaved = await SavedDealModel.countDocuments();
+    const totalSaved = await SavedDealModel.countDocuments({ isUsed: false });
     const totalUsed = await ReservationModel.countDocuments({
         dealId: { $ne: null },
         status: { $ne: ReservationStatus.CANCELLED }

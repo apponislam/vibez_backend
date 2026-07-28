@@ -254,7 +254,7 @@ const getActiveDeals = async (filters: any = {}, userId?: string) => {
         threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
 
         const [savedDeals, usedReservations] = await Promise.all([
-            SavedDealModel.find({ userId }),
+            SavedDealModel.find({ userId, isUsed: false }),
             ReservationModel.find({
                 userId: new Types.ObjectId(userId),
                 status: { $ne: ReservationStatus.CANCELLED },
@@ -308,7 +308,7 @@ const getDealById = async (dealId: string, userId?: string) => {
         threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
 
         const [saved, reservation] = await Promise.all([
-            SavedDealModel.findOne({ userId, dealId: dealObj._id }),
+            SavedDealModel.findOne({ userId, dealId: dealObj._id, isUsed: false }),
             ReservationModel.findOne({
                 dealId: dealObj._id,
                 userId: new Types.ObjectId(userId),

@@ -109,7 +109,7 @@ const getAllRestaurants = async (filters: any = {}, userId?: string) => {
     // Get user's saved deals if userId is present
     let savedDealIds = new Set<string>();
     if (userId) {
-        const savedDeals = await SavedDealModel.find({ userId });
+        const savedDeals = await SavedDealModel.find({ userId, isUsed: false });
         savedDealIds = new Set(savedDeals.map((sd) => sd.dealId.toString()));
     }
 
@@ -397,7 +397,7 @@ const getRestaurantById = async (id: string, userId?: string) => {
 
     let savedDealIds = new Set<string>();
     if (userId) {
-        const savedDeals = await SavedDealModel.find({ userId });
+        const savedDeals = await SavedDealModel.find({ userId, isUsed: false });
         savedDealIds = new Set(savedDeals.map((sd) => sd.dealId.toString()));
     }
 

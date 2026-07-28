@@ -30,7 +30,7 @@ const getUserFavorites = async (userId: string) => {
         .sort({ createdAt: -1 });
 
     let savedDealIds = new Set<string>();
-    const savedDeals = await SavedDealModel.find({ userId: new Types.ObjectId(userId) });
+    const savedDeals = await SavedDealModel.find({ userId: new Types.ObjectId(userId), isUsed: false });
     savedDealIds = new Set(savedDeals.map((sd) => sd.dealId.toString()));
 
     const formattedFavorites = await Promise.all(

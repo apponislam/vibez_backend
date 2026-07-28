@@ -58,9 +58,9 @@ const getUserSavedDeals = async (userId: string, query: any = {}) => {
     };
 };
 
-// Count user's saved deals
+// Count user's saved deals (only active/unused ones)
 const getSavedDealsCount = async (userId: string) => {
-    const count = await SavedDealModel.countDocuments({ userId: new Types.ObjectId(userId) });
+    const count = await SavedDealModel.countDocuments({ userId: new Types.ObjectId(userId), isUsed: false });
     return { count };
 };
 

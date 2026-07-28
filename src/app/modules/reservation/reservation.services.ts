@@ -120,12 +120,17 @@ const createReservation = async (data: Partial<IReservation>, userId: string) =>
     const reservationData = { ...data, userId };
     const reservation = await ReservationModel.create(reservationData);
 
-    // Remove from saved deals if a deal was associated with the reservation
+    // Mark saved deal as used if a deal was associated with the reservation
     if (data.dealId) {
-        await SavedDealModel.deleteOne({
-            userId: new Types.ObjectId(userId),
-            dealId: new Types.ObjectId(data.dealId as any),
-        });
+        await SavedDealModel.updateOne(
+            {
+                userId: new Types.ObjectId(userId),
+                dealId: new Types.ObjectId(data.dealId as any),
+            },
+            {
+                $set: { isUsed: true }
+            }
+        );
     }
 
     await reservation.populate("restaurantId userId dealId");
