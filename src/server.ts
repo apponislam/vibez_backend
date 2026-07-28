@@ -22,6 +22,7 @@ async function main() {
         seedAdmin();
 
         cronJobs.startSubscriptionExpiryCron();
+        cronJobs.startReservationAutoCompleteCron();
 
         server.listen(Number(config.port), config.ip, () => {
             console.log(`✅ App listening on port ${config.port} on ${config.ip}`);
