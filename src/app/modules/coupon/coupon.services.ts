@@ -137,6 +137,9 @@ const verifyReferralCodeAndGetCoupon = async (referralCode: string, currentUserI
     if (!defaultCoupon) {
         throw new ApiError(httpStatus.NOT_FOUND, "Default coupon not configured or inactive");
     }
+    if (defaultCoupon.maxRedemptions && defaultCoupon.timesRedeemed >= defaultCoupon.maxRedemptions) {
+        throw new ApiError(httpStatus.BAD_REQUEST, "This coupon has reached its maximum number of redemptions");
+    }
 
     return {
         _id: defaultCoupon._id,

@@ -130,6 +130,7 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                             subscriptionPlanId: subscriptionPlan._id,
                             subscriptionEndDate: endDate,
                             isNewUser: false,
+                            ...(referredBy && { referredBy }),
                         },
                     });
 
@@ -233,6 +234,7 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                                         subscriptionPlanId: subscriptionPlan._id,
                                         subscriptionEndDate: endDate,
                                         isNewUser: false,
+                                        ...(referredBy && { referredBy }),
                                     },
                                 });
 

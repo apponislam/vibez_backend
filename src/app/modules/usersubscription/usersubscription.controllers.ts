@@ -31,6 +31,9 @@ const createCheckoutSession = catchAsync(async (req: Request, res: Response) => 
         if (!dbCoupon.isActive) {
             throw new ApiError(httpStatus.BAD_REQUEST, "This coupon is no longer active");
         }
+        if (dbCoupon.maxRedemptions && dbCoupon.timesRedeemed >= dbCoupon.maxRedemptions) {
+            throw new ApiError(httpStatus.BAD_REQUEST, "This coupon has reached its maximum number of redemptions");
+        }
     }
 
     const finalSuccessUrl = successUrl || `${config.client_url}/subscription/success?session_id={CHECKOUT_SESSION_ID}`;
