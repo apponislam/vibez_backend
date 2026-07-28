@@ -57,8 +57,6 @@ export interface RestaurantOpenHourSlot {
 export interface RestaurantOpenHour {
     day: DayOfWeek;
     isOpen: boolean;
-    openTime?: string;
-    closeTime?: string;
     slots?: RestaurantOpenHourSlot[];
 }
 

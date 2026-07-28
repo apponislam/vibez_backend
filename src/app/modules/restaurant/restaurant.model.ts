@@ -15,8 +15,6 @@ const RestaurantOpenHourSlotSchema = new Schema({
 const RestaurantOpenHourSchema = new Schema({
     day: { type: String, enum: Object.values(DayOfWeek), required: true },
     isOpen: { type: Boolean, default: true },
-    openTime: { type: String },
-    closeTime: { type: String },
     slots: { type: [RestaurantOpenHourSlotSchema], default: [] },
 });
 

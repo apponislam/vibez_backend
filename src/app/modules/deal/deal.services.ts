@@ -113,9 +113,6 @@ const createDeal = async (userId: string, payload: any) => {
         if (slot) {
             start = slot.openTime;
             end = slot.closeTime;
-        } else if (openHour.openTime && openHour.closeTime) {
-            start = openHour.openTime;
-            end = openHour.closeTime;
         }
         
         if (!start || !end) {
@@ -390,9 +387,6 @@ const updateDeal = async (dealId: string, payload: any, userId: string, userRole
             if (slot) {
                 start = slot.openTime;
                 end = slot.closeTime;
-            } else if (openHour.openTime && openHour.closeTime) {
-                start = openHour.openTime;
-                end = openHour.closeTime;
             }
             
             if (!start || !end) {
