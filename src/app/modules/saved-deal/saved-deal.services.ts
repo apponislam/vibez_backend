@@ -13,8 +13,14 @@ const toggleSavedDeal = async (userId: string, dealId: string) => {
     const exists = await SavedDealModel.findOne(filter);
 
     if (exists) {
-        await SavedDealModel.deleteOne(filter);
-        return { isSaved: false, message: "Deal removed from saved successfully" };
+        if (exists.isUsed) {
+            exists.isUsed = false;
+            await exists.save();
+            return { isSaved: true, message: "Deal saved successfully again" };
+        } else {
+            await SavedDealModel.deleteOne(filter);
+            return { isSaved: false, message: "Deal removed from saved successfully" };
+        }
     } else {
         await SavedDealModel.create(filter);
         return { isSaved: true, message: "Deal saved successfully" };
