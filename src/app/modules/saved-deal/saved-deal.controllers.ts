@@ -17,13 +17,14 @@ const toggleSavedDeal = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getUserSavedDeals = catchAsync(async (req: Request, res: Response) => {
-    const result = await savedDealServices.getUserSavedDeals(req.user._id);
+    const result = await savedDealServices.getUserSavedDeals(req.user._id, req.query);
 
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
         message: "Saved deals retrieved successfully",
-        data: result,
+        data: result.data,
+        meta: result.meta,
     });
 });
 

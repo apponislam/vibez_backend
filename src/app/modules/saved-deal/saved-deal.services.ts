@@ -21,12 +21,35 @@ const toggleSavedDeal = async (userId: string, dealId: string) => {
     }
 };
 
-// Get user's saved deals
-const getUserSavedDeals = async (userId: string) => {
-    const savedDeals = await SavedDealModel.find({ userId: new Types.ObjectId(userId) })
+// Get user's saved deals with pagination (not used first, then used)
+const getUserSavedDeals = async (userId: string, query: any = {}) => {
+    const page = Number(query.page) || 1;
+    const limit = Number(query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const filter: any = { userId: new Types.ObjectId(userId) };
+    if (query.isUsed === "true") filter.isUsed = true;
+    else if (query.isUsed === "false") filter.isUsed = false;
+    const total = await SavedDealModel.countDocuments(filter);
+    const totalPages = Math.ceil(total / limit);
+
+    const savedDeals = await SavedDealModel.find(filter)
         .populate("dealId")
-        .sort({ createdAt: -1 });
-    return savedDeals;
+        .sort({ isUsed: 1, createdAt: -1 }) // not used first, then used; newest first within each group
+        .skip(skip)
+        .limit(limit);
+
+    return {
+        data: savedDeals,
+        meta: {
+            page,
+            limit,
+            total,
+            totalPages,
+            hasNext: page < totalPages,
+            hasPrev: page > 1,
+        },
+    };
 };
 
 // Count user's saved deals

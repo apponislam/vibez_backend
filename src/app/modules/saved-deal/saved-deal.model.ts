@@ -15,6 +15,10 @@ const SavedDealSchema = new Schema<SavedDealDocument>(
             ref: "Deal",
             required: true,
         },
+        isUsed: {
+            type: Boolean,
+            default: false,
+        },
     },
     {
         timestamps: true,
