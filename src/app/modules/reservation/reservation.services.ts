@@ -132,7 +132,10 @@ const createReservation = async (data: Partial<IReservation>, userId: string) =>
 
     // Broadcast real-time stats update
     if (reservation.restaurantId) {
-        dashboardServices.broadcastRestaurantStats(reservation.restaurantId.toString()).catch(console.error);
+        const restaurantId = (reservation.restaurantId as any)._id
+            ? (reservation.restaurantId as any)._id.toString()
+            : reservation.restaurantId.toString();
+        dashboardServices.broadcastRestaurantStats(restaurantId).catch(console.error);
     }
 
     return reservation;
