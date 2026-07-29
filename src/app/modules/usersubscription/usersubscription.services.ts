@@ -11,7 +11,7 @@ import { Types } from "mongoose";
 
 const populateOptions: any = [
     "subscriptionPlanId",
-    { path: "commissionUser", select: "name email" },
+    { path: "commissionUser", select: "name email profileImage" },
     { path: "userId", select: "name email profileImage" }
 ];
 
