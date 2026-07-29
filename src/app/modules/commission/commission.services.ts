@@ -21,8 +21,9 @@ const handleSubscriptionPayment = async (payload: {
     invoiceId: string;
     subscriptionId: string;
     invoiceAmount: number;
+    userSubscriptionId: string;
 }) => {
-    const { userId, referredBy, invoiceId, subscriptionId, invoiceAmount } = payload;
+    const { userId, referredBy, invoiceId, subscriptionId, invoiceAmount, userSubscriptionId } = payload;
 
     // Find the referrer to get their commission configuration
     const referrer = await UserModel.findById(referredBy);
@@ -78,6 +79,7 @@ const handleSubscriptionPayment = async (payload: {
             commission.history.push({
                 invoiceId,
                 amount: finalCommission,
+                userSubscriptionId: new Types.ObjectId(userSubscriptionId),
                 createdAt: new Date(),
             });
 

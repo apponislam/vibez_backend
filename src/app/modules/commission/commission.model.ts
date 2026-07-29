@@ -14,6 +14,11 @@ const CommissionHistorySchema = new Schema(
             required: [true, "Commission amount is required"],
             min: [0, "Commission amount cannot be negative"],
         },
+        userSubscriptionId: {
+            type: Schema.Types.ObjectId,
+            ref: "UserSubscription",
+            required: [true, "User subscription ID is required"],
+        },
         createdAt: {
             type: Date,
             default: Date.now,

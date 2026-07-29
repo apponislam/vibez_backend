@@ -95,15 +95,6 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                             const commissionPercentage = referrer.commissionPercentage || 0;
                             const calculatedCommission = paidPrice * (commissionPercentage / 100);
                             commissionAmount = Number(Math.min(calculatedCommission, referrer.maxPayout || 0).toFixed(2));
-
-                            const invoiceId = (session as any).invoice || (session as any).id;
-                            await commissionServices.handleSubscriptionPayment({
-                                userId,
-                                referredBy: referredBy.toString(),
-                                invoiceId,
-                                subscriptionId,
-                                invoiceAmount: paidPrice,
-                            });
                         }
                     }
 
@@ -118,7 +109,7 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                     }
 
                     // Create user subscription
-                    await UserSubscriptionModel.create({
+                    const userSub = await UserSubscriptionModel.create({
                         userId,
                         subscriptionPlanId: subscriptionPlan._id,
                         stripeSubscriptionId: subscriptionId,
@@ -134,6 +125,18 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                         commissionUser: referredBy || undefined,
                         commissionAmount,
                     });
+
+                    if (referredBy && commissionAmount !== undefined) {
+                        const invoiceId = (session as any).invoice || (session as any).id;
+                        await commissionServices.handleSubscriptionPayment({
+                            userId,
+                            referredBy: referredBy.toString(),
+                            invoiceId,
+                            subscriptionId,
+                            invoiceAmount: paidPrice,
+                            userSubscriptionId: userSub._id.toString(),
+                        });
+                    }
 
                     // Update User model with subscription info
                     await UserModel.findByIdAndUpdate(userId, {
@@ -212,15 +215,6 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                                         const commissionPercentage = referrer.commissionPercentage || 0;
                                         const calculatedCommission = paidPrice * (commissionPercentage / 100);
                                         commissionAmount = Number(Math.min(calculatedCommission, referrer.maxPayout || 0).toFixed(2));
-
-                                        const invoiceId = (invoice as any).id;
-                                        await commissionServices.handleSubscriptionPayment({
-                                            userId,
-                                            referredBy: referredBy.toString(),
-                                            invoiceId,
-                                            subscriptionId,
-                                            invoiceAmount: paidPrice,
-                                        });
                                     }
                                 }
 
@@ -250,6 +244,18 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                                     commissionUser: referredBy || undefined,
                                     commissionAmount,
                                 });
+
+                                if (referredBy && commissionAmount !== undefined) {
+                                    const invoiceId = (invoice as any).id;
+                                    await commissionServices.handleSubscriptionPayment({
+                                        userId,
+                                        referredBy: referredBy.toString(),
+                                        invoiceId,
+                                        subscriptionId,
+                                        invoiceAmount: paidPrice,
+                                        userSubscriptionId: userSubscription._id.toString(),
+                                    });
+                                }
 
                                 const updatedUser = await UserModel.findByIdAndUpdate(userId, {
                                     $set: {
@@ -309,6 +315,7 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                                     invoiceId,
                                     subscriptionId,
                                     invoiceAmount: paidPrice,
+                                    userSubscriptionId: userSubscription._id.toString(),
                                 });
                             }
                         }

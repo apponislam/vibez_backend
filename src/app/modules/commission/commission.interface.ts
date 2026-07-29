@@ -3,6 +3,7 @@ import { Types } from "mongoose";
 export interface ICommissionHistory {
     invoiceId: string;
     amount: number;
+    userSubscriptionId: Types.ObjectId;
     createdAt: Date;
 }
 
