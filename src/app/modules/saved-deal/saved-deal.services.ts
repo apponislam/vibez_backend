@@ -5,6 +5,7 @@ import { SavedDealModel } from "./saved-deal.model";
 
 // Toggle saved deal status (save if not exists, unsave if exists)
 const toggleSavedDeal = async (userId: string, dealId: string) => {
+    console.log(userId);
     const filter = {
         userId: new Types.ObjectId(userId),
         dealId: new Types.ObjectId(dealId),
@@ -39,11 +40,7 @@ const getUserSavedDeals = async (userId: string, query: any = {}) => {
     const total = await SavedDealModel.countDocuments(filter);
     const totalPages = Math.ceil(total / limit);
 
-    const savedDeals = await SavedDealModel.find(filter)
-        .populate("dealId")
-        .sort({ isUsed: 1, createdAt: -1 }) // not used first, then used; newest first within each group
-        .skip(skip)
-        .limit(limit);
+    const savedDeals = await SavedDealModel.find(filter).populate("dealId").sort({ isUsed: 1, createdAt: -1 }).skip(skip).limit(limit);
 
     return {
         data: savedDeals,
