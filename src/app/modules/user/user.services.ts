@@ -360,14 +360,27 @@ const getUserReferrals = async (userId: string, query: any) => {
 
     const filter = { referredBy: userId };
 
-    const [referrals, total] = await Promise.all([UserModel.find(filter).select("name email isActive isInfluencer createdAt").skip(skip).limit(limit).lean(), UserModel.countDocuments(filter)]);
+    const [referrals, total] = await Promise.all([
+        UserModel.find(filter)
+            .select("name email isActive isInfluencer createdAt subscriptionPlanId")
+            .populate("subscriptionPlanId", "name")
+            .skip(skip)
+            .limit(limit)
+            .lean(),
+        UserModel.countDocuments(filter),
+    ]);
+
+    const formattedReferrals = referrals.map((ref: any) => ({
+        ...ref,
+        planName: ref.subscriptionPlanId?.name || "N/A",
+    }));
 
     const totalPages = Math.ceil(total / limit);
     const hasNext = page < totalPages;
     const hasPrev = page > 1;
 
     return {
-        data: referrals,
+        data: formattedReferrals,
         meta: {
             page,
             limit,
