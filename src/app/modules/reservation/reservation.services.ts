@@ -487,6 +487,13 @@ const getOwnerStats = async (user: { _id: string; role: string; restaurantId?: a
     };
 };
 
+const formatLocalDate = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+};
+
 const getWeeklyBookings = async (queryParams: any) => {
     let restaurantId = queryParams.restaurantId;
 
@@ -516,7 +523,7 @@ const getWeeklyBookings = async (queryParams: any) => {
         const date = new Date(startDate);
         date.setDate(startDate.getDate() + i);
         const dayName = dayNames[date.getDay()];
-        const dateStr = date.toISOString().split("T")[0];
+        const dateStr = formatLocalDate(date);
         rollingWeekData.push({
             day: dayName,
             date: dateStr,
@@ -526,7 +533,7 @@ const getWeeklyBookings = async (queryParams: any) => {
 
     for (const res of reservations) {
         const resDate = new Date(res.reservationDate);
-        const resDateStr = resDate.toISOString().split("T")[0];
+        const resDateStr = formatLocalDate(resDate);
         const dayEntry = rollingWeekData.find((d) => d.date === resDateStr);
         if (dayEntry) {
             dayEntry.count++;
@@ -560,7 +567,7 @@ const getWeeklyBookings = async (queryParams: any) => {
     const currentWeekData = fixedDays.map((day, index) => {
         const date = new Date(mondayOfCurrentWeek);
         date.setDate(mondayOfCurrentWeek.getDate() + index);
-        const dateStr = date.toISOString().split("T")[0];
+        const dateStr = formatLocalDate(date);
         return {
             day,
             date: dateStr,
@@ -570,7 +577,7 @@ const getWeeklyBookings = async (queryParams: any) => {
 
     for (const res of currentWeekReservations) {
         const resDate = new Date(res.reservationDate);
-        const resDateStr = resDate.toISOString().split("T")[0];
+        const resDateStr = formatLocalDate(resDate);
         const dayEntry = currentWeekData.find((d) => d.date === resDateStr);
         if (dayEntry) {
             dayEntry.count++;

@@ -848,6 +848,13 @@ const getRestaurantOwnerOverview = async (user: { _id: string; role: string; res
     };
 };
 
+const formatLocalDate = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+};
+
 const getRestaurantOwnerBookingsPerDay = async (user: { _id: string; role: string; restaurantId?: any }) => {
     let restaurantId = user.restaurantId;
 
@@ -885,7 +892,7 @@ const getRestaurantOwnerBookingsPerDay = async (user: { _id: string; role: strin
     const bookingsPerDay = fixedDays.map((day, index) => {
         const date = new Date(mondayOfCurrentWeek);
         date.setDate(mondayOfCurrentWeek.getDate() + index);
-        const dateStr = date.toISOString().split("T")[0];
+        const dateStr = formatLocalDate(date);
         return {
             day,
             date: dateStr,
@@ -895,7 +902,7 @@ const getRestaurantOwnerBookingsPerDay = async (user: { _id: string; role: strin
 
     for (const res of currentWeekReservations) {
         const resDate = new Date(res.reservationDate);
-        const resDateStr = resDate.toISOString().split("T")[0];
+        const resDateStr = formatLocalDate(resDate);
         const dayEntry = bookingsPerDay.find((d) => d.date === resDateStr);
         if (dayEntry) {
             dayEntry.count++;
