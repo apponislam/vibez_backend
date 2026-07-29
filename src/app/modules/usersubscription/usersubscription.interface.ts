@@ -11,7 +11,8 @@ export interface IUserSubscription {
     startDate: Date;
     endDate: Date;
     isTrial: boolean;
-    coupon?: string;
+    percentOff?: number;
+    amountOff?: number;
     actualPrice: number;
     paidPrice: number;
     // Commission details

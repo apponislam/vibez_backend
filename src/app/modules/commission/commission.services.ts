@@ -6,8 +6,8 @@ import { UserModel } from "../auth/auth.model";
 import { Types } from "mongoose";
 
 const populateOptions = [
-    { path: "commissionUser", select: "name email" },
-    { path: "commissionFrom", select: "name email" },
+    { path: "commissionUser", select: "name email profileImage" },
+    { path: "commissionFrom", select: "name email profileImage" },
 ];
 
 const createCommission = async (data: Partial<ICommission>) => {

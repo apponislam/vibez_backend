@@ -107,6 +107,16 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                         }
                     }
 
+                    let percentOff = undefined;
+                    let amountOff = undefined;
+                    if (coupon) {
+                        const dbCoupon = await CouponModel.findOne({ couponId: coupon });
+                        if (dbCoupon) {
+                            percentOff = dbCoupon.percentOff;
+                            amountOff = dbCoupon.amountOff;
+                        }
+                    }
+
                     // Create user subscription
                     await UserSubscriptionModel.create({
                         userId,
@@ -117,7 +127,8 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                         startDate,
                         endDate,
                         isTrial: false,
-                        coupon: coupon || undefined,
+                        percentOff,
+                        amountOff,
                         actualPrice,
                         paidPrice,
                         commissionUser: referredBy || undefined,
@@ -213,6 +224,16 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                                     }
                                 }
 
+                                let percentOff = undefined;
+                                let amountOff = undefined;
+                                if (coupon) {
+                                    const dbCoupon = await CouponModel.findOne({ couponId: coupon });
+                                    if (dbCoupon) {
+                                        percentOff = dbCoupon.percentOff;
+                                        amountOff = dbCoupon.amountOff;
+                                    }
+                                }
+
                                 userSubscription = await UserSubscriptionModel.create({
                                     userId,
                                     subscriptionPlanId: subscriptionPlan._id,
@@ -222,7 +243,8 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                                     startDate,
                                     endDate,
                                     isTrial: false,
-                                    coupon: coupon || undefined,
+                                    percentOff,
+                                    amountOff,
                                     actualPrice,
                                     paidPrice,
                                     commissionUser: referredBy || undefined,

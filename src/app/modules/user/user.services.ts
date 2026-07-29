@@ -74,7 +74,10 @@ const getUserActivity = async (userId: string) => {
         UserModel.countDocuments({ referredBy: userId }),
         UserSubscriptionModel.countDocuments({ commissionUser: userId, status: UserSubscriptionStatus.ACTIVE }),
         UserModel.find({ referredBy: userId }).select("name email isActive isInfluencer createdAt").lean(),
-        CommissionModel.find({ commissionUser: userId }).populate("commissionFrom", "name email").lean(),
+        CommissionModel.find({ commissionUser: userId })
+            .populate("commissionFrom", "name email profileImage")
+            .populate("commissionUser", "name email profileImage")
+            .lean(),
         WithdrawModel.find({ userId: userId }).lean(),
         UserSubscriptionModel.find({ userId: userId }).populate("subscriptionPlanId").lean(),
     ]);
@@ -385,7 +388,8 @@ const getUserCommissions = async (userId: string, query: any) => {
 
     const [commissions, total] = await Promise.all([
         CommissionModel.find(filter)
-            .populate("commissionFrom", "name email")
+            .populate("commissionFrom", "name email profileImage")
+            .populate("commissionUser", "name email profileImage")
             .skip(skip)
             .limit(limit)
             .lean(),
