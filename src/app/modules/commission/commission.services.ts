@@ -10,10 +10,16 @@ const populateOptions: any = [
     { path: "commissionFrom", select: "name email profileImage" },
     {
         path: "history.userSubscriptionId",
-        populate: {
-            path: "subscriptionPlanId",
-            select: "name"
-        }
+        populate: [
+            {
+                path: "subscriptionPlanId",
+                select: "name"
+            },
+            {
+                path: "userId",
+                select: "name email profileImage"
+            }
+        ]
     }
 ];
 

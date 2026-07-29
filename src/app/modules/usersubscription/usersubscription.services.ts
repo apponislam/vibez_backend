@@ -9,7 +9,11 @@ import { UserModel } from "../auth/auth.model";
 import { commissionServices } from "../commission/commission.services";
 import { Types } from "mongoose";
 
-const populateOptions = ["subscriptionPlanId", { path: "commissionUser", select: "name email" }];
+const populateOptions: any = [
+    "subscriptionPlanId",
+    { path: "commissionUser", select: "name email" },
+    { path: "userId", select: "name email profileImage" }
+];
 
 const cancelPreviousActiveSubscriptions = async (userId: string, newStripeSubscriptionId?: string) => {
     const activeSubscriptions = await UserSubscriptionModel.find({
