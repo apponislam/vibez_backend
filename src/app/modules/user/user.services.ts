@@ -77,6 +77,13 @@ const getUserActivity = async (userId: string) => {
         CommissionModel.find({ commissionUser: userId })
             .populate("commissionFrom", "name email profileImage")
             .populate("commissionUser", "name email profileImage")
+            .populate({
+                path: "history.userSubscriptionId",
+                populate: {
+                    path: "subscriptionPlanId",
+                    select: "name"
+                }
+            })
             .lean(),
         WithdrawModel.find({ userId: userId }).lean(),
         UserSubscriptionModel.find({ userId: userId }).populate("subscriptionPlanId").lean(),
@@ -390,6 +397,13 @@ const getUserCommissions = async (userId: string, query: any) => {
         CommissionModel.find(filter)
             .populate("commissionFrom", "name email profileImage")
             .populate("commissionUser", "name email profileImage")
+            .populate({
+                path: "history.userSubscriptionId",
+                populate: {
+                    path: "subscriptionPlanId",
+                    select: "name"
+                }
+            })
             .skip(skip)
             .limit(limit)
             .lean(),

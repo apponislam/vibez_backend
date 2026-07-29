@@ -5,9 +5,16 @@ import { ICommission } from "./commission.interface";
 import { UserModel } from "../auth/auth.model";
 import { Types } from "mongoose";
 
-const populateOptions = [
+const populateOptions: any = [
     { path: "commissionUser", select: "name email profileImage" },
     { path: "commissionFrom", select: "name email profileImage" },
+    {
+        path: "history.userSubscriptionId",
+        populate: {
+            path: "subscriptionPlanId",
+            select: "name"
+        }
+    }
 ];
 
 const createCommission = async (data: Partial<ICommission>) => {
