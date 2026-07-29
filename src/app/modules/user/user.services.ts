@@ -79,16 +79,10 @@ const getUserActivity = async (userId: string) => {
             .populate("commissionUser", "name email profileImage")
             .populate({
                 path: "history.userSubscriptionId",
-                populate: [
-                    {
-                        path: "subscriptionPlanId",
-                        select: "name"
-                    },
-                    {
-                        path: "userId",
-                        select: "name email profileImage"
-                    }
-                ]
+                populate: {
+                    path: "subscriptionPlanId",
+                    select: "name",
+                },
             })
             .lean(),
         WithdrawModel.find({ userId: userId }).lean(),
@@ -366,14 +360,7 @@ const getUserReferrals = async (userId: string, query: any) => {
 
     const filter = { referredBy: userId };
 
-    const [referrals, total] = await Promise.all([
-        UserModel.find(filter)
-            .select("name email isActive isInfluencer createdAt")
-            .skip(skip)
-            .limit(limit)
-            .lean(),
-        UserModel.countDocuments(filter),
-    ]);
+    const [referrals, total] = await Promise.all([UserModel.find(filter).select("name email isActive isInfluencer createdAt").skip(skip).limit(limit).lean(), UserModel.countDocuments(filter)]);
 
     const totalPages = Math.ceil(total / limit);
     const hasNext = page < totalPages;
@@ -405,16 +392,10 @@ const getUserCommissions = async (userId: string, query: any) => {
             .populate("commissionUser", "name email profileImage")
             .populate({
                 path: "history.userSubscriptionId",
-                populate: [
-                    {
-                        path: "subscriptionPlanId",
-                        select: "name"
-                    },
-                    {
-                        path: "userId",
-                        select: "name email profileImage"
-                    }
-                ]
+                populate: {
+                    path: "subscriptionPlanId",
+                    select: "name",
+                },
             })
             .skip(skip)
             .limit(limit)
@@ -446,13 +427,7 @@ const getUserWithdrawals = async (userId: string, query: any) => {
 
     const filter = { userId: userId };
 
-    const [withdrawals, total] = await Promise.all([
-        WithdrawModel.find(filter)
-            .skip(skip)
-            .limit(limit)
-            .lean(),
-        WithdrawModel.countDocuments(filter),
-    ]);
+    const [withdrawals, total] = await Promise.all([WithdrawModel.find(filter).skip(skip).limit(limit).lean(), WithdrawModel.countDocuments(filter)]);
 
     const totalPages = Math.ceil(total / limit);
     const hasNext = page < totalPages;
@@ -478,15 +453,7 @@ const getUserSubscriptions = async (userId: string, query: any) => {
 
     const filter = { userId: userId };
 
-    const [subscriptions, total] = await Promise.all([
-        UserSubscriptionModel.find(filter)
-            .populate("subscriptionPlanId")
-            .populate("userId", "name email profileImage")
-            .skip(skip)
-            .limit(limit)
-            .lean(),
-        UserSubscriptionModel.countDocuments(filter),
-    ]);
+    const [subscriptions, total] = await Promise.all([UserSubscriptionModel.find(filter).populate("subscriptionPlanId").skip(skip).limit(limit).lean(), UserSubscriptionModel.countDocuments(filter)]);
 
     const totalPages = Math.ceil(total / limit);
     const hasNext = page < totalPages;

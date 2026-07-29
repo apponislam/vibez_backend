@@ -10,17 +10,11 @@ const populateOptions: any = [
     { path: "commissionFrom", select: "name email profileImage" },
     {
         path: "history.userSubscriptionId",
-        populate: [
-            {
-                path: "subscriptionPlanId",
-                select: "name"
-            },
-            {
-                path: "userId",
-                select: "name email profileImage"
-            }
-        ]
-    }
+        populate: {
+            path: "subscriptionPlanId",
+            select: "name",
+        },
+    },
 ];
 
 const createCommission = async (data: Partial<ICommission>) => {
@@ -28,14 +22,7 @@ const createCommission = async (data: Partial<ICommission>) => {
     return commission.populate(populateOptions);
 };
 
-const handleSubscriptionPayment = async (payload: {
-    userId: string;
-    referredBy: string;
-    invoiceId: string;
-    subscriptionId: string;
-    invoiceAmount: number;
-    userSubscriptionId: string;
-}) => {
+const handleSubscriptionPayment = async (payload: { userId: string; referredBy: string; invoiceId: string; subscriptionId: string; invoiceAmount: number; userSubscriptionId: string }) => {
     const { userId, referredBy, invoiceId, subscriptionId, invoiceAmount, userSubscriptionId } = payload;
 
     // Find the referrer to get their commission configuration
@@ -132,14 +119,7 @@ const getAllCommissions = async (query: any = {}) => {
     const limit = parseInt(query.limit as string) || 10;
     const skip = (page - 1) * limit;
 
-    const [commissions, total] = await Promise.all([
-        CommissionModel.find(filter)
-            .populate(populateOptions)
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit),
-        CommissionModel.countDocuments(filter),
-    ]);
+    const [commissions, total] = await Promise.all([CommissionModel.find(filter).populate(populateOptions).sort({ createdAt: -1 }).skip(skip).limit(limit), CommissionModel.countDocuments(filter)]);
 
     const totalPages = Math.ceil(total / limit);
     const hasNext = page < totalPages;
@@ -165,11 +145,7 @@ const getCommissionById = async (id: string) => {
 };
 
 const updateCommission = async (id: string, data: Partial<ICommission>) => {
-    const commission = await CommissionModel.findByIdAndUpdate(
-        id,
-        { $set: data },
-        { returnDocument: 'after', runValidators: true }
-    ).populate(populateOptions);
+    const commission = await CommissionModel.findByIdAndUpdate(id, { $set: data }, { returnDocument: "after", runValidators: true }).populate(populateOptions);
     if (!commission) throw new ApiError(httpStatus.NOT_FOUND, "Commission not found");
     return commission;
 };
