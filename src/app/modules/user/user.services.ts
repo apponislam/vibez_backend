@@ -137,7 +137,7 @@ const toggleUserActiveStatus = async (userId: string) => {
 
 const getUserStats = async () => {
     const now = new Date();
-    const [totalUser, regularCustomer, influencer, premiumUser] = await Promise.all([
+    const [totalUser, regularCustomer, influencer, premiumUser, restaurantOwner] = await Promise.all([
         UserModel.countDocuments(),
         UserModel.countDocuments({
             role: "USER",
@@ -145,9 +145,11 @@ const getUserStats = async () => {
         }),
         UserModel.countDocuments({ isInfluencer: true }),
         UserModel.countDocuments({
+            role: "USER",
             subscriptionPlanId: { $ne: null },
             subscriptionEndDate: { $gt: now },
         }),
+        UserModel.countDocuments({ role: "RESTAURANT_OWNER" }),
     ]);
 
     return {
@@ -155,6 +157,7 @@ const getUserStats = async () => {
         regularCustomer,
         influencer,
         premiumUser,
+        restaurantOwner,
     };
 };
 
