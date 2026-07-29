@@ -196,10 +196,10 @@ const getAdminSubscriptionStats = async () => {
     }
     const revenueGrowthStr = `${revenueGrowth >= 0 ? "+" : ""}${revenueGrowth.toFixed(1)}% this month`;
 
-    // Format monthly revenue string (e.g. €227K if >= 1000)
-    let formattedRevenue = `€${thisMonthRevenue}`;
+    // Format monthly revenue string (e.g. CHF 227K if >= 1000)
+    let formattedRevenue = `CHF ${thisMonthRevenue}`;
     if (thisMonthRevenue >= 1000) {
-        formattedRevenue = `€${(thisMonthRevenue / 1000).toFixed(0)}K`;
+        formattedRevenue = `CHF ${(thisMonthRevenue / 1000).toFixed(0)}K`;
     }
 
     // 3. Failed Payments (from Stripe with DB fallback)
