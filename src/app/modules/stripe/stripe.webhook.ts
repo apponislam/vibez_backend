@@ -488,9 +488,14 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                         $set: { status: UserSubscriptionStatus.CANCELLED },
                     });
 
-                    // Clear user's subscription info if this was their active subscription
-                    const user = await UserModel.findById(userSubscription.userId);
-                    if (user && user.subscriptionPlanId?.toString() === userSubscription.subscriptionPlanId.toString()) {
+                    // Clear user's subscription info only if there are no other active subscriptions left
+                    const hasActiveSub = await UserSubscriptionModel.findOne({
+                        userId: userSubscription.userId,
+                        status: UserSubscriptionStatus.ACTIVE,
+                        stripeSubscriptionId: { $ne: (subscription as any).id }
+                    });
+
+                    if (!hasActiveSub) {
                         await UserModel.findByIdAndUpdate(userSubscription.userId, {
                             $set: {
                                 subscriptionPlanId: null,

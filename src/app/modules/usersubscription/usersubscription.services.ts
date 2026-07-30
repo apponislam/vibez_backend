@@ -136,13 +136,21 @@ const cancelUserSubscription = async (id: string, userId: string) => {
     // Update in DB
     const updatedSubscription = await UserSubscriptionModel.findOneAndUpdate({ _id: id, userId }, { $set: { status: "CANCELLED" } }, { returnDocument: 'after' }).populate(populateOptions);
 
-    // Clear user's subscription info if needed
-    await UserModel.findByIdAndUpdate(userId, {
-        $set: {
-            subscriptionPlanId: null,
-            subscriptionEndDate: null,
-        },
+    // Clear user's subscription info only if there are no other active subscriptions
+    const hasActiveSub = await UserSubscriptionModel.findOne({
+        userId,
+        status: UserSubscriptionStatus.ACTIVE,
+        _id: { $ne: id },
     });
+
+    if (!hasActiveSub) {
+        await UserModel.findByIdAndUpdate(userId, {
+            $set: {
+                subscriptionPlanId: null,
+                subscriptionEndDate: null,
+            },
+        });
+    }
 
     return updatedSubscription;
 };
