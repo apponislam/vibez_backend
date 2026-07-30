@@ -11,6 +11,42 @@ import { userSubscriptionServices } from "../usersubscription/usersubscription.s
 import { commissionServices } from "../commission/commission.services";
 import { Types } from "mongoose";
 
+const parseStripeDate = (val: any): Date => {
+    if (!val) return new Date();
+    if (typeof val === "number") {
+        return new Date(val * 1000);
+    }
+    const parsed = new Date(val);
+    if (isNaN(parsed.getTime())) {
+        return new Date();
+    }
+    return parsed;
+};
+
+const resolveStripePeriodStart = (sub: any): Date => {
+    const val = sub.currentPeriodStart || 
+                sub.current_period_start ||
+                sub.items?.data?.[0]?.currentPeriodStart ||
+                sub.items?.data?.[0]?.current_period_start ||
+                sub.trialStart ||
+                sub.trial_start ||
+                sub.startDate ||
+                sub.start_date;
+    return parseStripeDate(val);
+};
+
+const resolveStripePeriodEnd = (sub: any): Date => {
+    const val = sub.currentPeriodEnd || 
+                sub.current_period_end ||
+                sub.items?.data?.[0]?.currentPeriodEnd ||
+                sub.items?.data?.[0]?.current_period_end ||
+                sub.trialEnd ||
+                sub.trial_end ||
+                sub.billingCycleAnchor ||
+                sub.billing_cycle_anchor;
+    return parseStripeDate(val);
+};
+
 const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
     const sig = req.headers["stripe-signature"] as string;
     const webhookSecret = config.stripe.webhook_secret as string;
@@ -18,6 +54,7 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
     let event;
     try {
         event = stripeServices.stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+        console.log(`[Webhook] Event received: ${event.type}`);
     } catch (err: any) {
         return res.status(400).send(`Webhook Error: ${err.message}`);
     }
@@ -53,22 +90,14 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                 });
 
                 const userId = (session as any).metadata?.userId || stripeSub.metadata?.userId;
+                console.log(`[Webhook] checkout.session.completed: stripePriceId=${stripePriceId}, planFound=${!!subscriptionPlan}, userId=${userId}`);
+
                 const coupon = (session as any).metadata?.coupon || stripeSub.metadata?.coupon;
                 const referralCode = (session as any).metadata?.referralCode || stripeSub.metadata?.referralCode;
 
                 if (subscriptionPlan && userId) {
-                    // Calculate end date based on plan duration
-                    const startDate = new Date();
-                    let endDate = new Date(startDate);
-                    if (subscriptionPlan.duration === "MONTHLY") {
-                        endDate.setMonth(endDate.getMonth() + 1);
-                    } else if (subscriptionPlan.duration === "HALF_YEARLY") {
-                        endDate.setMonth(endDate.getMonth() + 6);
-                    } else if (subscriptionPlan.duration === "YEARLY") {
-                        endDate.setFullYear(endDate.getFullYear() + 1);
-                    } else if (subscriptionPlan.duration === "TWO_YEARLY") {
-                        endDate.setFullYear(endDate.getFullYear() + 2);
-                    }
+                    const startDate = resolveStripePeriodStart(stripeSub);
+                    const endDate = resolveStripePeriodEnd(stripeSub);
 
                     // Resolve referrer from metadata if provided
                     let referredBy = undefined;
@@ -117,7 +146,7 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                         status: UserSubscriptionStatus.ACTIVE,
                         startDate,
                         endDate,
-                        isTrial: false,
+                        isTrial: stripeSub.status === "trialing",
                         percentOff,
                         amountOff,
                         actualPrice,
@@ -161,13 +190,13 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                 const subscriptionId = (invoice as any).subscription || (invoice as any).parent?.subscription_details?.subscription || (invoice as any).lines?.data?.[0]?.parent?.subscription_item_details?.subscription;
 
                 if (subscriptionId) {
+                    const stripeSub = await stripeServices.stripe.subscriptions.retrieve(subscriptionId);
                     let userSubscription = await UserSubscriptionModel.findOne({
                         stripeSubscriptionId: subscriptionId,
                     });
 
                     if (!userSubscription) {
                         // Retrieve subscription from Stripe to get metadata
-                        const stripeSub = await stripeServices.stripe.subscriptions.retrieve(subscriptionId);
                         const userId = stripeSub.metadata?.userId;
                         const coupon = stripeSub.metadata?.coupon;
                         const referralCode = stripeSub.metadata?.referralCode;
@@ -177,19 +206,11 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                             const subscriptionPlan = await SubscriptionPlanModel.findOne({
                                 stripePriceId: stripePriceId,
                             });
+                            console.log(`[Webhook] invoice.paid: stripePriceId=${stripePriceId}, planFound=${!!subscriptionPlan}, userId=${userId}`);
 
                             if (subscriptionPlan) {
-                                const startDate = new Date();
-                                let endDate = new Date(startDate);
-                                if (subscriptionPlan.duration === "MONTHLY") {
-                                    endDate.setMonth(endDate.getMonth() + 1);
-                                } else if (subscriptionPlan.duration === "HALF_YEARLY") {
-                                    endDate.setMonth(endDate.getMonth() + 6);
-                                } else if (subscriptionPlan.duration === "YEARLY") {
-                                    endDate.setFullYear(endDate.getFullYear() + 1);
-                                } else if (subscriptionPlan.duration === "TWO_YEARLY") {
-                                    endDate.setFullYear(endDate.getFullYear() + 2);
-                                }
+                                const startDate = resolveStripePeriodStart(stripeSub);
+                                const endDate = resolveStripePeriodEnd(stripeSub);
 
                                 let referredBy = undefined;
                                 if (referralCode) {
@@ -236,7 +257,7 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                                     status: UserSubscriptionStatus.ACTIVE,
                                     startDate,
                                     endDate,
-                                    isTrial: false,
+                                    isTrial: stripeSub.status === "trialing",
                                     percentOff,
                                     amountOff,
                                     actualPrice,
@@ -273,19 +294,10 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                         }
                     } else {
                         // Extend end date
-                        let newEndDate = new Date(userSubscription.endDate);
+                        let newEndDate = resolveStripePeriodEnd(stripeSub);
                         // Get plan to know duration
                         const plan = await SubscriptionPlanModel.findById(userSubscription.subscriptionPlanId);
                         if (plan) {
-                            if (plan.duration === "MONTHLY") {
-                                newEndDate.setMonth(newEndDate.getMonth() + 1);
-                            } else if (plan.duration === "HALF_YEARLY") {
-                                newEndDate.setMonth(newEndDate.getMonth() + 6);
-                            } else if (plan.duration === "YEARLY") {
-                                newEndDate.setFullYear(newEndDate.getFullYear() + 1);
-                            } else if (plan.duration === "TWO_YEARLY") {
-                                newEndDate.setFullYear(newEndDate.getFullYear() + 2);
-                            }
                             const actualPrice = plan.price;
                             const paidPrice = (invoice as any).amount_paid !== undefined && (invoice as any).amount_paid !== null
                                 ? (invoice as any).amount_paid / 100
@@ -297,6 +309,7 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                                     status: UserSubscriptionStatus.ACTIVE,
                                     actualPrice,
                                     paidPrice,
+                                    isTrial: false,
                                 },
                             });
                             // Update User model as well
@@ -345,8 +358,9 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                 // console.log("Subscription updated:", subscription);
 
                 // Update user subscription
-                const userSubscription = await UserSubscriptionModel.findOne({
-                    stripeSubscriptionId: (subscription as any).id,
+                const stripeSubscriptionId = (subscription as any).id;
+                let userSubscription = await UserSubscriptionModel.findOne({
+                    stripeSubscriptionId,
                 });
                 if (userSubscription) {
                     let newStatus = UserSubscriptionStatus.ACTIVE;
@@ -357,6 +371,107 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                     }
 
                     await UserSubscriptionModel.findByIdAndUpdate(userSubscription._id, { $set: { status: newStatus } });
+                } else {
+                    console.log(`[Webhook] customer.subscription.updated: Subscription ${stripeSubscriptionId} not in DB. Status=${(subscription as any).status}`);
+                    // Try to create the subscription if it does not exist yet (e.g. for free trials / setup payment sheets)
+                    const status = (subscription as any).status;
+                    if (status === "active" || status === "trialing") {
+                        const userId = (subscription as any).metadata?.userId;
+                        console.log(`[Webhook] customer.subscription.updated: userId=${userId}`);
+                        if (userId) {
+                            const stripePriceId = (subscription as any).items?.data?.[0]?.price?.id;
+                            console.log(`[Webhook] customer.subscription.updated: stripePriceId=${stripePriceId}`);
+                            if (stripePriceId) {
+                                const subscriptionPlan = await SubscriptionPlanModel.findOne({ stripePriceId });
+                                console.log(`[Webhook] customer.subscription.updated: planFound=${!!subscriptionPlan}`);
+                                if (subscriptionPlan) {
+                                     const startDate = resolveStripePeriodStart(subscription);
+                                     const endDate = resolveStripePeriodEnd(subscription);
+
+                                    const referralCode = (subscription as any).metadata?.referralCode;
+                                    const coupon = (subscription as any).metadata?.coupon;
+
+                                    let referredBy = undefined;
+                                    if (referralCode) {
+                                        const referrer = await UserModel.findOne({ referralCode });
+                                        if (referrer && referrer._id.toString() !== userId) {
+                                            referredBy = referrer._id;
+                                        }
+                                    }
+
+                                    // Cancel any previous active subscriptions first
+                                    await userSubscriptionServices.cancelPreviousActiveSubscriptions(userId, stripeSubscriptionId);
+
+                                    const actualPrice = subscriptionPlan.price;
+                                    // For a free trial or setup, paid price is 0 if status is trialing
+                                    const paidPrice = status === "trialing" ? 0 : subscriptionPlan.price;
+
+                                    // Calculate commissionAmount if referred
+                                    let commissionAmount = undefined;
+                                    if (referredBy) {
+                                        const referrer = await UserModel.findById(referredBy);
+                                        if (referrer) {
+                                            const commissionPercentage = referrer.commissionPercentage || 0;
+                                            const calculatedCommission = paidPrice * (commissionPercentage / 100);
+                                            commissionAmount = Number(Math.min(calculatedCommission, referrer.maxPayout || 0).toFixed(2));
+                                        }
+                                    }
+
+                                    let percentOff = undefined;
+                                    let amountOff = undefined;
+                                    if (coupon) {
+                                        const dbCoupon = await CouponModel.findOne({ couponId: coupon });
+                                        if (dbCoupon) {
+                                            percentOff = dbCoupon.percentOff;
+                                            amountOff = dbCoupon.amountOff;
+                                        }
+                                    }
+
+                                    userSubscription = await UserSubscriptionModel.create({
+                                        userId,
+                                        subscriptionPlanId: subscriptionPlan._id,
+                                        stripeSubscriptionId,
+                                        stripeCustomerId: (subscription as any).customer as string,
+                                        status: UserSubscriptionStatus.ACTIVE,
+                                        startDate,
+                                        endDate,
+                                        isTrial: status === "trialing",
+                                        percentOff,
+                                        amountOff,
+                                        actualPrice,
+                                        paidPrice,
+                                        commissionUser: referredBy || undefined,
+                                        commissionAmount,
+                                    });
+
+                                    if (referredBy && commissionAmount !== undefined && commissionAmount > 0) {
+                                        const invoiceId = (subscription as any).latest_invoice as string || "trial";
+                                        await commissionServices.handleSubscriptionPayment({
+                                            userId,
+                                            referredBy: referredBy.toString(),
+                                            invoiceId,
+                                            subscriptionId: stripeSubscriptionId,
+                                            invoiceAmount: paidPrice,
+                                            userSubscriptionId: userSubscription._id.toString(),
+                                        });
+                                    }
+
+                                    await UserModel.findByIdAndUpdate(userId, {
+                                        $set: {
+                                            subscriptionPlanId: subscriptionPlan._id,
+                                            subscriptionEndDate: endDate,
+                                            isNewUser: false,
+                                            ...(referredBy && { referredBy }),
+                                        },
+                                    });
+
+                                    if (coupon) {
+                                        await CouponModel.findOneAndUpdate({ couponId: coupon }, { $inc: { timesRedeemed: 1 } });
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
                 break;
             }
@@ -391,6 +506,7 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
             }
         }
     } catch (err: any) {
+        console.error("[Webhook Error] Error executing webhook handler:", err);
         throw err;
     }
 
