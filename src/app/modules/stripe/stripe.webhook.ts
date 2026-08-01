@@ -403,8 +403,22 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                                     await userSubscriptionServices.cancelPreviousActiveSubscriptions(userId, stripeSubscriptionId);
 
                                     const actualPrice = subscriptionPlan.price;
-                                    // For a free trial or setup, paid price is 0 if status is trialing
-                                    const paidPrice = status === "trialing" ? 0 : subscriptionPlan.price;
+                                    let paidPrice = status === "trialing" ? 0 : subscriptionPlan.price;
+
+                                    let percentOff = undefined;
+                                    let amountOff = undefined;
+                                    if (coupon) {
+                                        const dbCoupon = await CouponModel.findOne({ couponId: coupon });
+                                        if (dbCoupon) {
+                                            percentOff = dbCoupon.percentOff;
+                                            amountOff = dbCoupon.amountOff;
+                                            if (percentOff) {
+                                                paidPrice = paidPrice * (1 - percentOff / 100);
+                                            } else if (amountOff) {
+                                                paidPrice = Math.max(0, paidPrice - amountOff);
+                                            }
+                                        }
+                                    }
 
                                     // Calculate commissionAmount if referred
                                     let commissionAmount = undefined;
@@ -414,16 +428,6 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                                             const commissionPercentage = referrer.commissionPercentage || 0;
                                             const calculatedCommission = paidPrice * (commissionPercentage / 100);
                                             commissionAmount = Number(Math.min(calculatedCommission, referrer.maxPayout || 0).toFixed(2));
-                                        }
-                                    }
-
-                                    let percentOff = undefined;
-                                    let amountOff = undefined;
-                                    if (coupon) {
-                                        const dbCoupon = await CouponModel.findOne({ couponId: coupon });
-                                        if (dbCoupon) {
-                                            percentOff = dbCoupon.percentOff;
-                                            amountOff = dbCoupon.amountOff;
                                         }
                                     }
 
