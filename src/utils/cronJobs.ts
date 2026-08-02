@@ -4,6 +4,7 @@ import { UserSubscriptionModel } from "../app/modules/usersubscription/usersubsc
 import { UserSubscriptionStatus } from "../app/modules/subscription/subscription.interface";
 import { ReservationModel } from "../app/modules/reservation/reservation.model";
 import { ReservationStatus } from "../app/modules/reservation/reservation.interface";
+import { SavedDealModel } from "../app/modules/saved-deal/saved-deal.model";
 
 const startSubscriptionExpiryCron = () => {
     // Run every 24 hours (at midnight)
@@ -68,6 +69,20 @@ const startReservationAutoCompleteCron = () => {
                 if (now >= completionTime) {
                     reservation.status = ReservationStatus.COMPLETED;
                     await reservation.save();
+
+                    // If a deal was associated with the reservation, mark the saved deal as used
+                    if (reservation.dealId) {
+                        await SavedDealModel.updateOne(
+                            {
+                                userId: reservation.userId,
+                                dealId: reservation.dealId,
+                            },
+                            {
+                                $set: { isUsed: true },
+                            }
+                        );
+                    }
+
                     completedCount++;
                 }
             }
