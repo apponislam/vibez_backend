@@ -76,6 +76,7 @@ const startReservationAutoCompleteCron = () => {
                             {
                                 userId: reservation.userId,
                                 dealId: reservation.dealId,
+                                isUsed: false,
                             },
                             {
                                 $set: { isUsed: true },
