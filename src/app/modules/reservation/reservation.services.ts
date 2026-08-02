@@ -42,13 +42,11 @@ const createReservation = async (data: Partial<IReservation>, userId: string) =>
         const rawReservationDate = new Date(data.reservationDate as Date);
         const reservationDay = rawReservationDate.toLocaleDateString("en-US", { weekday: "long", timeZone: "UTC" }).toUpperCase() as DayOfWeek;
         const matchingHour = deal.resturantHours?.find((h) => h.day === reservationDay);
-        
+
         const formatDay = (day: string) => day.charAt(0) + day.slice(1).toLowerCase();
 
         if (!matchingHour) {
-            const availableDays = deal.resturantHours
-                ?.map((h) => `${formatDay(h.day)} (${h.start || "00:00"} - ${h.end || "23:59"})`)
-                .join(", ") || "";
+            const availableDays = deal.resturantHours?.map((h) => `${formatDay(h.day)} (${h.start || "00:00"} - ${h.end || "23:59"})`).join(", ") || "";
             throw new ApiError(httpStatus.BAD_REQUEST, `Deal is only available on ${availableDays}`);
         }
 
@@ -57,10 +55,7 @@ const createReservation = async (data: Partial<IReservation>, userId: string) =>
         const endTime = matchingHour.end || "23:59";
 
         if (reservationTime < startTime || reservationTime > endTime) {
-            throw new ApiError(
-                httpStatus.BAD_REQUEST,
-                `Deal is only available between ${startTime} and ${endTime} on ${formatDay(reservationDay)}`
-            );
+            throw new ApiError(httpStatus.BAD_REQUEST, `Deal is only available between ${startTime} and ${endTime} on ${formatDay(reservationDay)}`);
         }
 
         // Check max claims per day (using reservations)
@@ -96,7 +91,7 @@ const createReservation = async (data: Partial<IReservation>, userId: string) =>
         const lastReservation = await ReservationModel.findOne({
             dealId: deal._id,
             userId: new Types.ObjectId(userId),
-            status: { $ne: ReservationStatus.CANCELLED },
+            status: { $nin: [ReservationStatus.CANCELLED, ReservationStatus.EXPIRED] },
             reservationDate: { $gte: threeMonthsAgo },
         }).sort({ reservationDate: -1 });
 
@@ -110,36 +105,58 @@ const createReservation = async (data: Partial<IReservation>, userId: string) =>
                 year: "numeric",
             });
 
-            throw new ApiError(
-                httpStatus.BAD_REQUEST,
-                `You cannot use this deal again until ${formattedDate}.`
-            );
+            throw new ApiError(httpStatus.BAD_REQUEST, `You cannot use this deal again until ${formattedDate}.`);
         }
+    }
+
+    // Check if the user already has a reservation with ARRIVED status for this specific deal
+    const existingArrivedReservation = await ReservationModel.findOne({
+        userId: new Types.ObjectId(userId),
+        dealId: new Types.ObjectId(data.dealId as any),
+        status: ReservationStatus.ARRIVED,
+    });
+
+    if (existingArrivedReservation) {
+        throw new ApiError(
+            httpStatus.BAD_REQUEST,
+            "You are already arrived in resturant please you can't use this deal again."
+        );
     }
 
     const reservationData = { ...data, userId };
     const reservation = await ReservationModel.create(reservationData);
 
+    // Cancel any other UPCOMING reservations for this user and this specific deal
+    await ReservationModel.updateMany(
+        {
+            userId: new Types.ObjectId(userId),
+            dealId: new Types.ObjectId(data.dealId as any),
+            status: ReservationStatus.UPCOMING,
+            _id: { $ne: reservation._id },
+        },
+        {
+            $set: { status: ReservationStatus.CANCELLED },
+        }
+    );
+
     // Mark saved deal as used if a deal was associated with the reservation
-    if (data.dealId) {
-        await SavedDealModel.updateOne(
-            {
-                userId: new Types.ObjectId(userId),
-                dealId: new Types.ObjectId(data.dealId as any),
-            },
-            {
-                $set: { isUsed: true }
-            }
-        );
-    }
+    // if (data.dealId) {
+    //     await SavedDealModel.updateOne(
+    //         {
+    //             userId: new Types.ObjectId(userId),
+    //             dealId: new Types.ObjectId(data.dealId as any),
+    //         },
+    //         {
+    //             $set: { isUsed: true },
+    //         },
+    //     );
+    // }
 
     await reservation.populate("restaurantId userId dealId");
 
     // Broadcast real-time stats update
     if (reservation.restaurantId) {
-        const restaurantId = (reservation.restaurantId as any)._id
-            ? (reservation.restaurantId as any)._id.toString()
-            : reservation.restaurantId.toString();
+        const restaurantId = (reservation.restaurantId as any)._id ? (reservation.restaurantId as any)._id.toString() : reservation.restaurantId.toString();
         dashboardServices.broadcastRestaurantStats(restaurantId).catch(console.error);
     }
 
@@ -186,14 +203,8 @@ const getAllReservations = async (user: { _id: string; role: string; restaurantI
     const skip = (page - 1) * limit;
 
     const [reservations, total] = await Promise.all([
-        ReservationModel.find(query)
-            .populate("restaurantId", "restaurantName restaurantImage restaurantAddress restaurantType cuisineType")
-            .populate("userId", "name email phone profileImage")
-            .populate("dealId")
-            .sort({ reservationDate: 1, reservationTime: 1 })
-            .skip(skip)
-            .limit(limit),
-        ReservationModel.countDocuments(query)
+        ReservationModel.find(query).populate("restaurantId", "restaurantName restaurantImage restaurantAddress restaurantType cuisineType").populate("userId", "name email phone profileImage").populate("dealId").sort({ reservationDate: 1, reservationTime: 1 }).skip(skip).limit(limit),
+        ReservationModel.countDocuments(query),
     ]);
 
     const totalPages = Math.ceil(total / limit);
@@ -214,10 +225,7 @@ const getAllReservations = async (user: { _id: string; role: string; restaurantI
 };
 
 const getReservationById = async (id: string) => {
-    const reservation = await ReservationModel.findById(id)
-        .populate("restaurantId", "restaurantName restaurantImage restaurantAddress restaurantType cuisineType")
-        .populate("userId", "name email phone profileImage")
-        .populate("dealId");
+    const reservation = await ReservationModel.findById(id).populate("restaurantId", "restaurantName restaurantImage restaurantAddress restaurantType cuisineType").populate("userId", "name email phone profileImage").populate("dealId");
     if (!reservation) throw new ApiError(httpStatus.NOT_FOUND, "Reservation not found");
 
     const review = await ReviewModel.exists({ reservationId: reservation._id, isDeleted: false });
@@ -239,12 +247,7 @@ const getMyReservations = async (userId: string, filters: any = {}) => {
     const skip = (page - 1) * limit;
 
     const [reservations, total] = await Promise.all([
-        ReservationModel.find(query)
-            .populate("restaurantId", "restaurantName restaurantImage restaurantType cuisineType")
-            .populate("dealId")
-            .sort({ reservationDate: -1, reservationTime: -1 })
-            .skip(skip)
-            .limit(limit),
+        ReservationModel.find(query).populate("restaurantId", "restaurantName restaurantImage restaurantType cuisineType").populate("dealId").sort({ reservationDate: -1, reservationTime: -1 }).skip(skip).limit(limit),
         ReservationModel.countDocuments(query),
     ]);
 
@@ -289,7 +292,7 @@ const updateReservation = async (id: string, data: Partial<IReservation>, userId
         }
     }
 
-    const reservation = await ReservationModel.findOneAndUpdate({ _id: id, userId }, { $set: data }, { returnDocument: 'after', runValidators: true }).populate("restaurantId userId");
+    const reservation = await ReservationModel.findOneAndUpdate({ _id: id, userId }, { $set: data }, { returnDocument: "after", runValidators: true }).populate("restaurantId userId");
 
     if (!reservation) throw new ApiError(httpStatus.NOT_FOUND, "Reservation not found or not authorized");
 
@@ -318,7 +321,7 @@ const updateReservationStatus = async (id: string, status: ReservationStatus, us
         query.restaurantId = restaurantId;
     }
 
-    const reservation = await ReservationModel.findOneAndUpdate(query, { $set: { status } }, { returnDocument: 'after', runValidators: true }).populate("restaurantId userId");
+    const reservation = await ReservationModel.findOneAndUpdate(query, { $set: { status } }, { returnDocument: "after", runValidators: true }).populate("restaurantId userId");
 
     if (!reservation) throw new ApiError(httpStatus.NOT_FOUND, "Reservation not found or not authorized");
 
