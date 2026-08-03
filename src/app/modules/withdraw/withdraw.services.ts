@@ -157,7 +157,7 @@ const approveWithdrawal = async (withdrawId: string) => {
             stripeTransferId = transfer.id;
         } catch (error: any) {
             // If transfer fails, log and throw API Error with a friendly message
-            console.error("Stripe transfer failed:", error);
+            // console.error("Stripe transfer failed:", error);
             let friendlyMessage = "Failed to process withdrawal via Stripe. Please try again later.";
             if (error.code === "balance_insufficient" || error.message?.includes("insufficient available funds")) {
                 friendlyMessage = "The platform has insufficient available funds in Stripe to process this payout.";
