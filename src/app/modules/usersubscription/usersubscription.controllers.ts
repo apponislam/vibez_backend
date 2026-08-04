@@ -93,12 +93,13 @@ const createUserSubscription = catchAsync(async (req: Request, res: Response) =>
 });
 
 const getUserSubscriptions = catchAsync(async (req: Request, res: Response) => {
-    const result = await userSubscriptionServices.getUserSubscriptions(req.user._id as string);
+    const result = await userSubscriptionServices.getUserSubscriptions(req.user._id as string, req.query);
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
         message: "User subscriptions retrieved successfully",
-        data: result,
+        data: result.data,
+        meta: result.meta,
     });
 });
 

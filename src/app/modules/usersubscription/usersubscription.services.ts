@@ -110,9 +110,37 @@ const createUserSubscription = async (data: Partial<IUserSubscription>, userId: 
     return userSubscription;
 };
 
-const getUserSubscriptions = async (userId: string) => {
-    const subscriptions = await UserSubscriptionModel.find({ userId }).populate(populateOptions);
-    return subscriptions;
+const getUserSubscriptions = async (userId: string, query: any = {}) => {
+    const { page = 1, limit = 10 } = query;
+    const parsedPage = Number(page);
+    const parsedLimit = Number(limit);
+    const skip = (parsedPage - 1) * parsedLimit;
+
+    const [subscriptions, total] = await Promise.all([
+        UserSubscriptionModel.find({ userId })
+            .populate(populateOptions)
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(parsedLimit)
+            .lean(),
+        UserSubscriptionModel.countDocuments({ userId }),
+    ]);
+
+    const totalPages = Math.ceil(total / parsedLimit);
+    const hasNext = parsedPage < totalPages;
+    const hasPrev = parsedPage > 1;
+
+    return {
+        data: subscriptions,
+        meta: {
+            page: parsedPage,
+            limit: parsedLimit,
+            total,
+            totalPages,
+            hasNext,
+            hasPrev,
+        },
+    };
 };
 
 const getUserSubscriptionById = async (id: string, userId: string) => {
@@ -204,7 +232,7 @@ const getAllSubscriptionsByAdmin = async (query: any) => {
             })
             .populate({
                 path: "commissionUser",
-                select: "name email",
+                select: "name email profileImage",
             })
             .sort({ createdAt: -1 })
             .skip(skip)
