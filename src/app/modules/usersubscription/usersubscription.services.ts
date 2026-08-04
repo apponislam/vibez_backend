@@ -9,11 +9,7 @@ import { UserModel } from "../auth/auth.model";
 import { commissionServices } from "../commission/commission.services";
 import { Types } from "mongoose";
 
-const populateOptions: any = [
-    "subscriptionPlanId",
-    { path: "commissionUser", select: "name email profileImage" },
-    { path: "userId", select: "name email profileImage" }
-];
+const populateOptions: any = ["subscriptionPlanId", { path: "commissionUser", select: "name email profileImage" }, { path: "userId", select: "name email profileImage" }];
 
 const cancelPreviousActiveSubscriptions = async (userId: string, newStripeSubscriptionId?: string) => {
     const activeSubscriptions = await UserSubscriptionModel.find({
@@ -116,15 +112,7 @@ const getUserSubscriptions = async (userId: string, query: any = {}) => {
     const parsedLimit = Number(limit);
     const skip = (parsedPage - 1) * parsedLimit;
 
-    const [subscriptions, total] = await Promise.all([
-        UserSubscriptionModel.find({ userId })
-            .populate(populateOptions)
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(parsedLimit)
-            .lean(),
-        UserSubscriptionModel.countDocuments({ userId }),
-    ]);
+    const [subscriptions, total] = await Promise.all([UserSubscriptionModel.find({ userId }).populate(populateOptions).sort({ createdAt: -1 }).skip(skip).limit(parsedLimit).lean(), UserSubscriptionModel.countDocuments({ userId })]);
 
     const totalPages = Math.ceil(total / parsedLimit);
     const hasNext = parsedPage < totalPages;
@@ -162,7 +150,7 @@ const cancelUserSubscription = async (id: string, userId: string) => {
     }
 
     // Update in DB
-    const updatedSubscription = await UserSubscriptionModel.findOneAndUpdate({ _id: id, userId }, { $set: { status: "CANCELLED" } }, { returnDocument: 'after' }).populate(populateOptions);
+    const updatedSubscription = await UserSubscriptionModel.findOneAndUpdate({ _id: id, userId }, { $set: { status: "CANCELLED" } }, { returnDocument: "after" }).populate(populateOptions);
 
     // Clear user's subscription info only if there are no other active subscriptions
     const hasActiveSub = await UserSubscriptionModel.findOne({
@@ -193,7 +181,7 @@ const resumeUserSubscription = async (id: string, userId: string) => {
     }
 
     // Update in DB
-    const updatedSubscription = await UserSubscriptionModel.findOneAndUpdate({ _id: id, userId }, { $set: { status: "ACTIVE" } }, { returnDocument: 'after' }).populate(populateOptions);
+    const updatedSubscription = await UserSubscriptionModel.findOneAndUpdate({ _id: id, userId }, { $set: { status: "ACTIVE" } }, { returnDocument: "after" }).populate(populateOptions);
     return updatedSubscription;
 };
 
@@ -211,10 +199,7 @@ const getAllSubscriptionsByAdmin = async (query: any) => {
 
     if (search) {
         const users = await UserModel.find({
-            $or: [
-                { name: { $regex: search, $options: "i" } },
-                { email: { $regex: search, $options: "i" } },
-            ],
+            $or: [{ name: { $regex: search, $options: "i" } }, { email: { $regex: search, $options: "i" } }],
         }).select("_id");
         const userIds = users.map((u) => u._id);
         filters.userId = { $in: userIds };
@@ -266,8 +251,8 @@ const getRevenueBreakdown = async () => {
     const subscriptions = await UserSubscriptionModel.find({
         createdAt: { $gte: startDate, $lte: endDate },
     })
-    .populate("subscriptionPlanId")
-    .lean();
+        .populate("subscriptionPlanId")
+        .lean();
 
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
