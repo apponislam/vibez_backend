@@ -14,16 +14,7 @@ const createPaymentIntent = async (amount: number, currency: string = "chf") => 
     return paymentIntent;
 };
 
-const createCheckoutSession = async (
-    priceId: string,
-    successUrl: string,
-    cancelUrl: string,
-    customerEmail?: string,
-    metadata?: Record<string, string>,
-    trialPeriodDays?: number,
-    coupon?: string,
-    uiMode: "hosted" | "embedded" = "hosted"
-) => {
+const createCheckoutSession = async (priceId: string, successUrl: string, cancelUrl: string, customerEmail?: string, metadata?: Record<string, string>, trialPeriodDays?: number, coupon?: string, uiMode: "hosted" | "embedded" = "hosted") => {
     const isEmbedded = uiMode === "embedded";
     const mappedUiMode = isEmbedded ? "embedded_page" : "hosted_page";
     const session = await stripe.checkout.sessions.create({
@@ -36,19 +27,23 @@ const createCheckoutSession = async (
         ],
         mode: "subscription",
         ui_mode: mappedUiMode as any,
-        ...(isEmbedded ? {
-            return_url: successUrl,
-        } : {
-            success_url: successUrl,
-            cancel_url: cancelUrl,
-        }),
+        ...(isEmbedded
+            ? {
+                  return_url: successUrl,
+              }
+            : {
+                  success_url: successUrl,
+                  cancel_url: cancelUrl,
+              }),
         customer_email: customerEmail,
         metadata,
-        ...(coupon ? {
-            discounts: [{ coupon }],
-        } : {
-            allow_promotion_codes: true,
-        }),
+        ...(coupon
+            ? {
+                  discounts: [{ coupon }],
+              }
+            : {
+                  allow_promotion_codes: true,
+              }),
         subscription_data: {
             metadata,
             ...(trialPeriodDays && {
@@ -65,11 +60,16 @@ const createProduct = async (name: string) => {
 };
 
 const createPrice = async (productId: string, amount: number, currency: string = "chf", interval: "month" | "year", intervalCount?: number) => {
+    console.log("amount", amount);
+    console.log("currency", currency);
+    console.log("interval", interval);
+    console.log("intervalCount", intervalCount);
+
     const price = await stripe.prices.create({
         product: productId,
         unit_amount: amount,
         currency,
-        recurring: { 
+        recurring: {
             interval,
             ...(intervalCount && { interval_count: intervalCount }),
         },
@@ -91,14 +91,7 @@ const resumeSubscription = async (subscriptionId: string) => {
     return subscription;
 };
 
-const createCoupon = async (
-    id: string,
-    percentOff?: number,
-    amountOff?: number,
-    currency: string = "chf",
-    duration: "once" | "repeating" | "forever" = "forever",
-    durationInMonths?: number
-) => {
+const createCoupon = async (id: string, percentOff?: number, amountOff?: number, currency: string = "chf", duration: "once" | "repeating" | "forever" = "forever", durationInMonths?: number) => {
     const coupon = await stripe.coupons.create({
         id,
         ...(percentOff !== undefined && { percent_off: percentOff }),
@@ -109,13 +102,7 @@ const createCoupon = async (
     return coupon;
 };
 
-const createSubscriptionPaymentSheet = async (
-    priceId: string,
-    customerEmail: string,
-    metadata?: Record<string, string>,
-    trialPeriodDays?: number,
-    coupon?: string
-) => {
+const createSubscriptionPaymentSheet = async (priceId: string, customerEmail: string, metadata?: Record<string, string>, trialPeriodDays?: number, coupon?: string) => {
     // 1. Get or create Stripe customer
     let customer;
     const customers = await stripe.customers.list({ email: customerEmail, limit: 1 });
@@ -126,10 +113,7 @@ const createSubscriptionPaymentSheet = async (
     }
 
     // 2. Create Ephemeral Key (required for saving cards / Stripe SDK mobile)
-    const ephemeralKey = await stripe.ephemeralKeys.create(
-        { customer: customer.id },
-        { apiVersion: "2026-05-27.dahlia" }
-    );
+    const ephemeralKey = await stripe.ephemeralKeys.create({ customer: customer.id }, { apiVersion: "2026-05-27.dahlia" });
 
     // 3. Create Stripe Subscription with default_incomplete
     const subscription = await stripe.subscriptions.create({

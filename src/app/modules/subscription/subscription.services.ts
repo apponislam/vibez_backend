@@ -70,7 +70,7 @@ const updateSubscriptionPlan = async (id: string, data: Partial<ISubscriptionPla
     // If price is updated, create a new price in Stripe using CHF
     if (data.price !== undefined && data.price !== existingPlan.price) {
         let productId = existingPlan.stripeProductId;
-        
+
         // Ensure Stripe product exists
         if (!productId) {
             const product = await stripeServices.createProduct(data.name || existingPlan.name);
@@ -93,7 +93,7 @@ const updateSubscriptionPlan = async (id: string, data: Partial<ISubscriptionPla
             interval = "year";
             intervalCount = 2;
         }
-                
+
         const amount = data.price * 100; // Stripe cents
 
         // Create new Price object in Stripe (in CHF)
@@ -105,19 +105,19 @@ const updateSubscriptionPlan = async (id: string, data: Partial<ISubscriptionPla
         delete data.freeTrialDays;
     }
 
-    const updateQuery: any = { 
-        $set: { 
-            ...data, 
+    const updateQuery: any = {
+        $set: {
+            ...data,
             ...(stripePriceId && { stripePriceId }),
             ...(stripeProductId && { stripeProductId }),
-        } 
+        },
     };
 
     if (data.isFreeTrial === false) {
         updateQuery.$unset = { freeTrialDays: "" };
     }
 
-    const plan = await SubscriptionPlanModel.findByIdAndUpdate(id, updateQuery, { returnDocument: 'after', runValidators: true });
+    const plan = await SubscriptionPlanModel.findByIdAndUpdate(id, updateQuery, { returnDocument: "after", runValidators: true });
     return plan;
 };
 
@@ -130,19 +130,19 @@ const deleteSubscriptionPlan = async (id: string) => {
 const getAdminSubscriptionStats = async () => {
     const now = new Date();
     const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    
+
     // Start of last month
     const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
 
     // 1. Total Active Subscribers & Growth
     const totalActiveSubscribers = await UserSubscriptionModel.countDocuments({
-        status: UserSubscriptionStatus.ACTIVE
+        status: UserSubscriptionStatus.ACTIVE,
     });
 
     const activeCreatedBeforeThisMonth = await UserSubscriptionModel.countDocuments({
         status: UserSubscriptionStatus.ACTIVE,
-        createdAt: { $lt: startOfThisMonth }
+        createdAt: { $lt: startOfThisMonth },
     });
 
     let subscribersGrowth = 0;
@@ -156,13 +156,17 @@ const getAdminSubscriptionStats = async () => {
     // 2. Monthly Revenue & Growth (Sum of purchased plan prices this month vs last month)
     const thisMonthSubscriptions = await UserSubscriptionModel.find({
         createdAt: { $gte: startOfThisMonth, $lte: now },
-        isTrial: false
-    }).populate("subscriptionPlanId").lean();
+        isTrial: false,
+    })
+        .populate("subscriptionPlanId")
+        .lean();
 
     const lastMonthSubscriptions = await UserSubscriptionModel.find({
         createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth },
-        isTrial: false
-    }).populate("subscriptionPlanId").lean();
+        isTrial: false,
+    })
+        .populate("subscriptionPlanId")
+        .lean();
 
     let thisMonthRevenue = 0;
     for (const sub of thisMonthSubscriptions) {
@@ -207,7 +211,7 @@ const getAdminSubscriptionStats = async () => {
     try {
         const unpaidInvoices = await stripeServices.stripe.invoices.list({
             status: "open",
-            limit: 100
+            limit: 100,
         });
         failedPaymentsCount = unpaidInvoices.data.length;
     } catch (err) {
@@ -215,7 +219,7 @@ const getAdminSubscriptionStats = async () => {
         // Fallback: count cancelled subscriptions in this month
         failedPaymentsCount = await UserSubscriptionModel.countDocuments({
             status: UserSubscriptionStatus.CANCELLED,
-            updatedAt: { $gte: startOfThisMonth }
+            updatedAt: { $gte: startOfThisMonth },
         });
     }
 
@@ -229,27 +233,27 @@ const getAdminSubscriptionStats = async () => {
 
     const upcomingRenewalsCount = await UserSubscriptionModel.countDocuments({
         status: UserSubscriptionStatus.ACTIVE,
-        endDate: { $gte: now, $lte: next7Days }
+        endDate: { $gte: now, $lte: next7Days },
     });
 
     return {
         totalSubscribers: {
             value: totalActiveSubscribers,
-            change: subscribersGrowthStr
+            change: subscribersGrowthStr,
         },
         monthlyRevenue: {
             value: thisMonthRevenue,
             formattedValue: formattedRevenue,
-            change: revenueGrowthStr
+            change: revenueGrowthStr,
         },
         failedPayments: {
             value: failedPaymentsCount,
-            change: failedPaymentsChangeStr
+            change: failedPaymentsChangeStr,
         },
         upcomingRenewals: {
             value: upcomingRenewalsCount,
-            period: "Next 7 days"
-        }
+            period: "Next 7 days",
+        },
     };
 };
 
