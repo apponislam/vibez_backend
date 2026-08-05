@@ -6,7 +6,6 @@ import { IReservation, ReservationStatus } from "./reservation.interface";
 import { DealModel } from "../deal/deal.model";
 import { DayOfWeek } from "../deal/deal.interface";
 import { restaurantServices } from "../restaurant/restaurant.services";
-import { SavedDealModel } from "../saved-deal/saved-deal.model";
 import { ReviewModel } from "../review/review.model";
 import { dashboardServices } from "../dashboard/dashboard.services";
 
@@ -117,10 +116,7 @@ const createReservation = async (data: Partial<IReservation>, userId: string) =>
     });
 
     if (existingArrivedReservation) {
-        throw new ApiError(
-            httpStatus.BAD_REQUEST,
-            "You are already arrived in resturant please you can't use this deal again."
-        );
+        throw new ApiError(httpStatus.BAD_REQUEST, "You are already arrived in resturant please you can't use this deal again.");
     }
 
     const reservationData = { ...data, userId };
@@ -136,7 +132,7 @@ const createReservation = async (data: Partial<IReservation>, userId: string) =>
         },
         {
             $set: { status: ReservationStatus.CANCELLED },
-        }
+        },
     );
 
     // Mark saved deal as used if a deal was associated with the reservation
@@ -247,7 +243,7 @@ const getMyReservations = async (userId: string, filters: any = {}) => {
     const skip = (page - 1) * limit;
 
     const [reservations, total] = await Promise.all([
-        ReservationModel.find(query).populate("restaurantId", "restaurantName restaurantImage restaurantType cuisineType").populate("dealId").sort({ reservationDate: -1, reservationTime: -1 }).skip(skip).limit(limit),
+        ReservationModel.find(query).populate("restaurantId", "restaurantName restaurantImage restaurantAddress restaurantType cuisineType").populate("dealId").sort({ reservationDate: -1, reservationTime: -1 }).skip(skip).limit(limit),
         ReservationModel.countDocuments(query),
     ]);
 

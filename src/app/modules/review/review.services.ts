@@ -2,12 +2,61 @@ import httpStatus from "http-status";
 import { Types } from "mongoose";
 import ApiError from "../../../errors/ApiError";
 import { ReviewModel } from "./review.model";
+import { RestaurantModel } from "../restaurant/restaurant.model";
+import { ReservationModel } from "../reservation/reservation.model";
+import { ReservationStatus } from "../reservation/reservation.interface";
 
 const createReview = async (userId: string, payload: any) => {
+    const { restaurantId, reservationId, rating, images } = payload;
+
+    // Validate rating
+    if (!rating || rating < 1 || rating > 5) {
+        throw new ApiError(httpStatus.BAD_REQUEST, "Rating must be between 1 and 5");
+    }
+
+    // Validate restaurant exists
+    const restaurant = await RestaurantModel.findById(restaurantId);
+    if (!restaurant) {
+        throw new ApiError(httpStatus.NOT_FOUND, "Restaurant not found");
+    }
+
+    // Validate reservation if provided
+    if (reservationId) {
+        const reservation = await ReservationModel.findOne({
+            _id: reservationId,
+            userId: new Types.ObjectId(userId),
+        });
+
+        if (!reservation) {
+            throw new ApiError(httpStatus.NOT_FOUND, "Reservation not found or does not belong to you");
+        }
+
+        if (reservation.status !== ReservationStatus.COMPLETED) {
+            throw new ApiError(httpStatus.BAD_REQUEST, "You can only review a completed reservation");
+        }
+
+        // Ensure reservation belongs to the same restaurant
+        if (reservation.restaurantId.toString() !== restaurantId.toString()) {
+            throw new ApiError(httpStatus.BAD_REQUEST, "Reservation does not belong to this restaurant");
+        }
+
+        // Check duplicate review for this reservation
+        const existingReview = await ReviewModel.findOne({
+            reservationId,
+            userId: new Types.ObjectId(userId),
+            isDeleted: false,
+        });
+
+        if (existingReview) {
+            throw new ApiError(httpStatus.CONFLICT, "You have already reviewed this reservation");
+        }
+    }
+
     const review = await ReviewModel.create({
         ...payload,
         userId: new Types.ObjectId(userId),
     });
+
     return review;
 };
 
