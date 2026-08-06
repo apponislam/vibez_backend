@@ -21,8 +21,17 @@ export const getOnlineUserIds = (): string[] => {
 export const initSocket = (server: http.Server) => {
     io = new Server(server, {
         cors: {
-            origin: "*",
+            origin: [
+                "https://vibez.apponislam.top",
+                "http://localhost:3000",
+                "http://10.10.7.111:3000",
+                "http://localhost:3001",
+                "http://10.10.26.188:3000",
+                "http://localhost:3055",
+                "http://10.10.26.188:3055"
+            ],
             methods: ["GET", "POST"],
+            credentials: true,
         },
         pingTimeout: 60000,
     });
