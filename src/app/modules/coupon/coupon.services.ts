@@ -54,9 +54,7 @@ const getAllCoupons = async () => {
 // Get coupon details by local ID or Stripe couponId
 const getCouponById = async (id: string) => {
     const isObjectId = Types.ObjectId.isValid(id);
-    const query = isObjectId
-        ? { $or: [{ _id: id }, { couponId: id }] }
-        : { couponId: id };
+    const query = isObjectId ? { $or: [{ _id: id }, { couponId: id }] } : { couponId: id };
 
     const coupon = await CouponModel.findOne(query);
     if (!coupon) throw new ApiError(httpStatus.NOT_FOUND, "Coupon not found");
@@ -103,29 +101,100 @@ const updateCoupon = async (id: string, data: Partial<ICoupon>) => {
     }
 
     // 2. Update locally
-    const updatedCoupon = await CouponModel.findByIdAndUpdate(id, { $set: data }, { returnDocument: 'after', runValidators: true });
+    const updatedCoupon = await CouponModel.findByIdAndUpdate(id, { $set: data }, { returnDocument: "after", runValidators: true });
     return updatedCoupon;
 };
 
+// const verifyReferralCodeAndGetCoupon = async (referralCode: string, currentUserId?: string) => {
+//     if (!referralCode) {
+//         throw new ApiError(httpStatus.BAD_REQUEST, "Referral code is required");
+//     }
+
+//     if (currentUserId) {
+//         const currentUser = await UserModel.findById(currentUserId);
+//         if (!currentUser || !currentUser.isActive || currentUser.isDeleted) {
+//             throw new ApiError(httpStatus.NOT_FOUND, "Authenticated user account not found or is inactive");
+//         }
+//         if (!currentUser.isNewUser) {
+//             throw new ApiError(httpStatus.BAD_REQUEST, "Referral discounts are only valid for first-time subscribers");
+//         }
+//     }
+
+//     // Check if referrer exists
+//     const referrer = await UserModel.findOne({ referralCode, isDeleted: false });
+//     if (!referrer || !referrer.isActive) {
+//         throw new ApiError(httpStatus.NOT_FOUND, "The referral code provided is invalid, inactive, or does not exist");
+//     }
+
+//     if (!referrer.isInfluencer) {
+//         throw new ApiError(httpStatus.BAD_REQUEST, "The referral code provided does not belong to an influencer");
+//     }
+
+//     // Check if user is trying to refer themselves
+//     if (currentUserId && referrer._id.toString() === currentUserId.toString()) {
+//         throw new ApiError(httpStatus.BAD_REQUEST, "You cannot use your own referral code");
+//     }
+
+//     // Get active default coupon
+//     const defaultCoupon = await CouponModel.findOne({ isDefault: true, isActive: true });
+//     if (!defaultCoupon) {
+//         throw new ApiError(httpStatus.NOT_FOUND, "Default coupon not configured or inactive");
+//     }
+//     if (defaultCoupon.maxRedemptions && defaultCoupon.timesRedeemed >= defaultCoupon.maxRedemptions) {
+//         throw new ApiError(httpStatus.BAD_REQUEST, "This coupon has reached its maximum number of redemptions");
+//     }
+
+//     return {
+//         _id: defaultCoupon._id,
+//         couponId: defaultCoupon.couponId,
+//         name: defaultCoupon.name,
+//         percentOff: defaultCoupon.percentOff,
+//         amountOff: defaultCoupon.amountOff,
+//         referralCode,
+//     };
+// };
+
 const verifyReferralCodeAndGetCoupon = async (referralCode: string, currentUserId?: string) => {
     if (!referralCode) {
-        throw new ApiError(httpStatus.BAD_REQUEST, "Referral code is required");
+        throw new ApiError(httpStatus.BAD_REQUEST, "Referral code or coupon is required");
     }
 
+    // 1. Check if the code is a Direct Coupon (isDirectUse: true)
+    const directCoupon = await CouponModel.findOne({
+        couponId: referralCode,
+        isActive: true,
+        isDirectUse: true,
+    });
+
+    if (directCoupon) {
+        if (directCoupon.maxRedemptions && directCoupon.timesRedeemed >= directCoupon.maxRedemptions) {
+            throw new ApiError(httpStatus.BAD_REQUEST, "This coupon has reached its maximum number of redemptions");
+        }
+
+        return {
+            _id: directCoupon._id,
+            couponId: directCoupon.couponId,
+            name: directCoupon.name,
+            percentOff: directCoupon.percentOff,
+            amountOff: directCoupon.amountOff,
+        };
+    }
+
+    // 2. Otherwise, treat code as an Influencer Referral Code
     if (currentUserId) {
         const currentUser = await UserModel.findById(currentUserId);
         if (!currentUser || !currentUser.isActive || currentUser.isDeleted) {
             throw new ApiError(httpStatus.NOT_FOUND, "Authenticated user account not found or is inactive");
         }
-        if (!currentUser.isNewUser) {
-            throw new ApiError(httpStatus.BAD_REQUEST, "Referral discounts are only valid for first-time subscribers");
-        }
+        // if (!currentUser.isNewUser) {
+        //     throw new ApiError(httpStatus.BAD_REQUEST, "Referral discounts are only valid for first-time subscribers");
+        // }
     }
 
     // Check if referrer exists
     const referrer = await UserModel.findOne({ referralCode, isDeleted: false });
     if (!referrer || !referrer.isActive) {
-        throw new ApiError(httpStatus.NOT_FOUND, "The referral code provided is invalid, inactive, or does not exist");
+        throw new ApiError(httpStatus.NOT_FOUND, "The referral code or coupon provided is invalid, inactive, or does not exist");
     }
 
     if (!referrer.isInfluencer) {
