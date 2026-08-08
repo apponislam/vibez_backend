@@ -114,8 +114,8 @@ const verifyReferralCodeAndGetCoupon = async (referralCode: string, currentUserI
 
     if (currentUserId) {
         const currentUser = await UserModel.findById(currentUserId);
-        if (!currentUser) {
-            throw new ApiError(httpStatus.NOT_FOUND, "Authenticated user account not found");
+        if (!currentUser || !currentUser.isActive || currentUser.isDeleted) {
+            throw new ApiError(httpStatus.NOT_FOUND, "Authenticated user account not found or is inactive");
         }
         if (!currentUser.isNewUser) {
             throw new ApiError(httpStatus.BAD_REQUEST, "Referral discounts are only valid for first-time subscribers");
@@ -123,9 +123,13 @@ const verifyReferralCodeAndGetCoupon = async (referralCode: string, currentUserI
     }
 
     // Check if referrer exists
-    const referrer = await UserModel.findOne({ referralCode });
-    if (!referrer) {
-        throw new ApiError(httpStatus.NOT_FOUND, "The referral code provided is invalid or does not exist");
+    const referrer = await UserModel.findOne({ referralCode, isDeleted: false });
+    if (!referrer || !referrer.isActive) {
+        throw new ApiError(httpStatus.NOT_FOUND, "The referral code provided is invalid, inactive, or does not exist");
+    }
+
+    if (!referrer.isInfluencer) {
+        throw new ApiError(httpStatus.BAD_REQUEST, "The referral code provided does not belong to an influencer");
     }
 
     // Check if user is trying to refer themselves
