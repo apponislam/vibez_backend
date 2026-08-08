@@ -10,6 +10,15 @@ import mongoose from "mongoose";
 import { RestaurantModel } from "../restaurant/restaurant.model";
 import { SettingsModel } from "../settings/settings.model";
 import { getLatLngFromAddress } from "../../../utils/googleMaps";
+import { FavoriteModel } from "../favorite/favorite.model";
+import { SavedDealModel } from "../saved-deal/saved-deal.model";
+import { NotificationModel } from "../notification/notification.model";
+import { ReservationModel } from "../reservation/reservation.model";
+import { DealModel } from "../deal/deal.model";
+import { ReviewModel } from "../review/review.model";
+import { UserSubscriptionModel } from "../usersubscription/usersubscription.model";
+import { UserSubscriptionStatus } from "../subscription/subscription.interface";
+import { stripeServices } from "../stripe/stripe.service";
 
 const registerUser = async (data: any) => {
     // Check existing user
@@ -666,11 +675,43 @@ const deleteAccount = async (userId: string) => {
         throw new ApiError(httpStatus.NOT_FOUND, "User not found");
     }
 
+    // 1. Cancel active Stripe subscriptions to prevent future charges, but PRESERVE records in DB for revenue tracking
+    const activeSubscriptions = await UserSubscriptionModel.find({
+        userId,
+        status: UserSubscriptionStatus.ACTIVE,
+    });
+
+    for (const sub of activeSubscriptions) {
+        if (sub.stripeSubscriptionId) {
+            try {
+                await stripeServices.stripe.subscriptions.cancel(sub.stripeSubscriptionId);
+            } catch (error: any) {
+                console.error(`Failed to cancel Stripe subscription ${sub.stripeSubscriptionId}:`, error?.message);
+            }
+        }
+        await UserSubscriptionModel.findByIdAndUpdate(sub._id, {
+            $set: { status: UserSubscriptionStatus.CANCELLED },
+        });
+    }
+
+    // 2. If user is a restaurant owner, delete restaurant & restaurant-associated data
     if (user.restaurantId) {
+        await DealModel.deleteMany({ restaurantId: user.restaurantId });
+        await ReservationModel.deleteMany({ restaurantId: user.restaurantId });
+        await ReviewModel.deleteMany({ restaurantId: user.restaurantId });
         await RestaurantModel.findByIdAndDelete(user.restaurantId);
     }
 
+    // 3. Delete user personal state (favorites, saved deals, notifications, reservations, reviews)
+    await FavoriteModel.deleteMany({ userId });
+    await SavedDealModel.deleteMany({ userId });
+    await NotificationModel.deleteMany({ userId });
+    await ReservationModel.deleteMany({ userId });
+    await ReviewModel.deleteMany({ userId });
+
+    // 4. Delete user account document
     await UserModel.findByIdAndDelete(userId);
+
     return { message: "Account deleted successfully" };
 };
 
