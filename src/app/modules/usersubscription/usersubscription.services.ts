@@ -25,8 +25,8 @@ const cancelPreviousActiveSubscriptions = async (userId: string, newStripeSubscr
         if (sub.stripeSubscriptionId) {
             try {
                 await stripeServices.stripe.subscriptions.cancel(sub.stripeSubscriptionId);
-            } catch (error) {
-                console.error(`Failed to cancel Stripe subscription ${sub.stripeSubscriptionId}:`, error);
+            } catch (error: any) {
+                console.log(`[Stripe Info] Subscription ${sub.stripeSubscriptionId} already cancelled or inactive: ${error?.message || error}`);
             }
         }
 

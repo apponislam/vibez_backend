@@ -24,26 +24,12 @@ const parseStripeDate = (val: any): Date => {
 };
 
 const resolveStripePeriodStart = (sub: any): Date => {
-    const val = sub.currentPeriodStart || 
-                sub.current_period_start ||
-                sub.items?.data?.[0]?.currentPeriodStart ||
-                sub.items?.data?.[0]?.current_period_start ||
-                sub.trialStart ||
-                sub.trial_start ||
-                sub.startDate ||
-                sub.start_date;
+    const val = sub.currentPeriodStart || sub.current_period_start || sub.items?.data?.[0]?.currentPeriodStart || sub.items?.data?.[0]?.current_period_start || sub.trialStart || sub.trial_start || sub.startDate || sub.start_date;
     return parseStripeDate(val);
 };
 
 const resolveStripePeriodEnd = (sub: any): Date => {
-    const val = sub.currentPeriodEnd || 
-                sub.current_period_end ||
-                sub.items?.data?.[0]?.currentPeriodEnd ||
-                sub.items?.data?.[0]?.current_period_end ||
-                sub.trialEnd ||
-                sub.trial_end ||
-                sub.billingCycleAnchor ||
-                sub.billing_cycle_anchor;
+    const val = sub.currentPeriodEnd || sub.current_period_end || sub.items?.data?.[0]?.currentPeriodEnd || sub.items?.data?.[0]?.current_period_end || sub.trialEnd || sub.trial_end || sub.billingCycleAnchor || sub.billing_cycle_anchor;
     return parseStripeDate(val);
 };
 
@@ -112,9 +98,7 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                     await userSubscriptionServices.cancelPreviousActiveSubscriptions(userId, subscriptionId);
 
                     const actualPrice = subscriptionPlan.price;
-                    const paidPrice = (session as any).amount_total !== undefined && (session as any).amount_total !== null
-                        ? (session as any).amount_total / 100
-                        : subscriptionPlan.price;
+                    const paidPrice = (session as any).amount_total !== undefined && (session as any).amount_total !== null ? (session as any).amount_total / 100 : subscriptionPlan.price;
 
                     // Calculate commissionAmount if referred
                     let commissionAmount = undefined;
@@ -137,23 +121,26 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                         }
                     }
 
-                    // Create user subscription
-                    const userSub = await UserSubscriptionModel.create({
-                        userId,
-                        subscriptionPlanId: subscriptionPlan._id,
-                        stripeSubscriptionId: subscriptionId,
-                        stripeCustomerId: (session as any).customer,
-                        status: UserSubscriptionStatus.ACTIVE,
-                        startDate,
-                        endDate,
-                        isTrial: stripeSub.status === "trialing",
-                        percentOff,
-                        amountOff,
-                        actualPrice,
-                        paidPrice,
-                        commissionUser: referredBy || undefined,
-                        commissionAmount,
-                    });
+                    // Create user subscription if not already created by concurrent webhook
+                    let userSub = await UserSubscriptionModel.findOne({ stripeSubscriptionId: subscriptionId });
+                    if (!userSub) {
+                        userSub = await UserSubscriptionModel.create({
+                            userId,
+                            subscriptionPlanId: subscriptionPlan._id,
+                            stripeSubscriptionId: subscriptionId,
+                            stripeCustomerId: (session as any).customer,
+                            status: UserSubscriptionStatus.ACTIVE,
+                            startDate,
+                            endDate,
+                            isTrial: stripeSub.status === "trialing",
+                            percentOff,
+                            amountOff,
+                            actualPrice,
+                            paidPrice,
+                            commissionUser: referredBy || undefined,
+                            commissionAmount,
+                        });
+                    }
 
                     if (referredBy && commissionAmount !== undefined) {
                         const invoiceId = (session as any).invoice || (session as any).id;
@@ -224,9 +211,7 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                                 await userSubscriptionServices.cancelPreviousActiveSubscriptions(userId, subscriptionId);
 
                                 const actualPrice = subscriptionPlan.price;
-                                const paidPrice = (invoice as any).amount_paid !== undefined && (invoice as any).amount_paid !== null
-                                    ? (invoice as any).amount_paid / 100
-                                    : subscriptionPlan.price;
+                                const paidPrice = (invoice as any).amount_paid !== undefined && (invoice as any).amount_paid !== null ? (invoice as any).amount_paid / 100 : subscriptionPlan.price;
 
                                 // Calculate commissionAmount if referred
                                 let commissionAmount = undefined;
@@ -249,22 +234,24 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                                     }
                                 }
 
-                                userSubscription = await UserSubscriptionModel.create({
-                                    userId,
-                                    subscriptionPlanId: subscriptionPlan._id,
-                                    stripeSubscriptionId: subscriptionId,
-                                    stripeCustomerId: stripeSub.customer as string,
-                                    status: UserSubscriptionStatus.ACTIVE,
-                                    startDate,
-                                    endDate,
-                                    isTrial: stripeSub.status === "trialing",
-                                    percentOff,
-                                    amountOff,
-                                    actualPrice,
-                                    paidPrice,
-                                    commissionUser: referredBy || undefined,
-                                    commissionAmount,
-                                });
+                                if (!userSubscription) {
+                                    userSubscription = await UserSubscriptionModel.create({
+                                        userId,
+                                        subscriptionPlanId: subscriptionPlan._id,
+                                        stripeSubscriptionId: subscriptionId,
+                                        stripeCustomerId: stripeSub.customer as string,
+                                        status: UserSubscriptionStatus.ACTIVE,
+                                        startDate,
+                                        endDate,
+                                        isTrial: stripeSub.status === "trialing",
+                                        percentOff,
+                                        amountOff,
+                                        actualPrice,
+                                        paidPrice,
+                                        commissionUser: referredBy || undefined,
+                                        commissionAmount,
+                                    });
+                                }
 
                                 if (referredBy && commissionAmount !== undefined) {
                                     const invoiceId = (invoice as any).id;
@@ -299,9 +286,7 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                         const plan = await SubscriptionPlanModel.findById(userSubscription.subscriptionPlanId);
                         if (plan) {
                             const actualPrice = plan.price;
-                            const paidPrice = (invoice as any).amount_paid !== undefined && (invoice as any).amount_paid !== null
-                                ? (invoice as any).amount_paid / 100
-                                : plan.price;
+                            const paidPrice = (invoice as any).amount_paid !== undefined && (invoice as any).amount_paid !== null ? (invoice as any).amount_paid / 100 : plan.price;
 
                             await UserSubscriptionModel.findByIdAndUpdate(userSubscription._id, {
                                 $set: {
@@ -385,8 +370,8 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                                 const subscriptionPlan = await SubscriptionPlanModel.findOne({ stripePriceId });
                                 console.log(`[Webhook] customer.subscription.updated: planFound=${!!subscriptionPlan}`);
                                 if (subscriptionPlan) {
-                                     const startDate = resolveStripePeriodStart(subscription);
-                                     const endDate = resolveStripePeriodEnd(subscription);
+                                    const startDate = resolveStripePeriodStart(subscription);
+                                    const endDate = resolveStripePeriodEnd(subscription);
 
                                     const referralCode = (subscription as any).metadata?.referralCode;
                                     const coupon = (subscription as any).metadata?.coupon;
@@ -449,7 +434,7 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                                     });
 
                                     if (referredBy && commissionAmount !== undefined && commissionAmount > 0) {
-                                        const invoiceId = (subscription as any).latest_invoice as string || "trial";
+                                        const invoiceId = ((subscription as any).latest_invoice as string) || "trial";
                                         await commissionServices.handleSubscriptionPayment({
                                             userId,
                                             referredBy: referredBy.toString(),
@@ -496,7 +481,7 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                     const hasActiveSub = await UserSubscriptionModel.findOne({
                         userId: userSubscription.userId,
                         status: UserSubscriptionStatus.ACTIVE,
-                        stripeSubscriptionId: { $ne: (subscription as any).id }
+                        stripeSubscriptionId: { $ne: (subscription as any).id },
                     });
 
                     if (!hasActiveSub) {
