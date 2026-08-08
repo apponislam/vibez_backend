@@ -26,6 +26,7 @@ router.post("/change-password", auth, authControllers.changePassword);
 router.post("/update-email", auth, authControllers.updateEmail);
 router.get("/verify-new-email", authControllers.verifyNewEmail);
 router.post("/resend-email-update", auth, authControllers.resendEmailUpdate);
+router.delete("/delete-account", auth, authControllers.deleteAccount);
 
 // Admin only routes
 router.post("/set-password/:userId", auth, authControllers.setUserPassword);

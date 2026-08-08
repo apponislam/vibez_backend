@@ -660,6 +660,20 @@ const registerRestaurant = async (data: any) => {
     };
 };
 
+const deleteAccount = async (userId: string) => {
+    const user = await UserModel.findById(userId);
+    if (!user) {
+        throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+    }
+
+    if (user.restaurantId) {
+        await RestaurantModel.findByIdAndDelete(user.restaurantId);
+    }
+
+    await UserModel.findByIdAndDelete(userId);
+    return { message: "Account deleted successfully" };
+};
+
 export const authServices = {
     registerUser,
     registerRestaurant,
@@ -680,4 +694,5 @@ export const authServices = {
     verifyNewEmail,
     setUserPassword,
     updateLocation,
+    deleteAccount,
 };

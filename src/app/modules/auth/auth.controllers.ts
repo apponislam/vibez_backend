@@ -395,6 +395,20 @@ const addFcmToken = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const deleteAccount = catchAsync(async (req: Request, res: Response) => {
+    const userId = req.user._id;
+    const result = await authServices.deleteAccount(userId);
+
+    res.clearCookie("refreshToken");
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Account deleted successfully",
+        data: result,
+    });
+});
+
 export const authControllers = {
     register,
     registerRestaurant,
@@ -416,4 +430,5 @@ export const authControllers = {
     verifyNewEmail,
     setUserPassword,
     updateLocation,
+    deleteAccount,
 };
