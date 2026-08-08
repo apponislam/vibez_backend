@@ -416,22 +416,27 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                                         }
                                     }
 
-                                    userSubscription = await UserSubscriptionModel.create({
-                                        userId,
-                                        subscriptionPlanId: subscriptionPlan._id,
-                                        stripeSubscriptionId,
-                                        stripeCustomerId: (subscription as any).customer as string,
-                                        status: UserSubscriptionStatus.ACTIVE,
-                                        startDate,
-                                        endDate,
-                                        isTrial: status === "trialing",
-                                        percentOff,
-                                        amountOff,
-                                        actualPrice,
-                                        paidPrice,
-                                        commissionUser: referredBy || undefined,
-                                        commissionAmount,
-                                    });
+                                    let existingSub = await UserSubscriptionModel.findOne({ stripeSubscriptionId });
+                                    if (!existingSub) {
+                                        userSubscription = await UserSubscriptionModel.create({
+                                            userId,
+                                            subscriptionPlanId: subscriptionPlan._id,
+                                            stripeSubscriptionId,
+                                            stripeCustomerId: (subscription as any).customer as string,
+                                            status: UserSubscriptionStatus.ACTIVE,
+                                            startDate,
+                                            endDate,
+                                            isTrial: status === "trialing",
+                                            percentOff,
+                                            amountOff,
+                                            actualPrice,
+                                            paidPrice,
+                                            commissionUser: referredBy || undefined,
+                                            commissionAmount,
+                                        });
+                                    } else {
+                                        userSubscription = existingSub;
+                                    }
 
                                     if (referredBy && commissionAmount !== undefined && commissionAmount > 0) {
                                         const invoiceId = ((subscription as any).latest_invoice as string) || "trial";
