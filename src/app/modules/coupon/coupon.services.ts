@@ -37,6 +37,7 @@ const createCoupon = async (data: Partial<ICoupon>) => {
         maxRedemptions: data.maxRedemptions,
         timesRedeemed: 0,
         isDefault: !!data.isDefault,
+        isDirectUse: !!data.isDirectUse,
         isActive: true,
     };
 

@@ -51,6 +51,10 @@ const CouponSchema = new Schema<ICoupon>(
             type: Number,
             default: 0,
         },
+        isDirectUse: {
+            type: Boolean,
+            default: false,
+        },
     },
     {
         timestamps: true,

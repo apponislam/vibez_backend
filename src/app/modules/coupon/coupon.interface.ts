@@ -13,6 +13,7 @@ export interface ICoupon {
     isActive: boolean;
     maxRedemptions?: number;
     timesRedeemed: number;
+    isDirectUse: boolean;
     createdAt?: Date;
     updatedAt?: Date;
 }
