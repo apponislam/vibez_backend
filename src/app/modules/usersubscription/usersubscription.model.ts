@@ -42,7 +42,7 @@ const UserSubscriptionSchema = new Schema<IUserSubscription>(
 
 // Indexes for faster lookups
 UserSubscriptionSchema.index({ userId: 1, status: 1 });
-UserSubscriptionSchema.index({ stripeSubscriptionId: 1 }, { unique: true, sparse: true });
+UserSubscriptionSchema.index({ stripeSubscriptionId: 1 });
 UserSubscriptionSchema.index({ subscriptionPlanId: 1 });
 UserSubscriptionSchema.index({ commissionUser: 1 });
 
