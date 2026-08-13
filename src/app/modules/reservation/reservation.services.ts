@@ -589,6 +589,25 @@ const getWeeklyBookings = async (queryParams: any) => {
     };
 };
 
+const checkDealReservationStatus = async (dealId: string, userId: string) => {
+    const activeReservation = await ReservationModel.findOne({
+        dealId: new Types.ObjectId(dealId),
+        userId: new Types.ObjectId(userId),
+        status: { $in: [ReservationStatus.UPCOMING, ReservationStatus.ARRIVED] },
+    }).select("_id status");
+
+    if (activeReservation) {
+        return {
+            isAlreadyReserved: true,
+            reservationId: activeReservation._id,
+        };
+    }
+
+    return {
+        isAlreadyReserved: false,
+    };
+};
+
 export const reservationServices = {
     createReservation,
     getAllReservations,
@@ -600,4 +619,5 @@ export const reservationServices = {
     getReservationStats,
     getOwnerStats,
     getWeeklyBookings,
+    checkDealReservationStatus,
 };

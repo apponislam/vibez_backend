@@ -110,6 +110,18 @@ const getWeeklyBookings = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const checkDealReservationStatus = catchAsync(async (req: Request, res: Response) => {
+    const { dealId } = req.body;
+    const result = await reservationServices.checkDealReservationStatus(dealId as string, req.user._id as string);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Reservation status checked successfully",
+        data: result,
+    });
+});
+
 export const reservationControllers = {
     createReservation,
     getAllReservations,
@@ -121,4 +133,5 @@ export const reservationControllers = {
     getReservationStats,
     getOwnerStats,
     getWeeklyBookings,
+    checkDealReservationStatus,
 };

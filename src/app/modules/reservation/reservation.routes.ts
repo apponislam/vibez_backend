@@ -6,6 +6,7 @@ import authorize from "../../middlewares/authorized";
 const router = Router();
 
 // Protected routes (require auth)
+router.post("/check-status", auth, reservationControllers.checkDealReservationStatus);
 router.post("/", auth, reservationControllers.createReservation);
 router.get("/my", auth, reservationControllers.getMyReservations);
 router.get("/stats", auth, authorize(["ADMIN", "RESTAURANT_OWNER", "STAFF"]), reservationControllers.getReservationStats);
