@@ -11,8 +11,20 @@ export const seedAdmin = async () => {
         if (!adminExists) {
             console.log("📝 No admin found, creating one...");
 
-            if (!config.initialAdmin.name || !config.initialAdmin.email || !config.initialAdmin.password || !config.initialAdmin.phone) {
-                console.log("⚠️ Initial admin credentials missing in environment variables. Skipping creation.");
+            if (!config.initialAdmin.name) {
+                console.log("⚠️ INITIAL_ADMIN_NAME is missing in environment variables. Skipping admin creation.");
+                return;
+            }
+            if (!config.initialAdmin.email) {
+                console.log("⚠️ INITIAL_ADMIN_EMAIL is missing in environment variables. Skipping admin creation.");
+                return;
+            }
+            if (!config.initialAdmin.password) {
+                console.log("⚠️ INITIAL_ADMIN_PASSWORD is missing in environment variables. Skipping admin creation.");
+                return;
+            }
+            if (!config.initialAdmin.phone) {
+                console.log("⚠️ INITIAL_ADMIN_PHONE is missing in environment variables. Skipping admin creation.");
                 return;
             }
 
