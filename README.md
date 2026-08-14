@@ -113,8 +113,10 @@ Update the following keys in your `.env` file:
 | `SMTP_PORT` | Email SMTP Server Port | `587` |
 | `SMTP_USER` | Sender email address | `example@gmail.com` |
 | `SMTP_PASS` | App password for Gmail/SMTP | `your_email_app_password` |
-| `SUPERADMINEMAIL` | Default Super Admin email address | `admin@vibez.com` |
-| `SUPERADMINPASSWORD` | Default Super Admin password | `super_admin_pass` |
+| `INITIAL_ADMIN_NAME` | Initial Admin Name | `Appon Islam` |
+| `INITIAL_ADMIN_EMAIL` | Initial Admin Email | `admin@vibez.com` |
+| `INITIAL_ADMIN_PASSWORD` | Initial Admin Password | `123456` |
+| `INITIAL_ADMIN_PHONE` | Initial Admin Phone Number | `+8801722779803` |
 | `MYFATOORAH_API_KEY` | MyFatoorah Payment Gateway Token | `myfatoorah_token` |
 
 ---
