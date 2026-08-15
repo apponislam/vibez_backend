@@ -315,6 +315,8 @@ const updateReservationStatus = async (id: string, status: ReservationStatus, us
             throw new ApiError(httpStatus.FORBIDDEN, "User is not associated with any restaurant");
         }
         query.restaurantId = restaurantId;
+    } else if (user.role === "USER") {
+        query.userId = user._id;
     }
 
     const reservation = await ReservationModel.findOneAndUpdate(query, { $set: { status } }, { returnDocument: "after", runValidators: true }).populate("restaurantId userId");

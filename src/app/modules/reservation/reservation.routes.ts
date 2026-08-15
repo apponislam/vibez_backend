@@ -18,6 +18,6 @@ router.delete("/:id", auth, reservationControllers.deleteReservation);
 
 // Admin/Owner only routes
 router.get("/", auth, authorize(["ADMIN", "RESTAURANT_OWNER", "STAFF"]), reservationControllers.getAllReservations);
-router.patch("/:id/status", auth, authorize(["ADMIN", "RESTAURANT_OWNER", "STAFF"]), reservationControllers.updateReservationStatus);
+router.patch("/:id/status", auth, authorize(["ADMIN", "RESTAURANT_OWNER", "STAFF", "USER"]), reservationControllers.updateReservationStatus);
 
 export const reservationRoutes = router;
