@@ -1219,12 +1219,13 @@ const getRestaurantRealtimeStats = async (user: { _id: string; role: string; res
     return await getRestaurantRealtimeStatsById(restaurantId.toString());
 };
 
-const broadcastRestaurantStats = async (restaurantId: string) => {
+const broadcastRestaurantStats = async (restaurantId: string | any) => {
     try {
-        const stats = await getRestaurantRealtimeStatsById(restaurantId);
+        const idStr = typeof restaurantId === "object" && restaurantId !== null ? (restaurantId._id || restaurantId.id || restaurantId).toString() : String(restaurantId);
+        const stats = await getRestaurantRealtimeStatsById(idStr);
         const { getSocket } = require("../../socket/socket");
         const io = getSocket();
-        io.to(`restaurant_${restaurantId}`).emit("restaurant_stats", stats);
+        io.to(`restaurant_${idStr}`).emit("restaurant_stats", stats);
     } catch (err) {
         console.error(`Error broadcasting stats for restaurant ${restaurantId}:`, err);
     }

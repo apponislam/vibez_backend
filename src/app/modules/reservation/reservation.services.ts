@@ -325,7 +325,8 @@ const updateReservationStatus = async (id: string, status: ReservationStatus, us
 
     // Broadcast real-time stats update
     if (reservation.restaurantId) {
-        dashboardServices.broadcastRestaurantStats(reservation.restaurantId.toString()).catch(console.error);
+        const restId = (reservation.restaurantId as any)._id ? (reservation.restaurantId as any)._id.toString() : reservation.restaurantId.toString();
+        dashboardServices.broadcastRestaurantStats(restId).catch(console.error);
     }
 
     return reservation;
