@@ -193,7 +193,44 @@ All API routes are prefixed with `/api/v1`.
 
 ---
 
+## 🗄️ Database Schema Overview
+
+The database uses **MongoDB** managed via **Mongoose**. Below are the main collections and key model schemas:
+
+### 1. 👤 `users` Collection (`UserModel`)
+- **Key Fields**: `name`, `email` (unique), `password`, `role` (`ADMIN`, `RESTAURANT_OWNER`, `USER`, `STAFF`), `staffRole` (`MANAGER`, `CASHIER`, `WAITER`), `restaurantId` (`ObjectId -> Restaurant`), `enableStaffLogin` (Boolean), `phone`, `profileImage`, `location` (`{ lat, lng }`), `address`, `isActive`, `isEmailVerified`, `isInfluencer`, `balance`, `commissionPercentage`, `maxPayout`, `commissionDuration`, `favoriteCuisines`, `dietaryPreferences`, `referralCode` (unique), `referredBy` (`ObjectId -> User`), `stripeConnectedAccountId`, `fcmTokens`.
+- **Indexes**: `email` (unique), `name`, `role`, `isActive`, `isEmailVerified`, `lastLogin`, `referralCode` (unique, sparse).
+
+### 2. 🏪 `restaurants` Collection (`RestaurantModel`)
+- **Key Fields**: `name`, `ownerId` (`ObjectId -> User`), `slug` (unique), `logo`, `coverImages`, `description`, `phone`, `email`, `address`, `location` (`GeoJSON Point { type: "Point", coordinates: [lng, lat] }`), `cuisineTypes`, `features`, `openHours`, `isApproved`, `isActive`, `isDeleted`, `rating`, `reviewCount`, `priceRange`, `socialLinks`.
+- **Indexes**: `location` (`2dsphere`), `slug` (unique), `ownerId`, `isApproved`, `isActive`, `rating`.
+
+### 3. 🏷️ `deals` Collection (`DealModel`)
+- **Key Fields**: `title`, `description`, `restaurantId` (`ObjectId -> Restaurant`), `code` (unique), `discountPercentage`, `originalPrice`, `discountedPrice`, `validFrom`, `validUntil`, `bannerImage`, `termsAndConditions`, `isActive`, `isDeleted`, `usageLimit`, `usedCount`.
+- **Indexes**: `restaurantId`, `isActive`, `isDeleted`, `validFrom`, `validUntil`, `code` (unique).
+
+### 4. 📅 `reservations` Collection (`ReservationModel`)
+- **Key Fields**: `userId` (`ObjectId -> User`), `restaurantId` (`ObjectId -> Restaurant`), `reservationDate`, `timeSlot`, `partySize`, `guestName`, `guestEmail`, `guestPhone`, `specialRequest`, `status` (`PENDING`, `CONFIRMED`, `CANCELLED`, `COMPLETED`), `cancellationReason`.
+- **Indexes**: `userId`, `restaurantId`, `reservationDate`, `status`.
+
+### 5. 💳 `subscriptions` Collection (`SubscriptionPlanModel`) & `usersubscriptions` Collection (`UserSubscriptionModel`)
+- **`subscriptions`**: `name`, `price`, `interval` (`monthly`, `yearly`), `features`, `stripePriceId`, `stripeProductId`, `isActive`.
+- **`usersubscriptions`**: `userId` (`ObjectId -> User`), `subscriptionPlanId` (`ObjectId -> SubscriptionPlan`), `status` (`active`, `cancelled`, `expired`), `startDate`, `endDate`, `stripeSubscriptionId`, `commissionUser` (`ObjectId -> User`).
+
+### 6. 💰 `commissions` Collection (`CommissionModel`) & `withdraws` Collection (`WithdrawModel`)
+- **`commissions`**: `influencerId` (`ObjectId -> User`), `referredUserId` (`ObjectId -> User`), `subscriptionId` (`ObjectId -> UserSubscription`), `amount`, `status` (`PENDING`, `APPROVED`, `PAID`).
+- **`withdraws`**: `userId` (`ObjectId -> User`), `amount`, `status` (`PENDING`, `PROCESSING`, `COMPLETED`, `REJECTED`), `stripeTransferId`, `payoutDetails`.
+
+### 7. 🎥 `shorts` Collection (`ShortsModel`), ⭐ `reviews`, ❤️ `favorites`, 🔖 `saveddeals`
+- **`shorts`**: Short videos linked to `restaurantId` with `videoUrl`, `title`, `description`, `views`, `likes`.
+- **`reviews`**: Ratings & reviews linked to `restaurantId` and `userId`.
+- **`favorites`**: Saved favorite restaurants per `userId`.
+- **`saveddeals`**: Bookmarked deals per `userId`.
+
+---
+
 ## 🛡️ License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
 
