@@ -195,181 +195,160 @@ All API routes are prefixed with `/api/v1`.
 
 ## 🗄️ Database Schema & Data Models
 
-The database is built on **MongoDB** using **Mongoose** object modeling. Below is the detailed schema layout for every collection:
+Below is an overview of the core database schema models and how they relate:
 
----
+- **User Model (`UserModel`)**
+  - `_id`: `ObjectId` - Unique identifier for the user account.
+  - `name`: `String` - Full name of the user.
+  - `email`: `String` - Unique email address used for authentication.
+  - `password`: `String` - Encrypted password hash (Bcrypt).
+  - `role`: `String` - System role (`ADMIN`, `RESTAURANT_OWNER`, `USER`, `STAFF`).
+  - `staffRole`: `String` - Role assignment for staff (`MANAGER`, `CASHIER`, `WAITER`).
+  - `restaurantId`: `ObjectId` - References `Restaurant` model if user is staff/owner.
+  - `enableStaffLogin`: `Boolean` - Controls staff login access permissions.
+  - `phone`: `String` - Contact phone number.
+  - `profileImage`: `String` - Profile picture image file path / URL.
+  - `location`: `{ lat: Number, lng: Number }` - Latitude and longitude coordinates.
+  - `address`: `{ street, city, state, zipCode, country }` - User physical location details.
+  - `aboutme`: `String` - User bio/description.
+  - `isActive`: `Boolean` - Account active status flag.
+  - `isEmailVerified`: `Boolean` - Indicates whether email verification is completed.
+  - `isDeleted`: `Boolean` - Soft deletion flag.
+  - `isInfluencer`: `Boolean` - Identifies registered platform influencers.
+  - `isNewUser`: `Boolean` - Onboarding status flag.
+  - `lastLogin`: `Date` - Timestamp of latest account login.
+  - `balance`: `Number` - Referral & commission wallet balance.
+  - `commissionPercentage`: `Number` - Custom commission rate override (%).
+  - `maxPayout`: `Number` - Maximum earning cap limit.
+  - `commissionDuration`: `Number` - Duration limit for referral payouts (days).
+  - `favoriteCuisines`: `[String]` - List of user's preferred food types.
+  - `dietaryPreferences`: `[String]` - Dietary restriction tags.
+  - `referralCode`: `String` - Unique 8-character referral code generated on register.
+  - `referredBy`: `ObjectId` - References `User` model who invited this user.
+  - `stripeConnectedAccountId`: `String` - Connected Stripe account ID for payouts.
+  - `fcmTokens`: `[String]` - Firebase FCM tokens for push notification delivery.
+  - `createdAt` / `updatedAt`: `Date` - Mongoose automatic timestamps.
 
-### 1. 👤 `users` Collection (`UserModel`)
-**Collection Name**: `users`  
-**Description**: Stores system users, restaurant owners, staff accounts, and admin profiles.
+- **Restaurant Model (`RestaurantModel`)**
+  - `_id`: `ObjectId` - Unique identifier for the restaurant.
+  - `restaurantName`: `String` - Official name of the restaurant.
+  - `restaurantDescription`: `String` - Overview and details of the restaurant.
+  - `restaurantType`: `String` - Enum category (e.g. Fine Dining, Fast Food, Cafe).
+  - `cuisineType`: `[String]` - List of cuisine types offered.
+  - `foodType`: `[String]` - Specific dietary or item classifications.
+  - `restaurantOwner`: `ObjectId` - References `User` model (owner account).
+  - `restaurantWebsite`: `String` - Official website URL.
+  - `restaurantAddress`: `{ street, city, state, zipCode, country, location }` - Detailed physical address.
+  - `restaurantAddress.location`: `GeoJSON Point { type: "Point", coordinates: [lng, lat] }` - Indexed with `2dsphere` for distance queries.
+  - `restaurantOpenHours`: `[{ day, isOpen, slots: [{ type, openTime, closeTime }] }]` - Operating schedule.
+  - `restaurantImage`: `String` - Main cover image URL.
+  - `restaurantImages`: `[String]` - Gallery photo URLs.
+  - `approved`: `Boolean` - Admin approval verification status.
+  - `approvedBy`: `ObjectId` - References `User` model (admin who approved).
+  - `approvedAt`: `Date` - Timestamp when profile was approved.
+  - `createdAt` / `updatedAt`: `Date` - Mongoose automatic timestamps.
 
-| Field | Type | Required / Constraints | Description |
-| :--- | :--- | :--- | :--- |
-| `_id` | `ObjectId` | Auto | Primary Key |
-| `name` | `String` | Required, Trimmed | Full name of the user |
-| `email` | `String` | Required, Unique, Lowercase | User email address |
-| `password` | `String` | Required | Encrypted password hash (Bcrypt) |
-| `role` | `String` | Enum (`ADMIN`, `RESTAURANT_OWNER`, `USER`, `STAFF`) | Account authorization role (Default: `USER`) |
-| `staffRole` | `String` | Enum (`MANAGER`, `CASHIER`, `WAITER`) | Role scope if `role` == `STAFF` |
-| `restaurantId` | `ObjectId` | Ref: `Restaurant` | Associated restaurant ID for staff/owners |
-| `enableStaffLogin` | `Boolean` | Default: `true` | Access permission toggle for staff account |
-| `phone` | `String` | Optional | Contact phone number |
-| `profileImage` | `String` | Optional | Profile image file path / URL |
-| `location` | `Object` | `{ lat: Number, lng: Number }` | Coordinates of user |
-| `address` | `Object` | `{ street, city, state, zipCode, country }` | User physical address details |
-| `aboutme` | `String` | Optional | User bio |
-| `isActive` | `Boolean` | Default: `true` | Account active state |
-| `isEmailVerified` | `Boolean` | Default: `false` | Email verification flag |
-| `isDeleted` | `Boolean` | Default: `false` | Soft deletion status |
-| `isInfluencer` | `Boolean` | Default: `false` | Influencer account status |
-| `isNewUser` | `Boolean` | Default: `true` | New user flag |
-| `lastLogin` | `Date` | Optional | Timestamp of last user login |
-| `balance` | `Number` | Default: `0`, Min: `0` | Referral commission balance (USD) |
-| `commissionPercentage` | `Number` | Default: `0` | Customized influencer commission rate (%) |
-| `maxPayout` | `Number` | Default: `0` | Max commission cap limit |
-| `commissionDuration` | `Number` | Default: `0` | Commission validity period in days |
-| `favoriteCuisines` | `[String]` | Default: `[]` | User preferences for cuisine filtering |
-| `dietaryPreferences` | `[String]` | Default: `[]` | Preferred dietary flags |
-| `referralCode` | `String` | Unique, Sparse | Auto-generated referral code for invite links |
-| `referredBy` | `ObjectId` | Ref: `User` | User ID of the referrer |
-| `stripeConnectedAccountId`| `String` | Optional | Stripe Connect Account ID for payouts |
-| `fcmTokens` | `[String]` | Default: `[]` | Firebase Push Notification Device Tokens |
-| `createdAt` | `Date` | Auto | Account creation timestamp |
-| `updatedAt` | `Date` | Auto | Account update timestamp |
+- **Deal Model (`DealModel`)**
+  - `_id`: `ObjectId` - Unique identifier for the promotional offer.
+  - `restaurantId`: `ObjectId` - References `Restaurant` model hosting the deal.
+  - `createdBy`: `ObjectId` - References `User` model who posted the deal.
+  - `dealType`: `String` - Type of deal (`TWO_FOR_ONE`, `FREE_ITEM`, `PERCENT_DISCOUNT`, `FIXED_DISCOUNT`).
+  - `title`: `String` - Title of the deal.
+  - `description`: `String` - Specific terms / details of the deal.
+  - `day`: `[String]` - Applicable days of the week.
+  - `mealTime`: `String` - Meal timeframe category (`LUNCH`, `DINNER`).
+  - `resturantHours`: `[{ day, start, end }]` - Deal active time windows per day.
+  - `maxClaimsPerDay`: `Number` - Maximum allowable daily redemptions.
+  - `isActive`: `Boolean` - Deal status toggle.
+  - `isDeleted`: `Boolean` - Soft deletion flag.
+  - `twoForOne`: `{ appliesTo }` - Rules if deal is 2-for-1.
+  - `freeItem`: `{ buy, get }` - Rules if deal is Buy X Get Y Free.
+  - `percentDiscount`: `{ percentage, appliesTo, category }` - Percentage discount breakdown.
+  - `fixedDiscount`: `{ minSpend, amount }` - Flat discount breakdown.
+  - `createdAt` / `updatedAt`: `Date` - Mongoose automatic timestamps.
 
----
+- **Reservation Model (`ReservationModel`)**
+  - `_id`: `ObjectId` - Unique identifier for the reservation.
+  - `restaurantId`: `ObjectId` - References `Restaurant` model.
+  - `userId`: `ObjectId` - References `User` model (customer).
+  - `dealId`: `ObjectId` - References `Deal` model attached to table booking.
+  - `partySize`: `Number` - Total guest headcount.
+  - `reservationDate`: `Date` - Date of table reservation.
+  - `reservationTime`: `String` - Time slot string (e.g. `"19:30"`).
+  - `specialRequests`: `String` - Customer notes or dietary requests.
+  - `status`: `String` - Booking status (`UPCOMING`, `COMPLETED`, `CANCELLED`).
+  - `createdAt` / `updatedAt`: `Date` - Mongoose automatic timestamps.
 
-### 2. 🏪 `restaurants` Collection (`RestaurantModel`)
-**Collection Name**: `restaurants`  
-**Description**: Stores restaurant profile, address, operating hours, and approval status.
+- **Subscription Plan Model (`SubscriptionPlanModel`)**
+  - `_id`: `ObjectId` - Unique identifier for the subscription plan tier.
+  - `name`: `String` - Plan name (e.g. Premium Member).
+  - `price`: `Number` - Price amount.
+  - `interval`: `String` - Billing period (`monthly`, `yearly`).
+  - `features`: `[String]` - List of included subscription perks.
+  - `stripePriceId`: `String` - Stripe API Price reference ID.
+  - `stripeProductId`: `String` - Stripe API Product reference ID.
+  - `isActive`: `Boolean` - Plan active status.
 
-| Field | Type | Required / Constraints | Description |
-| :--- | :--- | :--- | :--- |
-| `_id` | `ObjectId` | Auto | Primary Key |
-| `restaurantName` | `String` | Required, Trimmed | Official name of the restaurant |
-| `restaurantDescription` | `String` | Required, Trimmed | Restaurant details & description |
-| `restaurantType` | `String` | Enum (`RestaurantType`) | Type of food establishment |
-| `cuisineType` | `[String]` | Enum (`CuisineType`), Required | List of served cuisines |
-| `foodType` | `[String]` | Enum (`FoodType`), Default: `[]` | Specific food category tags |
-| `restaurantOwner` | `ObjectId` | Ref: `User`, Required | Owner user account ID |
-| `restaurantWebsite` | `String` | Optional, Trimmed | Official website URL |
-| `restaurantAddress.street` | `String` | Required | Street name / house number |
-| `restaurantAddress.city` | `String` | Required | City |
-| `restaurantAddress.state` | `String` | Required | State / Province |
-| `restaurantAddress.zipCode` | `String` | Required | Postal / Zip code |
-| `restaurantAddress.country` | `String` | Required | Country |
-| `restaurantAddress.location` | `Object` | `GeoJSON Point { type: "Point", coordinates: [lng, lat] }` | GeoJSON location for 2dsphere spatial queries |
-| `restaurantOpenHours` | `[Array]` | Required | Daily open/close time slots (`day`, `isOpen`, `slots`) |
-| `restaurantImage` | `String` | Optional | Primary cover image URL |
-| `restaurantImages` | `[String]` | Default: `[]` | Additional gallery photos |
-| `approved` | `Boolean` | Default: `false` | Approval status by Admin |
-| `approvedBy` | `ObjectId` | Ref: `User` | Admin ID who approved profile |
-| `approvedAt` | `Date` | Optional | Timestamp of approval |
-| `createdAt` | `Date` | Auto | Record creation timestamp |
-| `updatedAt` | `Date` | Auto | Record update timestamp |
+- **User Subscription Model (`UserSubscriptionModel`)**
+  - `_id`: `ObjectId` - Unique identifier for user's active membership.
+  - `userId`: `ObjectId` - References `User` model.
+  - `subscriptionPlanId`: `ObjectId` - References `SubscriptionPlan` model.
+  - `status`: `String` - Subscription state (`active`, `cancelled`, `expired`).
+  - `startDate`: `Date` - Subscription start date.
+  - `endDate`: `Date` - Expiry / renewal date.
+  - `stripeSubscriptionId`: `String` - External Stripe subscription reference.
+  - `commissionUser`: `ObjectId` - References `User` model (influencer earning referral rewards).
 
----
+- **Commission Model (`CommissionModel`)**
+  - `_id`: `ObjectId` - Unique commission record ID.
+  - `influencerId`: `ObjectId` - References `User` model receiving reward.
+  - `referredUserId`: `ObjectId` - References `User` model who bought subscription.
+  - `subscriptionId`: `ObjectId` - References `UserSubscription` model.
+  - `amount`: `Number` - Commission reward amount (USD).
+  - `status`: `String` - Commission payout state (`PENDING`, `APPROVED`, `PAID`).
 
-### 3. 🏷️ `deals` Collection (`DealModel`)
-**Collection Name**: `deals`  
-**Description**: Promotional deals & coupons generated by restaurants or platform admin.
+- **Withdraw Model (`WithdrawModel`)**
+  - `_id`: `ObjectId` - Payout request ID.
+  - `userId`: `ObjectId` - References `User` model requesting withdrawal.
+  - `amount`: `Number` - Withdrawal amount.
+  - `status`: `String` - Payout processing status (`PENDING`, `PROCESSING`, `COMPLETED`, `REJECTED`).
+  - `stripeTransferId`: `String` - Stripe transfer batch ID.
+  - `payoutDetails`: `Mixed` - Additional gateway details.
 
-| Field | Type | Required / Constraints | Description |
-| :--- | :--- | :--- | :--- |
-| `_id` | `ObjectId` | Auto | Primary Key |
-| `title` | `String` | Required | Title of the promotional deal |
-| `description` | `String` | Required | Detailed description of offer |
-| `restaurantId` | `ObjectId` | Ref: `Restaurant`, Required | Associated restaurant ID |
-| `code` | `String` | Required, Unique, Uppercase | Coupon discount code |
-| `discountPercentage` | `Number` | Min: `0`, Max: `100` | Percentage discount |
-| `originalPrice` | `Number` | Optional | Original item price before deal |
-| `discountedPrice` | `Number` | Optional | Discounted final price |
-| `validFrom` | `Date` | Required | Deal activation start timestamp |
-| `validUntil` | `Date` | Required | Deal expiration timestamp |
-| `bannerImage` | `String` | Optional | Promotional image |
-| `termsAndConditions` | `String` | Optional | Deal conditions |
-| `isActive` | `Boolean` | Default: `true` | Deal active state |
-| `isDeleted` | `Boolean` | Default: `false` | Soft deletion status |
-| `usageLimit` | `Number` | Default: `0` (Unlimited) | Maximum claim capacity |
-| `usedCount` | `Number` | Default: `0` | Number of times claimed |
+- **Shorts Model (`ShortsModel`)**
+  - `_id`: `ObjectId` - Video short ID.
+  - `restaurantId`: `ObjectId` - References `Restaurant` model.
+  - `videoUrl`: `String` - Video media file URL.
+  - `title`: `String` - Video title.
+  - `description`: `String` - Video caption/description.
+  - `views`: `Number` - View count.
+  - `likes`: `Number` - Total likes received.
+  - `isActive`: `Boolean` - Active status.
 
----
+- **Review Model (`ReviewModel`)**
+  - `_id`: `ObjectId` - Review ID.
+  - `restaurantId`: `ObjectId` - References `Restaurant` model.
+  - `userId`: `ObjectId` - References `User` model (reviewer).
+  - `rating`: `Number` - Rating score (1-5 stars).
+  - `comment`: `String` - Feedback review text.
+  - `isDeleted`: `Boolean` - Soft deletion flag.
 
-### 4. 📅 `reservations` Collection (`ReservationModel`)
-**Collection Name**: `reservations`  
-**Description**: Table booking records for customers at restaurants.
+- **Favorite Model (`FavoriteModel`)**
+  - `_id`: `ObjectId` - Unique record ID.
+  - `userId`: `ObjectId` - References `User` model.
+  - `restaurantId`: `ObjectId` - References `Restaurant` model saved as favorite.
 
-| Field | Type | Required / Constraints | Description |
-| :--- | :--- | :--- | :--- |
-| `_id` | `ObjectId` | Auto | Primary Key |
-| `userId` | `ObjectId` | Ref: `User`, Required | Customer user ID |
-| `restaurantId` | `ObjectId` | Ref: `Restaurant`, Required | Target restaurant ID |
-| `reservationDate` | `Date` | Required | Date of booking |
-| `timeSlot` | `String` | Required | Booked time slot (e.g. `"19:30"`) |
-| `partySize` | `Number` | Required, Min: `1` | Number of guests |
-| `guestName` | `String` | Required | Booking contact person name |
-| `guestEmail` | `String` | Required | Booking contact email |
-| `guestPhone` | `String` | Required | Booking contact phone number |
-| `specialRequest` | `String` | Optional | Customer requests / instructions |
-| `status` | `String` | Enum (`PENDING`, `CONFIRMED`, `CANCELLED`, `COMPLETED`) | Current reservation status |
-| `cancellationReason` | `String` | Optional | Reason for cancellation if cancelled |
-
----
-
-### 5. 💳 Subscriptions (`SubscriptionPlanModel` & `UserSubscriptionModel`)
-**Collection Names**: `subscriptions`, `usersubscriptions`
-
-#### 🔹 `subscriptions` Schema (`SubscriptionPlan`)
-- `name` (`String`, Required, Unique): Name of plan (e.g. `"Gold VIP"`)
-- `price` (`Number`, Required): Subscription cost
-- `interval` (`String`, Enum: `monthly`, `yearly`): Billing cycle
-- `features` (`[String]`): List of included benefits
-- `stripePriceId` (`String`, Unique): Stripe API Price Object ID
-- `stripeProductId` (`String`, Unique): Stripe API Product ID
-- `isActive` (`Boolean`, Default: `true`): Availability status
-
-#### 🔹 `usersubscriptions` Schema (`UserSubscription`)
-- `userId` (`ObjectId -> User`): Subscribed customer ID
-- `subscriptionPlanId` (`ObjectId -> SubscriptionPlan`): Active plan tier ID
-- `status` (`String`, Enum: `active`, `cancelled`, `expired`)
-- `startDate` (`Date`): Subscription activation date
-- `endDate` (`Date`): Subscription renewal / expiry date
-- `stripeSubscriptionId` (`String`): Stripe gateway reference
-- `commissionUser` (`ObjectId -> User`): Influencer ID who earned referral commission from this signup
-
----
-
-### 6. 💰 Commissions & Payouts (`CommissionModel` & `WithdrawModel`)
-**Collection Names**: `commissions`, `withdraws`
-
-#### 🔹 `commissions` Schema (`Commission`)
-- `influencerId` (`ObjectId -> User`): Referrer receiving commission
-- `referredUserId` (`ObjectId -> User`): User who subscribed via referral code
-- `subscriptionId` (`ObjectId -> UserSubscription`): Associated subscription transaction
-- `amount` (`Number`): Calculated commission reward in USD
-- `status` (`String`, Enum: `PENDING`, `APPROVED`, `PAID`)
-
-#### 🔹 `withdraws` Schema (`Withdraw`)
-- `userId` (`ObjectId -> User`): Influencer / user requesting payout
-- `amount` (`Number`, Required): Requested withdrawal amount
-- `status` (`String`, Enum: `PENDING`, `PROCESSING`, `COMPLETED`, `REJECTED`)
-- `stripeTransferId` (`String`, Unique, Sparse): Stripe Payout Transfer ID
-- `payoutDetails` (`Mixed`): Custom payment destination metadata
-
----
-
-### 7. 🎥 `shorts`, ⭐ `reviews`, ❤️ `favorites`, 🔖 `saveddeals`
-
-- **`shorts`**: `restaurantId` (`ObjectId -> Restaurant`), `videoUrl` (`String`), `title` (`String`), `description` (`String`), `views` (`Number`), `likes` (`Number`), `isActive` (`Boolean`).
-- **`reviews`**: `restaurantId` (`ObjectId -> Restaurant`), `userId` (`ObjectId -> User`), `rating` (`Number`, 1-5), `comment` (`String`), `isDeleted` (`Boolean`).
-- **`favorites`**: `userId` (`ObjectId -> User`), `restaurantId` (`ObjectId -> Restaurant`). Unique index on `[userId, restaurantId]`.
-- **`saveddeals`**: `userId` (`ObjectId -> User`), `dealId` (`ObjectId -> Deal`). Unique index on `[userId, dealId]`.
+- **Saved Deal Model (`SavedDealModel`)**
+  - `_id`: `ObjectId` - Unique record ID.
+  - `userId`: `ObjectId` - References `User` model.
+  - `dealId`: `ObjectId` - References `Deal` model saved to bookmarks.
 
 ---
 
 ## 🛡️ License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
 
 
 
