@@ -1,20 +1,21 @@
 # VIBEZ Backend API
 
-Vibez Backend is a robust, modular, and high-performance backend application built with **Node.js**, **Express**, and **TypeScript**. It serves as the core API service for the VIBEZ application, supporting role-based access control, restaurant management, table reservations, promotional deals, multi-gateway payments (Stripe & MyFatoorah), real-time communications via Socket.io, and more.
+Vibez Backend is a robust, modular, and high-performance backend application built with **Node.js**, **Express**, and **TypeScript**. It serves as the core API service for the VIBEZ application, supporting role-based access control, restaurant management, table reservations, promotional deals, Stripe payment integration, real-time communications via Socket.io, Google Maps location integration, and push notifications.
 
 ---
 
 ## 🚀 Tech Stack & Core Libraries
 
-- **Runtime & Language**: Node.js, TypeScript (ts-node-dev for development, tsc for compilation)
+- **Runtime & Language**: Node.js, TypeScript (`ts-node-dev` for development, `tsc` for compilation)
 - **Framework**: Express.js
 - **Database**: MongoDB (Object modeling via Mongoose)
 - **Authentication**: JSON Web Tokens (JWT), Bcrypt hashing
-- **Payments**: Stripe & MyFatoorah
+- **Payments**: Stripe (Checkout & Webhooks)
+- **Maps & Location**: Google Maps API
 - **File Processing**: Multer (file uploads) & Sharp (image optimization/resizing)
 - **Emailing**: Nodemailer (SMTP/Gmail integrations)
 - **Validation**: Zod (schema validations)
-- **Notifications & Push**: Firebase Cloud Messaging (FCM via firebase-admin)
+- **Notifications & Push**: Firebase Cloud Messaging (FCM via `firebase-admin`)
 - **Real-Time & Background**: Socket.io (real-time communication), Node-Cron (scheduled cron tasks), BullMQ & ioredis (background queue processing)
 
 ---
@@ -27,6 +28,7 @@ The codebase is organized following a **Modular Pattern**, where each feature is
 vibez_backend/
 ├── src/
 │   ├── app/
+│   │   ├── config/                   # Centralized Environment Configuration
 │   │   ├── modules/                  # Modular domain-driven folders
 │   │   │   ├── auth/                 # Users & Authentication
 │   │   │   ├── commission/           # Referral commission logic
@@ -72,54 +74,108 @@ Ensure you have the following installed on your machine:
 - **MongoDB** (local instance or MongoDB Atlas cluster URI)
 - **Redis** (optional, required if running background workers/BullMQ)
 
-### Installation
+### Installation & Setup
 
-1. Clone the repository and navigate to the project directory:
+1. **Clone the repository and navigate into the project directory**:
    ```bash
    git clone <repository-url>
    cd vibez_backend
    ```
 
-2. Install the dependencies:
+2. **Install project dependencies**:
    ```bash
    npm install
    ```
 
-3. Setup environment variables:
-   Copy the example environment file and fill in your credentials.
-   ```bash
-   cp .env.example .env
-   ```
+3. **Configure Environment Variables (`.env`)**:
+   - Create a `.env` file in the project root directory by copying the sample template:
+     ```bash
+     cp .env.example .env
+     ```
+   - Open `.env` and fill in your MongoDB connection string, JWT secrets, SMTP credentials, Stripe keys, and initial admin credentials.
 
 ---
 
-## ⚙️ Environment Variables
+## ⚙️ Environment Variables Guide
 
-Update the following keys in your `.env` file:
+Copy the template below into your `.env` file and replace values:
 
-| Variable | Description | Example Value |
+```env
+# Application Setup
+NODE_ENV=development
+IP=0.0.0.0
+PORT=5000
+
+# Database Connection
+MONGODB_URL=mongodb+srv://<USER>:<PASS>@cluster.mongodb.net/vibez?retryWrites=true&w=majority
+
+# Security Settings
+BCRYPT_SALT_ROUNDS=12
+
+# Client URLs
+CLIENT_URL=http://localhost:3000
+
+# JWT Configuration
+JWT_ACCESS_SECRET=your_access_secret
+JWT_ACCESS_EXPIRE=30d
+JWT_REFRESH_SECRET=your_refresh_secret
+JWT_REFRESH_EXPIRE=365d
+JWT_PASSWORD_RESET_SECRET=your_password_reset_secret
+
+# Nodemailer / SMTP Email Setup
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=example@gmail.com
+SMTP_PASS="your_app_password"
+
+# Initial Admin Seeding Configuration
+INITIAL_ADMIN_NAME="Appon Islam"
+INITIAL_ADMIN_EMAIL=admin@vibez.com
+INITIAL_ADMIN_PASSWORD=your_secure_password
+INITIAL_ADMIN_PHONE=+8801700000000
+
+# Stripe Payment Gateway
+STRIPE_PUBLISHABLE_KEY=pk_test_...
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+
+# Google Maps API
+MAPS_API_KEY=AIzaSy...
+```
+
+### Environment Variable References
+
+| Variable | Description | Default / Example |
 | :--- | :--- | :--- |
-| `NODE_ENV` | Running Environment | `development` / `production` |
-| `PORT` | Listening Port | `5000` |
+| `NODE_ENV` | Running Environment Mode | `development` |
+| `IP` | Bind IP Address | `0.0.0.0` |
+| `PORT` | Server Listening Port | `5000` |
 | `MONGODB_URL` | MongoDB Connection URI | `mongodb+srv://...` |
-| `BCRYPT_SALT_ROUNDS` | Cost factor for password hashing | `12` |
-| `CLIENT_URL` | Frontend client application URL | `http://localhost:3000` |
+| `BCRYPT_SALT_ROUNDS` | Salt cost factor for password hashing | `12` |
+| `CLIENT_URL` | Frontend Web Client URL (used for email verification links & Stripe checkout callbacks) | `https://vibez.apponislam.top` |
 | `JWT_ACCESS_SECRET` | Secret key for signing Access Tokens | `your_access_secret` |
 | `JWT_ACCESS_EXPIRE` | Expiry duration for Access Tokens | `30d` |
 | `JWT_REFRESH_SECRET` | Secret key for signing Refresh Tokens | `your_refresh_secret` |
 | `JWT_REFRESH_EXPIRE` | Expiry duration for Refresh Tokens | `365d` |
-| `JWT_PASSWORD_RESET_SECRET`| Secret key for resetting passwords | `your_reset_secret` |
+| `JWT_PASSWORD_RESET_SECRET` | Secret key for Password Reset OTP tokens | `your_reset_secret` |
 | `SMTP_HOST` | Email SMTP Server Host | `smtp.gmail.com` |
 | `SMTP_PORT` | Email SMTP Server Port | `587` |
-| `SMTP_USER` | Sender email address | `example@gmail.com` |
-| `SMTP_PASS` | App password for Gmail/SMTP | `your_email_app_password` |
-| `INITIAL_ADMIN_NAME` | Initial Admin Name | `Appon Islam` |
-| `INITIAL_ADMIN_EMAIL` | Initial Admin Email | `admin@vibez.com` |
-| `INITIAL_ADMIN_PASSWORD` | Initial Admin Password | `123456` |
-| `INITIAL_ADMIN_PHONE` | Initial Admin Phone Number | `+8801722779803` |
-| `MYFATOORAH_API_KEY` | MyFatoorah Payment Gateway Token | `myfatoorah_token` |
+| `SMTP_SECURE` | Secure connection flag | `false` |
+| `SMTP_USER` | System sender email address | `example@gmail.com` |
+| `SMTP_PASS` | SMTP / Gmail App Password | `your_app_password` |
+| `INITIAL_ADMIN_NAME` | Name of auto-seeded Super Admin | `Appon Islam` |
+| `INITIAL_ADMIN_EMAIL` | Email of auto-seeded Super Admin | `admin@vibez.com` |
+| `INITIAL_ADMIN_PASSWORD` | Password of auto-seeded Super Admin | `your_password` |
+| `INITIAL_ADMIN_PHONE` | Phone of auto-seeded Super Admin | `+8801700000000` |
+| `STRIPE_PUBLISHABLE_KEY` | Stripe Publishable API Key | `pk_test_...` |
+| `STRIPE_SECRET_KEY` | Stripe Secret API Key | `sk_test_...` |
+| `STRIPE_WEBHOOK_SECRET` | Stripe Webhook Signature Secret | `whsec_...` |
+| `MAPS_API_KEY` | Google Maps Platform API Key | `AIzaSy...` |
 
 ---
+
+
 
 ## 🏃 Scripts
 
@@ -130,8 +186,6 @@ Update the following keys in your `.env` file:
 | `npm run start` | Runs the compiled JavaScript server in production mode |
 | `npm run lint` | Lints the codebase using ESLint rules |
 | `npm run lint:fix` | Automatically resolves autofixable linting issues |
-| `npm run worker:dev` | Runs the background worker queue in development mode |
-| `npm run worker` | Runs the compiled worker script in production mode |
 
 ---
 

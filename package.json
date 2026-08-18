@@ -9,9 +9,7 @@
         "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
         "lint": "npx eslint src",
         "lint:fix": "npx eslint src --fix",
-        "test": "echo \"Error: no test specified\" && exit 1",
-        "worker:dev": "ts-node-dev src/worker.ts",
-        "worker": "node dist/worker.js"
+        "test": "echo \"Error: no test specified\" && exit 1"
     },
     "keywords": [],
     "author": "",
