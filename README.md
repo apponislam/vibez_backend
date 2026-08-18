@@ -193,9 +193,191 @@ All API routes are prefixed with `/api/v1`.
 
 ---
 
-## 🗄️ Database Schema & Data Models
+## 🗄️ Database Relationships & Schemas Analysis
 
 Below is an overview of the core database schema models and how they relate:
+
+```mermaid
+erDiagram
+    USER ||--o{ RESTAURANT : "owns"
+    USER ||--o{ RESERVATION : "books"
+    USER ||--o{ USER_SUBSCRIPTION : "subscribes"
+    USER ||--o{ REVIEW : "writes"
+    USER ||--o{ FAVORITE : "bookmarks"
+    USER ||--o{ SAVED_DEAL : "saves"
+    USER ||--o{ COMMISSION : "earns as influencer"
+    USER ||--o{ WITHDRAW : "requests payout"
+    USER ||--o{ USER : "refers / referred by"
+
+    RESTAURANT ||--o{ USER : "employs staff"
+    RESTAURANT ||--o{ DEAL : "offers"
+    RESTAURANT ||--o{ RESERVATION : "hosts"
+    RESTAURANT ||--o{ SHORTS : "publishes"
+    RESTAURANT ||--o{ REVIEW : "receives"
+    RESTAURANT ||--o{ FAVORITE : "saved by"
+
+    DEAL ||--o{ RESERVATION : "applied to"
+    DEAL ||--o{ SAVED_DEAL : "bookmarked by"
+
+    SUBSCRIPTION_PLAN ||--o{ USER_SUBSCRIPTION : "defines plan tier"
+    USER_SUBSCRIPTION ||--o{ COMMISSION : "generates referral reward"
+
+    USER {
+        ObjectId _id PK
+        String name
+        String email UK
+        String password
+        String role "ADMIN | RESTAURANT_OWNER | USER | STAFF"
+        String staffRole "MANAGER | CASHIER | WAITER"
+        ObjectId restaurantId FK
+        Boolean enableStaffLogin
+        String phone
+        String profileImage
+        Object location "{ lat, lng }"
+        Object address
+        String aboutme
+        Boolean isActive
+        Boolean isEmailVerified
+        Boolean isDeleted
+        Boolean isInfluencer
+        Boolean isNewUser
+        Date lastLogin
+        Number balance
+        Number commissionPercentage
+        Number maxPayout
+        Number commissionDuration
+        String referralCode UK
+        ObjectId referredBy FK
+        String stripeConnectedAccountId
+        String fcmTokens
+    }
+
+    RESTAURANT {
+        ObjectId _id PK
+        String restaurantName
+        String restaurantDescription
+        String restaurantType
+        String[] cuisineType
+        String[] foodType
+        ObjectId restaurantOwner FK
+        String restaurantWebsite
+        Object restaurantAddress
+        Object location "GeoJSON Point (2dsphere)"
+        Array restaurantOpenHours
+        String restaurantImage
+        String[] restaurantImages
+        Boolean approved
+        ObjectId approvedBy FK
+        Date approvedAt
+    }
+
+    DEAL {
+        ObjectId _id PK
+        ObjectId restaurantId FK
+        ObjectId createdBy FK
+        String dealType "TWO_FOR_ONE | FREE_ITEM | PERCENT_DISCOUNT | FIXED_DISCOUNT"
+        String title
+        String description
+        String[] day
+        String mealTime "LUNCH | DINNER"
+        Array resturantHours
+        Number maxClaimsPerDay
+        Boolean isActive
+        Boolean isDeleted
+        Object twoForOne
+        Object freeItem
+        Object percentDiscount
+        Object fixedDiscount
+    }
+
+    RESERVATION {
+        ObjectId _id PK
+        ObjectId restaurantId FK
+        ObjectId userId FK
+        ObjectId dealId FK
+        Number partySize
+        Date reservationDate
+        String reservationTime
+        String specialRequests
+        String status "UPCOMING | COMPLETED | CANCELLED"
+    }
+
+    SUBSCRIPTION_PLAN {
+        ObjectId _id PK
+        String name UK
+        Number price
+        String interval "monthly | yearly"
+        String[] features
+        String stripePriceId UK
+        String stripeProductId UK
+        Boolean isActive
+    }
+
+    USER_SUBSCRIPTION {
+        ObjectId _id PK
+        ObjectId userId FK
+        ObjectId subscriptionPlanId FK
+        String status "active | cancelled | expired"
+        Date startDate
+        Date endDate
+        String stripeSubscriptionId
+        ObjectId commissionUser FK
+    }
+
+    COMMISSION {
+        ObjectId _id PK
+        ObjectId influencerId FK
+        ObjectId referredUserId FK
+        ObjectId subscriptionId FK
+        Number amount
+        String status "PENDING | APPROVED | PAID"
+    }
+
+    WITHDRAW {
+        ObjectId _id PK
+        ObjectId userId FK
+        Number amount
+        String status "PENDING | PROCESSING | COMPLETED | REJECTED"
+        String stripeTransferId UK
+        Mixed payoutDetails
+    }
+
+    SHORTS {
+        ObjectId _id PK
+        ObjectId restaurantId FK
+        String videoUrl
+        String title
+        String description
+        Number views
+        Number likes
+        Boolean isActive
+    }
+
+    REVIEW {
+        ObjectId _id PK
+        ObjectId restaurantId FK
+        ObjectId userId FK
+        Number rating
+        String comment
+        Boolean isDeleted
+    }
+
+    FAVORITE {
+        ObjectId _id PK
+        ObjectId userId FK
+        ObjectId restaurantId FK
+    }
+
+    SAVED_DEAL {
+        ObjectId _id PK
+        ObjectId userId FK
+        ObjectId dealId FK
+    }
+```
+
+---
+
+## 📋 Line-by-Line Model & Field Specification
 
 - **User Model (`UserModel`)**
   - `_id`: `ObjectId` - Unique identifier for the user account.
@@ -348,6 +530,7 @@ Below is an overview of the core database schema models and how they relate:
 ## 🛡️ License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
 
 
 
