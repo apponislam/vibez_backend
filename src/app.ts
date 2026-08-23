@@ -17,7 +17,19 @@ app.use(morgan("dev"));
 app.post("/api/v1/subscription/webhook", express.raw({ type: "application/json" }), stripeWebhooks.handleStripeWebhook);
 
 const corsOptions = {
-    origin: ["http://localhost:3000", "http://10.10.7.111:3000", "http://localhost:3001", "http://10.10.26.188:3000", "https://vibez.apponislam.top", "http://localhost:3055", "http://10.10.26.188:3055"],
+    origin: [
+        "http://localhost:3000",
+        "http://10.10.7.111:3000",
+        "http://localhost:3001",
+        "http://10.10.26.188:3000",
+        "https://vibez.apponislam.top",
+        "http://localhost:3055",
+        "http://10.10.26.188:3055",
+        "https://getvibez.app",
+        "https://www.getvibez.app",
+        "http://getvibez.app",
+        "http://www.getvibez.app",
+    ],
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
