@@ -1,3 +1,4 @@
+import config from "../app/config";
 import { sendMail } from "./nodemailer";
 
 export const sendVerificationEmail = (email: string, name: string, otp: string) => {
@@ -68,7 +69,8 @@ export const sendOtpEmail = (email: string, otp: string, name?: string) => {
     sendMail(email, "Your OTP Code", html);
 };
 
-export const sendWelcomeEmail = (email: string, name: string) => {
+export const sendWelcomeEmail = (email: string, name: string, redirectUrl?: string) => {
+    const targetUrl = redirectUrl || config.client_url || "#";
     const html = `
         <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; padding: 40px 20px; text-align: center;">
             <div style="max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); border: 1px solid #e5e7eb; text-align: left;">
@@ -86,7 +88,7 @@ export const sendWelcomeEmail = (email: string, name: string) => {
                         VIBEZ is designed to help you manage operations seamlessly and elevate your dining or business experience. Take a moment to set up your profile and explore your dashboard.
                     </p>
                     <div style="text-align: center; margin: 30px 0;">
-                        <a href="#" style="background: linear-gradient(135deg, #cf0738 0%, #ff4d6d 100%); color: white; padding: 14px 35px; text-decoration: none; border-radius: 10px; display: inline-block; font-weight: bold; box-shadow: 0 4px 12px rgba(207, 7, 56, 0.35);">Get Started</a>
+                        <a href="${targetUrl}" style="background: linear-gradient(135deg, #cf0738 0%, #ff4d6d 100%); color: white; padding: 14px 35px; text-decoration: none; border-radius: 10px; display: inline-block; font-weight: bold; box-shadow: 0 4px 12px rgba(207, 7, 56, 0.35);">Get Started</a>
                     </div>
                     <p style="font-size: 14px; line-height: 1.6; color: #6b7280; margin-bottom: 0; text-align: center;">
                         If you have any questions, our support team is available 24/7.

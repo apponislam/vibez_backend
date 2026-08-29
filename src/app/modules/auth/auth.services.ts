@@ -641,7 +641,7 @@ const registerRestaurant = async (data: any) => {
 
     // Send emails (non-blocking, don't revert registration if email fails)
     try {
-        sendVerificationEmail(createdUser.email as string, createdUser.name as string, verificationCode);
+        // sendVerificationEmail(createdUser.email as string, createdUser.name as string, verificationCode);
         sendWelcomeEmail(createdUser.email as string, createdUser.name as string);
     } catch (emailError) {
         console.error("Failed to send verification/welcome email:", emailError);
