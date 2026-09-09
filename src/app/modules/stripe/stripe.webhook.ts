@@ -365,6 +365,7 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                 }
                 break;
             }
+            case "customer.subscription.created":
             case "customer.subscription.updated": {
                 const subscription = event.data.object;
                 // console.log("Subscription updated:", subscription);

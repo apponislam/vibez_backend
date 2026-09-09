@@ -2,7 +2,7 @@ import Stripe from "stripe";
 import config from "../../config";
 
 const stripe = new Stripe(config.stripe.secret_key as string, {
-    apiVersion: "2026-05-27.dahlia",
+    apiVersion: "2026-08-26.dahlia" as any,
 });
 
 const createPaymentIntent = async (amount: number, currency: string = "chf") => {
@@ -113,7 +113,7 @@ const createSubscriptionPaymentSheet = async (priceId: string, customerEmail: st
     }
 
     // 2. Create Ephemeral Key (required for saving cards / Stripe SDK mobile)
-    const ephemeralKey = await stripe.ephemeralKeys.create({ customer: customer.id }, { apiVersion: "2026-05-27.dahlia" });
+    const ephemeralKey = await stripe.ephemeralKeys.create({ customer: customer.id }, { apiVersion: "2026-08-26.dahlia" as any });
 
     // 3. Create Stripe Subscription with default_incomplete
     const subscription = await stripe.subscriptions.create({
