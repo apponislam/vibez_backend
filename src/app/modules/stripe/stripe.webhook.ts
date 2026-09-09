@@ -280,68 +280,69 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                             }
                         }
                     } else {
-                        // Create a NEW UserSubscription record for auto-renewal cycle
-                        let newStartDate = resolveStripePeriodStart(stripeSub);
-                        let newEndDate = resolveStripePeriodEnd(stripeSub);
-                        // Get plan to know duration
-                        const plan = await SubscriptionPlanModel.findById(userSubscription.subscriptionPlanId);
-                        if (plan) {
-                            const actualPrice = plan.price;
-                            const paidPrice = (invoice as any).amount_paid !== undefined && (invoice as any).amount_paid !== null ? (invoice as any).amount_paid / 100 : plan.price;
+                        const billingReason = (invoice as any).billing_reason;
+                        // Only create a new renewal record if this is a recurring cycle payment, NOT the initial subscription creation
+                        if (billingReason === "subscription_cycle") {
+                            // Create a NEW UserSubscription record for auto-renewal cycle
+                            let newStartDate = resolveStripePeriodStart(stripeSub);
+                            let newEndDate = resolveStripePeriodEnd(stripeSub);
+                            // Get plan to know duration
+                            const plan = await SubscriptionPlanModel.findById(userSubscription.subscriptionPlanId);
+                            if (plan) {
+                                const actualPrice = plan.price;
+                                const paidPrice = (invoice as any).amount_paid !== undefined && (invoice as any).amount_paid !== null ? (invoice as any).amount_paid / 100 : plan.price;
 
-                            const commissionUser = userSubscription.commissionUser || undefined;
-                            let commissionAmount = undefined;
+                                const commissionUser = userSubscription.commissionUser || undefined;
+                                let commissionAmount = undefined;
 
-                            if (commissionUser) {
-                                const referrer = await UserModel.findById(commissionUser);
-                                if (referrer) {
-                                    const commissionPercentage = referrer.commissionPercentage || 0;
-                                    const calculatedCommission = paidPrice * (commissionPercentage / 100);
-                                    commissionAmount = Number(Math.min(calculatedCommission, referrer.maxPayout || 0).toFixed(2));
+                                if (commissionUser) {
+                                    const referrer = await UserModel.findById(commissionUser);
+                                    if (referrer) {
+                                        const commissionPercentage = referrer.commissionPercentage || 0;
+                                        const calculatedCommission = paidPrice * (commissionPercentage / 100);
+                                        commissionAmount = Number(Math.min(calculatedCommission, referrer.maxPayout || 0).toFixed(2));
+                                    }
                                 }
-                            }
 
-                            // Set previous active subscriptions for this user to CANCELLED
-                            await UserSubscriptionModel.updateMany(
-                                { userId: userSubscription.userId, status: UserSubscriptionStatus.ACTIVE },
-                                { $set: { status: UserSubscriptionStatus.CANCELLED } }
-                            );
+                                // Set previous active subscriptions for this user to CANCELLED
+                                await UserSubscriptionModel.updateMany({ userId: userSubscription.userId, status: UserSubscriptionStatus.ACTIVE }, { $set: { status: UserSubscriptionStatus.CANCELLED } });
 
-                            const newSubscription = await UserSubscriptionModel.create({
-                                userId: userSubscription.userId,
-                                subscriptionPlanId: plan._id,
-                                stripeSubscriptionId: subscriptionId,
-                                stripeCustomerId: stripeSub.customer as string,
-                                status: UserSubscriptionStatus.ACTIVE,
-                                startDate: newStartDate,
-                                endDate: newEndDate,
-                                isTrial: false,
-                                percentOff: userSubscription.percentOff,
-                                amountOff: userSubscription.amountOff,
-                                actualPrice,
-                                paidPrice,
-                                commissionUser,
-                                commissionAmount,
-                            });
-
-                            // Update User model with new subscription end date
-                            await UserModel.findByIdAndUpdate(userSubscription.userId, {
-                                $set: {
-                                    subscriptionEndDate: newEndDate,
-                                },
-                            });
-
-                            // Process renewal commission if referred
-                            if (userSubscription.commissionUser) {
-                                const invoiceId = (invoice as any).id;
-                                await commissionServices.handleSubscriptionPayment({
-                                    userId: userSubscription.userId.toString(),
-                                    referredBy: userSubscription.commissionUser.toString(),
-                                    invoiceId,
-                                    subscriptionId,
-                                    invoiceAmount: paidPrice,
-                                    userSubscriptionId: newSubscription._id.toString(),
+                                const newSubscription = await UserSubscriptionModel.create({
+                                    userId: userSubscription.userId,
+                                    subscriptionPlanId: plan._id,
+                                    stripeSubscriptionId: subscriptionId,
+                                    stripeCustomerId: stripeSub.customer as string,
+                                    status: UserSubscriptionStatus.ACTIVE,
+                                    startDate: newStartDate,
+                                    endDate: newEndDate,
+                                    isTrial: false,
+                                    percentOff: userSubscription.percentOff,
+                                    amountOff: userSubscription.amountOff,
+                                    actualPrice,
+                                    paidPrice,
+                                    commissionUser,
+                                    commissionAmount,
                                 });
+
+                                // Update User model with new subscription end date
+                                await UserModel.findByIdAndUpdate(userSubscription.userId, {
+                                    $set: {
+                                        subscriptionEndDate: newEndDate,
+                                    },
+                                });
+
+                                // Process renewal commission if referred
+                                if (userSubscription.commissionUser) {
+                                    const invoiceId = (invoice as any).id;
+                                    await commissionServices.handleSubscriptionPayment({
+                                        userId: userSubscription.userId.toString(),
+                                        referredBy: userSubscription.commissionUser.toString(),
+                                        invoiceId,
+                                        subscriptionId,
+                                        invoiceAmount: paidPrice,
+                                        userSubscriptionId: newSubscription._id.toString(),
+                                    });
+                                }
                             }
                         }
                     }
