@@ -182,8 +182,10 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                         stripeSubscriptionId: subscriptionId,
                     });
 
+                    // If userSubscription was already created (e.g. by customer.subscription.created / checkout.session.completed), do not duplicate creation
                     if (!userSubscription) {
-                        // Retrieve subscription from Stripe to get metadata
+                        const billingReason = (invoice as any).billing_reason;
+                        // Only create initial subscription if it's the subscription_create invoice and doesn't exist yet
                         const userId = stripeSub.metadata?.userId;
                         const coupon = stripeSub.metadata?.coupon;
                         const referralCode = stripeSub.metadata?.referralCode;
@@ -213,7 +215,6 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                                 const actualPrice = subscriptionPlan.price;
                                 const paidPrice = (invoice as any).amount_paid !== undefined && (invoice as any).amount_paid !== null ? (invoice as any).amount_paid / 100 : subscriptionPlan.price;
 
-                                // Calculate commissionAmount if referred
                                 let commissionAmount = undefined;
                                 if (referredBy) {
                                     const referrer = await UserModel.findById(referredBy);
@@ -234,24 +235,28 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                                     }
                                 }
 
-                                if (!userSubscription) {
-                                    userSubscription = await UserSubscriptionModel.create({
-                                        userId,
-                                        subscriptionPlanId: subscriptionPlan._id,
-                                        stripeSubscriptionId: subscriptionId,
-                                        stripeCustomerId: stripeSub.customer as string,
-                                        status: UserSubscriptionStatus.ACTIVE,
-                                        startDate,
-                                        endDate,
-                                        isTrial: stripeSub.status === "trialing",
-                                        percentOff,
-                                        amountOff,
-                                        actualPrice,
-                                        paidPrice,
-                                        commissionUser: referredBy || undefined,
-                                        commissionAmount,
-                                    });
-                                }
+                                await UserSubscriptionModel.findOneAndUpdate(
+                                    { stripeSubscriptionId: subscriptionId },
+                                    {
+                                        $setOnInsert: {
+                                            userId,
+                                            subscriptionPlanId: subscriptionPlan._id,
+                                            stripeSubscriptionId: subscriptionId,
+                                            stripeCustomerId: stripeSub.customer as string,
+                                            status: UserSubscriptionStatus.ACTIVE,
+                                            startDate,
+                                            endDate,
+                                            isTrial: stripeSub.status === "trialing",
+                                            percentOff,
+                                            amountOff,
+                                            actualPrice,
+                                            paidPrice,
+                                            commissionUser: referredBy || undefined,
+                                            commissionAmount,
+                                        },
+                                    },
+                                    { upsert: true, new: true }
+                                );
 
                                 if (referredBy && commissionAmount !== undefined) {
                                     const invoiceId = (invoice as any).id;
@@ -261,11 +266,11 @@ const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
                                         invoiceId,
                                         subscriptionId,
                                         invoiceAmount: paidPrice,
-                                        userSubscriptionId: userSubscription._id.toString(),
+                                        userSubscriptionId: subscriptionId,
                                     });
                                 }
 
-                                const updatedUser = await UserModel.findByIdAndUpdate(userId, {
+                                await UserModel.findByIdAndUpdate(userId, {
                                     $set: {
                                         subscriptionPlanId: subscriptionPlan._id,
                                         subscriptionEndDate: endDate,
