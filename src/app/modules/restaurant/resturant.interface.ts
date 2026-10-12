@@ -18,6 +18,14 @@ export enum CuisineType {
     VIETNAMESE = "VIETNAMESE",
     TURKISH = "TURKISH",
     MEXICAN = "MEXICAN",
+
+    //new
+    FRENCH = "FRENCH",
+    JAPANESE = "JAPANESE",
+    SPANISH = "SPANISH",
+    GREEK = "GREEK",
+    LEBANESE = "LEBANESE",
+    BRAZILIAN = "BRAZILIAN",
 }
 
 export enum FoodType {
