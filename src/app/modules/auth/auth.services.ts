@@ -551,22 +551,39 @@ const registerRestaurant = async (data: any) => {
         if (latVal !== undefined && lngVal !== undefined && latVal !== "" && lngVal !== "") {
             const lat = parseFloat(latVal);
             const lng = parseFloat(lngVal);
-            address.lat = lat.toString();
-            address.lng = lng.toString();
-            address.location = {
-                type: "Point",
-                coordinates: [lng, lat],
-            };
-        } else {
-            const coords = await getLatLngFromAddress(address, data.restaurantName);
-            if (coords) {
-                address.lat = coords.lat.toString();
-                address.lng = coords.lng.toString();
+            if (!isNaN(lat) && !isNaN(lng)) {
+                address.lat = lat.toString();
+                address.lng = lng.toString();
                 address.location = {
                     type: "Point",
-                    coordinates: [coords.lng, coords.lat],
+                    coordinates: [lng, lat],
                 };
             }
+        } else {
+            try {
+                const coords = await getLatLngFromAddress(address, data.restaurantName);
+                if (coords && !isNaN(coords.lat) && !isNaN(coords.lng)) {
+                    address.lat = coords.lat.toString();
+                    address.lng = coords.lng.toString();
+                    address.location = {
+                        type: "Point",
+                        coordinates: [coords.lng, coords.lat],
+                    };
+                }
+            } catch (error: any) {
+                console.error("Failed to geocode address during registration:", error?.message || error);
+            }
+        }
+
+        // Ensure location is valid GeoJSON Point or removed entirely
+        if (
+            !address.location ||
+            !Array.isArray(address.location.coordinates) ||
+            address.location.coordinates.length !== 2 ||
+            isNaN(address.location.coordinates[0]) ||
+            isNaN(address.location.coordinates[1])
+        ) {
+            delete address.location;
         }
     }
 

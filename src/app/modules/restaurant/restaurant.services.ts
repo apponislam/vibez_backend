@@ -549,22 +549,38 @@ const updateRestaurant = async (id: string, data: any, ownerId: string) => {
         if (latVal !== undefined && lngVal !== undefined && latVal !== "" && lngVal !== "") {
             const lat = parseFloat(latVal);
             const lng = parseFloat(lngVal);
-            mergedAddress.lat = lat.toString();
-            mergedAddress.lng = lng.toString();
-            mergedAddress.location = {
-                type: "Point",
-                coordinates: [lng, lat],
-            };
-        } else {
-            const coords = await getLatLngFromAddress(mergedAddress, data.restaurantName || existingRestaurant.restaurantName);
-            if (coords) {
-                mergedAddress.lat = coords.lat.toString();
-                mergedAddress.lng = coords.lng.toString();
+            if (!isNaN(lat) && !isNaN(lng)) {
+                mergedAddress.lat = lat.toString();
+                mergedAddress.lng = lng.toString();
                 mergedAddress.location = {
                     type: "Point",
-                    coordinates: [coords.lng, coords.lat],
+                    coordinates: [lng, lat],
                 };
             }
+        } else {
+            try {
+                const coords = await getLatLngFromAddress(mergedAddress, data.restaurantName || existingRestaurant.restaurantName);
+                if (coords && !isNaN(coords.lat) && !isNaN(coords.lng)) {
+                    mergedAddress.lat = coords.lat.toString();
+                    mergedAddress.lng = coords.lng.toString();
+                    mergedAddress.location = {
+                        type: "Point",
+                        coordinates: [coords.lng, coords.lat],
+                    };
+                }
+            } catch (error: any) {
+                console.error("Failed to geocode address during restaurant update:", error?.message || error);
+            }
+        }
+
+        if (
+            !mergedAddress.location ||
+            !Array.isArray(mergedAddress.location.coordinates) ||
+            mergedAddress.location.coordinates.length !== 2 ||
+            isNaN(mergedAddress.location.coordinates[0]) ||
+            isNaN(mergedAddress.location.coordinates[1])
+        ) {
+            delete mergedAddress.location;
         }
         data.restaurantAddress = mergedAddress;
     }
@@ -711,22 +727,38 @@ const updateRestaurantByAdmin = async (id: string, data: any, adminId: string) =
         if (latVal !== undefined && lngVal !== undefined && latVal !== "" && lngVal !== "") {
             const lat = parseFloat(latVal);
             const lng = parseFloat(lngVal);
-            mergedAddress.lat = lat.toString();
-            mergedAddress.lng = lng.toString();
-            mergedAddress.location = {
-                type: "Point",
-                coordinates: [lng, lat],
-            };
-        } else {
-            const coords = await getLatLngFromAddress(mergedAddress, data.restaurantName || existingRestaurant.restaurantName);
-            if (coords) {
-                mergedAddress.lat = coords.lat.toString();
-                mergedAddress.lng = coords.lng.toString();
+            if (!isNaN(lat) && !isNaN(lng)) {
+                mergedAddress.lat = lat.toString();
+                mergedAddress.lng = lng.toString();
                 mergedAddress.location = {
                     type: "Point",
-                    coordinates: [coords.lng, coords.lat],
+                    coordinates: [lng, lat],
                 };
             }
+        } else {
+            try {
+                const coords = await getLatLngFromAddress(mergedAddress, data.restaurantName || existingRestaurant.restaurantName);
+                if (coords && !isNaN(coords.lat) && !isNaN(coords.lng)) {
+                    mergedAddress.lat = coords.lat.toString();
+                    mergedAddress.lng = coords.lng.toString();
+                    mergedAddress.location = {
+                        type: "Point",
+                        coordinates: [coords.lng, coords.lat],
+                    };
+                }
+            } catch (error: any) {
+                console.error("Failed to geocode address during admin restaurant update:", error?.message || error);
+            }
+        }
+
+        if (
+            !mergedAddress.location ||
+            !Array.isArray(mergedAddress.location.coordinates) ||
+            mergedAddress.location.coordinates.length !== 2 ||
+            isNaN(mergedAddress.location.coordinates[0]) ||
+            isNaN(mergedAddress.location.coordinates[1])
+        ) {
+            delete mergedAddress.location;
         }
         data.restaurantAddress = mergedAddress;
     }

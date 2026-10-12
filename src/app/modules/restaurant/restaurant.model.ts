@@ -18,6 +18,21 @@ const RestaurantOpenHourSchema = new Schema({
     slots: { type: [RestaurantOpenHourSlotSchema], default: [] },
 });
 
+const PointSchema = new Schema(
+    {
+        type: {
+            type: String,
+            enum: ["Point"],
+            required: true,
+        },
+        coordinates: {
+            type: [Number],
+            required: true,
+        },
+    },
+    { _id: false }
+);
+
 const RestaurantSchema = new Schema<IRestaurant>(
     {
         restaurantName: {
@@ -61,15 +76,8 @@ const RestaurantSchema = new Schema<IRestaurant>(
             zipCode: { type: String, required: [true, "Zip code is required"] },
             country: { type: String, required: [true, "Country is required"] },
             location: {
-                type: {
-                    type: String,
-                    enum: ["Point"],
-                    default: "Point",
-                },
-                coordinates: {
-                    type: [Number],
-                    index: "2dsphere",
-                },
+                type: PointSchema,
+                default: undefined,
             },
         },
         restaurantOpenHours: {
@@ -108,6 +116,6 @@ RestaurantSchema.index({ cuisineType: 1 });
 RestaurantSchema.index({ restaurantType: 1 });
 RestaurantSchema.index({ approved: 1, restaurantType: 1, cuisineType: 1 });
 RestaurantSchema.index({ approved: 1, restaurantType: 1, foodType: 1 });
-RestaurantSchema.index({ "restaurantAddress.location": "2dsphere" });
+RestaurantSchema.index({ "restaurantAddress.location": "2dsphere" }, { sparse: true });
 
 export const RestaurantModel = mongoose.model<IRestaurant>("Restaurant", RestaurantSchema);
