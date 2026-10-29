@@ -22,13 +22,18 @@ export const initSocket = (server: http.Server) => {
     io = new Server(server, {
         cors: {
             origin: [
+                "https://getvibez.app",
+                "https://www.getvibez.app",
+                "http://getvibez.app",
+                "http://www.getvibez.app",
                 "https://vibez.apponislam.top",
                 "http://localhost:3000",
                 "http://10.10.7.111:3000",
                 "http://localhost:3001",
                 "http://10.10.26.188:3000",
                 "http://localhost:3055",
-                "http://10.10.26.188:3055"
+                "http://10.10.26.188:3055",
+                /^https?:\/\/([a-zA-Z0-9-]+\.)*getvibez\.app$/,
             ],
             methods: ["GET", "POST"],
             credentials: true,

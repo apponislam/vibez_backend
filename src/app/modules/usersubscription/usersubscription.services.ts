@@ -6,8 +6,6 @@ import { SubscriptionPlanModel } from "../subscription/subscription.model";
 import { SubscriptionDuration, UserSubscriptionStatus } from "../subscription/subscription.interface";
 import { stripeServices } from "../stripe/stripe.service";
 import { UserModel } from "../auth/auth.model";
-import { commissionServices } from "../commission/commission.services";
-import { Types } from "mongoose";
 
 const populateOptions: any = ["subscriptionPlanId", { path: "commissionUser", select: "name email profileImage" }, { path: "userId", select: "name email profileImage" }];
 

@@ -105,55 +105,6 @@ const updateCoupon = async (id: string, data: Partial<ICoupon>) => {
     return updatedCoupon;
 };
 
-// const verifyReferralCodeAndGetCoupon = async (referralCode: string, currentUserId?: string) => {
-//     if (!referralCode) {
-//         throw new ApiError(httpStatus.BAD_REQUEST, "Referral code is required");
-//     }
-
-//     if (currentUserId) {
-//         const currentUser = await UserModel.findById(currentUserId);
-//         if (!currentUser || !currentUser.isActive || currentUser.isDeleted) {
-//             throw new ApiError(httpStatus.NOT_FOUND, "Authenticated user account not found or is inactive");
-//         }
-//         if (!currentUser.isNewUser) {
-//             throw new ApiError(httpStatus.BAD_REQUEST, "Referral discounts are only valid for first-time subscribers");
-//         }
-//     }
-
-//     // Check if referrer exists
-//     const referrer = await UserModel.findOne({ referralCode, isDeleted: false });
-//     if (!referrer || !referrer.isActive) {
-//         throw new ApiError(httpStatus.NOT_FOUND, "The referral code provided is invalid, inactive, or does not exist");
-//     }
-
-//     if (!referrer.isInfluencer) {
-//         throw new ApiError(httpStatus.BAD_REQUEST, "The referral code provided does not belong to an influencer");
-//     }
-
-//     // Check if user is trying to refer themselves
-//     if (currentUserId && referrer._id.toString() === currentUserId.toString()) {
-//         throw new ApiError(httpStatus.BAD_REQUEST, "You cannot use your own referral code");
-//     }
-
-//     // Get active default coupon
-//     const defaultCoupon = await CouponModel.findOne({ isDefault: true, isActive: true });
-//     if (!defaultCoupon) {
-//         throw new ApiError(httpStatus.NOT_FOUND, "Default coupon not configured or inactive");
-//     }
-//     if (defaultCoupon.maxRedemptions && defaultCoupon.timesRedeemed >= defaultCoupon.maxRedemptions) {
-//         throw new ApiError(httpStatus.BAD_REQUEST, "This coupon has reached its maximum number of redemptions");
-//     }
-
-//     return {
-//         _id: defaultCoupon._id,
-//         couponId: defaultCoupon.couponId,
-//         name: defaultCoupon.name,
-//         percentOff: defaultCoupon.percentOff,
-//         amountOff: defaultCoupon.amountOff,
-//         referralCode,
-//     };
-// };
-
 const verifyReferralCodeAndGetCoupon = async (referralCode: string, currentUserId?: string) => {
     if (!referralCode) {
         throw new ApiError(httpStatus.BAD_REQUEST, "Referral code or coupon is required");
@@ -197,9 +148,9 @@ const verifyReferralCodeAndGetCoupon = async (referralCode: string, currentUserI
         throw new ApiError(httpStatus.NOT_FOUND, "The referral code or coupon provided is invalid, inactive, or does not exist");
     }
 
-    if (!referrer.isInfluencer) {
-        throw new ApiError(httpStatus.BAD_REQUEST, "The referral code provided does not belong to an influencer");
-    }
+    // if (!referrer.isInfluencer) {
+    //     throw new ApiError(httpStatus.BAD_REQUEST, "The referral code provided does not belong to an influencer");
+    // }
 
     // Check if user is trying to refer themselves
     if (currentUserId && referrer._id.toString() === currentUserId.toString()) {
