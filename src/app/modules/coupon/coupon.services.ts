@@ -45,7 +45,7 @@ const createCoupon = async (data: Partial<ICoupon>) => {
     return coupon;
 };
 
-// Retrieve all coupons from local database
+// Retrieve all coupons from local database //adsfa
 const getAllCoupons = async () => {
     const coupons = await CouponModel.find().sort({ createdAt: -1 });
     return coupons;
