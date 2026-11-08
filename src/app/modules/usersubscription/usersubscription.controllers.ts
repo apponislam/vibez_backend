@@ -34,6 +34,13 @@ const createCheckoutSession = catchAsync(async (req: Request, res: Response) => 
         if (dbCoupon.maxRedemptions && dbCoupon.timesRedeemed >= dbCoupon.maxRedemptions) {
             throw new ApiError(httpStatus.BAD_REQUEST, "This coupon has reached its maximum number of redemptions");
         }
+        if (
+            dbCoupon.selectedPlans &&
+            dbCoupon.selectedPlans.length > 0 &&
+            !dbCoupon.selectedPlans.some((id: any) => id.toString() === targetPlanId.toString())
+        ) {
+            throw new ApiError(httpStatus.BAD_REQUEST, "This coupon is not valid for the selected subscription plan");
+        }
     }
 
     const finalSuccessUrl = successUrl || `${config.client_url}/subscription/success?session_id={CHECKOUT_SESSION_ID}`;

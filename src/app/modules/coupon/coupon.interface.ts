@@ -9,7 +9,8 @@ export interface ICoupon {
     currency?: string;
     duration: "once" | "repeating" | "forever";
     durationInMonths?: number;
-    isDefault: boolean; // Indicates if this is the default coupon given to new users
+    isDefault: boolean; // Indicates if this is a default coupon for referrals
+    selectedPlans?: (Types.ObjectId | string)[]; // Specific SubscriptionPlan IDs this coupon is restricted to (works for both direct-use and default referral coupons)
     isActive: boolean;
     maxRedemptions?: number;
     timesRedeemed: number;

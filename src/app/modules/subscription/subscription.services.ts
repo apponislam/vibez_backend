@@ -7,6 +7,11 @@ import { UserSubscriptionModel } from "../usersubscription/usersubscription.mode
 
 // Subscription Plan Services
 const createSubscriptionPlan = async (data: Partial<ISubscriptionPlan>) => {
+    const totalPlans = await SubscriptionPlanModel.countDocuments();
+    if (totalPlans >= 10) {
+        throw new ApiError(httpStatus.BAD_REQUEST, "Maximum limit reached: You can only create up to 10 subscription plans");
+    }
+
     let stripeProductId;
     let stripePriceId;
 

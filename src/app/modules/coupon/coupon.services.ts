@@ -20,11 +20,6 @@ const createCoupon = async (data: Partial<ICoupon>) => {
         throw new ApiError(httpStatus.BAD_REQUEST, `Failed to create coupon in Stripe: ${error.message}`);
     }
 
-    // If this new coupon is default, disable other default coupons first
-    if (data.isDefault) {
-        await CouponModel.updateMany({}, { $set: { isDefault: false } });
-    }
-
     // 2. Save Coupon details locally in database
     const localCouponData = {
         couponId: data.couponId,
@@ -37,6 +32,7 @@ const createCoupon = async (data: Partial<ICoupon>) => {
         maxRedemptions: data.maxRedemptions,
         timesRedeemed: 0,
         isDefault: !!data.isDefault,
+        selectedPlans: Array.isArray(data.selectedPlans) ? data.selectedPlans : [],
         isDirectUse: !!data.isDirectUse,
         isActive: true,
     };
@@ -45,9 +41,9 @@ const createCoupon = async (data: Partial<ICoupon>) => {
     return coupon;
 };
 
-// Retrieve all coupons from local database //adsfa
+// Retrieve all coupons from local database
 const getAllCoupons = async () => {
-    const coupons = await CouponModel.find().sort({ createdAt: -1 });
+    const coupons = await CouponModel.find().populate("selectedPlans", "name price duration").sort({ createdAt: -1 });
     return coupons;
 };
 
@@ -56,7 +52,7 @@ const getCouponById = async (id: string) => {
     const isObjectId = Types.ObjectId.isValid(id);
     const query = isObjectId ? { $or: [{ _id: id }, { couponId: id }] } : { couponId: id };
 
-    const coupon = await CouponModel.findOne(query);
+    const coupon = await CouponModel.findOne(query).populate("selectedPlans", "name price duration");
     if (!coupon) throw new ApiError(httpStatus.NOT_FOUND, "Coupon not found");
     return coupon;
 };
@@ -95,17 +91,19 @@ const updateCoupon = async (id: string, data: Partial<ICoupon>) => {
         }
     }
 
-    // If updated coupon is set as default, disable other default coupons
-    if (data.isDefault) {
-        await CouponModel.updateMany({ _id: { $ne: id } }, { $set: { isDefault: false } });
+    if (data.isDefault !== undefined) {
+        data.isDefault = !!data.isDefault;
+    }
+    if (data.selectedPlans !== undefined) {
+        data.selectedPlans = Array.isArray(data.selectedPlans) ? data.selectedPlans : [];
     }
 
     // 2. Update locally
-    const updatedCoupon = await CouponModel.findByIdAndUpdate(id, { $set: data }, { returnDocument: "after", runValidators: true });
+    const updatedCoupon = await CouponModel.findByIdAndUpdate(id, { $set: data }, { returnDocument: "after", runValidators: true }).populate("selectedPlans", "name price duration");
     return updatedCoupon;
 };
 
-const verifyReferralCodeAndGetCoupon = async (referralCode: string, currentUserId?: string) => {
+const verifyReferralCodeAndGetCoupon = async (referralCode: string, currentUserId?: string, planId?: string) => {
     if (!referralCode) {
         throw new ApiError(httpStatus.BAD_REQUEST, "Referral code or coupon is required");
     }
@@ -122,12 +120,24 @@ const verifyReferralCodeAndGetCoupon = async (referralCode: string, currentUserI
             throw new ApiError(httpStatus.BAD_REQUEST, "This coupon has reached its maximum number of redemptions");
         }
 
+        // If direct coupon has selectedPlans restriction, verify planId
+        if (
+            planId &&
+            directCoupon.selectedPlans &&
+            directCoupon.selectedPlans.length > 0 &&
+            !directCoupon.selectedPlans.some((id: any) => id.toString() === planId.toString())
+        ) {
+            throw new ApiError(httpStatus.BAD_REQUEST, "This coupon is not valid for the selected subscription plan");
+        }
+
         return {
             _id: directCoupon._id,
             couponId: directCoupon.couponId,
             name: directCoupon.name,
             percentOff: directCoupon.percentOff,
             amountOff: directCoupon.amountOff,
+            isDefault: directCoupon.isDefault,
+            selectedPlans: directCoupon.selectedPlans,
         };
     }
 
@@ -137,9 +147,6 @@ const verifyReferralCodeAndGetCoupon = async (referralCode: string, currentUserI
         if (!currentUser || !currentUser.isActive || currentUser.isDeleted) {
             throw new ApiError(httpStatus.NOT_FOUND, "Authenticated user account not found or is inactive");
         }
-        // if (!currentUser.isNewUser) {
-        //     throw new ApiError(httpStatus.BAD_REQUEST, "Referral discounts are only valid for first-time subscribers");
-        // }
     }
 
     // Check if referrer exists
@@ -148,17 +155,39 @@ const verifyReferralCodeAndGetCoupon = async (referralCode: string, currentUserI
         throw new ApiError(httpStatus.NOT_FOUND, "The referral code or coupon provided is invalid, inactive, or does not exist");
     }
 
-    // if (!referrer.isInfluencer) {
-    //     throw new ApiError(httpStatus.BAD_REQUEST, "The referral code provided does not belong to an influencer");
-    // }
-
     // Check if user is trying to refer themselves
     if (currentUserId && referrer._id.toString() === currentUserId.toString()) {
         throw new ApiError(httpStatus.BAD_REQUEST, "You cannot use your own referral code");
     }
 
-    // Get active default coupon
-    const defaultCoupon = await CouponModel.findOne({ isDefault: true, isActive: true });
+    // 3. Resolve active default coupon:
+    // If planId is provided: first look for default coupon for that specific plan
+    let defaultCoupon: any = null;
+    if (planId) {
+        defaultCoupon = await CouponModel.findOne({
+            isDefault: true,
+            selectedPlans: planId,
+            isActive: true,
+        });
+    }
+
+    // Fallback: look for a default coupon without plan restrictions (applies to all plans)
+    if (!defaultCoupon) {
+        defaultCoupon = await CouponModel.findOne({
+            isDefault: true,
+            $or: [{ selectedPlans: { $size: 0 } }, { selectedPlans: { $exists: false } }],
+            isActive: true,
+        });
+    }
+
+    // Fallback if no global default coupon, check any active default coupon
+    if (!defaultCoupon) {
+        defaultCoupon = await CouponModel.findOne({
+            isDefault: true,
+            isActive: true,
+        });
+    }
+
     if (!defaultCoupon) {
         throw new ApiError(httpStatus.NOT_FOUND, "Default coupon not configured or inactive");
     }
@@ -172,6 +201,8 @@ const verifyReferralCodeAndGetCoupon = async (referralCode: string, currentUserI
         name: defaultCoupon.name,
         percentOff: defaultCoupon.percentOff,
         amountOff: defaultCoupon.amountOff,
+        isDefault: defaultCoupon.isDefault,
+        selectedPlans: defaultCoupon.selectedPlans,
         referralCode,
     };
 };

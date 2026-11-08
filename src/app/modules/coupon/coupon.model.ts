@@ -39,6 +39,12 @@ const CouponSchema = new Schema<ICoupon>(
             type: Boolean,
             default: false,
         },
+        selectedPlans: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: "SubscriptionPlan",
+            },
+        ],
         isActive: {
             type: Boolean,
             default: true,
