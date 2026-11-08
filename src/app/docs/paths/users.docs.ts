@@ -11,18 +11,26 @@ export const userPaths = {
                     "multipart/form-data": {
                         schema: {
                             type: "object",
+                            required: ["body"],
                             properties: {
-                                profileImage: { type: "string", format: "binary" },
+                                profileImage: { type: "string", format: "binary", description: "Optional staff profile avatar (JPG, PNG, WEBP)" },
                                 body: {
-                                    type: "string",
-                                    example: JSON.stringify({
-                                        name: "David Waiter",
-                                        email: "david@bistro.ch",
-                                        password: "StaffPassword123!",
-                                        staffRole: "WAITER",
-                                        phone: "+41791112233",
-                                    }),
+                                    type: "object",
+                                    description: "Staff account details (sent as JSON in FormData)",
+                                    required: ["name", "email", "password", "staffRole"],
+                                    properties: {
+                                        name: { type: "string", example: "David Waiter", description: "Staff member's full name" },
+                                        email: { type: "string", format: "email", example: "david@bistro.ch", description: "Staff login email" },
+                                        password: { type: "string", example: "StaffPassword123!", description: "Staff initial password" },
+                                        staffRole: { type: "string", enum: ["MANAGER", "CASHIER", "WAITER"], example: "WAITER" },
+                                        phone: { type: "string", example: "+41791112233" },
+                                    },
                                 },
+                            },
+                        },
+                        encoding: {
+                            body: {
+                                contentType: "application/json",
                             },
                         },
                     },
@@ -159,15 +167,21 @@ export const userPaths = {
                         schema: {
                             type: "object",
                             properties: {
-                                profileImage: { type: "string", format: "binary" },
+                                profileImage: { type: "string", format: "binary", description: "Optional updated staff avatar (JPG, PNG, WEBP)" },
                                 body: {
-                                    type: "string",
-                                    example: JSON.stringify({
-                                        name: "David Updated",
-                                        phone: "+41791119988",
-                                        staffRole: "MANAGER",
-                                    }),
+                                    type: "object",
+                                    description: "Staff update fields (sent as JSON in FormData)",
+                                    properties: {
+                                        name: { type: "string", example: "David Updated" },
+                                        phone: { type: "string", example: "+41791119988" },
+                                        staffRole: { type: "string", enum: ["MANAGER", "CASHIER", "WAITER"], example: "MANAGER" },
+                                    },
                                 },
+                            },
+                        },
+                        encoding: {
+                            body: {
+                                contentType: "application/json",
                             },
                         },
                     },

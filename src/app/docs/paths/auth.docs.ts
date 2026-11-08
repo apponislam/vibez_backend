@@ -2,52 +2,90 @@ export const authPaths = {
     "/auth/register": {
         post: {
             tags: ["Authentication"],
-            summary: "Register a standard customer/user",
-            description: "Creates a new user account. Supports both JSON or multipart/form-data for uploading a profile image.",
+            summary: "Register a new user account (Customer or Restaurant Owner)",
+            description: `
+Registers a new customer (\`USER\`), restaurant owner (\`RESTAURANT_OWNER\`), or staff member.
+
+---
+
+### ⚠️ IMPORTANT: Backend Rules Checked
+- **Never send \`balance\`**: The server initializes \`balance: 0\`. In \`auth.services.ts\`, if \`balance\` is present in the payload, the backend explicitly deletes it (\`delete data.balance\`).
+- **Never send \`referralCode\`**: The backend automatically generates and assigns a unique personal \`referralCode\` for every new user upon creation.
+- **Invited by someone?** Pass the inviter's referral code in **\`referredByCode\`** (optional).
+- **Other Profile Fields** (\`address\`, \`favoriteCuisines\`, \`dietaryPreferences\`, \`language\`, \`aboutme\`): Registration accepts essential account fields; full profile customization is handled after login via \`PATCH /api/v1/auth/profile\`.
+
+---
+
+### 📦 Request Format (\`multipart/form-data\`)
+Because this endpoint accepts an optional profile image file (\`profileImage\`), the request should be submitted as **\`multipart/form-data\`** with:
+1. **\`profileImage\`** *(File, optional)*: Image file (\`.jpeg\`, \`.png\`, \`.webp\`)
+2. **\`body\`** *(string, required)*: **JSON-stringified** object containing the user registration data.
+
+#### 💻 Frontend Implementation Example (Axios / Fetch):
+\`\`\`javascript
+const formData = new FormData();
+
+// 1. (Optional) Attach profile avatar file
+if (avatarFileInput?.files?.[0]) {
+  formData.append("profileImage", avatarFileInput.files[0]);
+}
+
+// 2. Registration data payload (stringified JSON)
+const userData = {
+  name: "John Doe",
+  email: "john.doe@example.com",
+  password: "StrongPassword123!",
+  role: "USER", // "USER" | "RESTAURANT_OWNER"
+  phone: "+41791234567",
+  referredByCode: "VBZ-98210", // Optional: only if invited by a friend/affiliate
+  location: {
+    lat: 47.3769,
+    lng: 8.5417
+  },
+  preferences: ["ITALIAN", "SWISS"] // Optional
+};
+
+formData.append("body", JSON.stringify(userData));
+
+// 3. Send request (Do NOT manually set Content-Type header; Axios/browser sets multipart boundary automatically)
+const response = await axios.post("/api/v1/auth/register", formData);
+\`\`\`
+            `,
             requestBody: {
                 required: true,
+                description: "Registration payload. In multipart/form-data, provide `profileImage` (binary file) and `body` (JSON string containing full user registration details conforming to RegisterUserInput).",
                 content: {
                     "multipart/form-data": {
                         schema: {
                             type: "object",
+                            required: ["body"],
                             properties: {
-                                profileImage: { type: "string", format: "binary", description: "Optional user avatar (jpeg, png, webp)" },
-                                body: {
+                                profileImage: {
                                     type: "string",
-                                    description: "JSON string containing registration details",
-                                    example: JSON.stringify({
-                                        name: "John Doe",
-                                        email: "john@example.com",
-                                        password: "StrongPassword123!",
-                                        role: "USER",
-                                        phone: "+41791234567",
-                                        referralCode: "VBZ-98210",
-                                        preferences: ["ITALIAN"],
-                                    }),
+                                    format: "binary",
+                                    description: "Optional profile avatar image (JPEG, PNG, WEBP)",
                                 },
+                                body: {
+                                    $ref: "#/components/schemas/RegisterUserInput",
+                                },
+                            },
+                        },
+                        encoding: {
+                            body: {
+                                contentType: "application/json",
                             },
                         },
                     },
                     "application/json": {
                         schema: {
-                            type: "object",
-                            required: ["name", "email", "password"],
-                            properties: {
-                                name: { type: "string", example: "John Doe" },
-                                email: { type: "string", format: "email", example: "john@example.com" },
-                                password: { type: "string", example: "StrongPassword123!" },
-                                role: { type: "string", enum: ["USER", "RESTAURANT_OWNER"], default: "USER" },
-                                phone: { type: "string", example: "+41791234567" },
-                                referredByCode: { type: "string", example: "VBZ-98210" },
-                                preferences: { type: "array", items: { type: "string" }, example: ["ITALIAN", "JAPANESE"] },
-                            },
+                            $ref: "#/components/schemas/RegisterUserInput",
                         },
                     },
                 },
             },
             responses: {
                 201: {
-                    description: "User registered successfully",
+                    description: "User registered successfully. Returns user profile, access token, and refresh token.",
                     content: {
                         "application/json": {
                             schema: {
@@ -60,7 +98,8 @@ export const authPaths = {
                                         type: "object",
                                         properties: {
                                             user: { $ref: "#/components/schemas/User" },
-                                            accessToken: { type: "string", example: "eyJhbGciOi..." },
+                                            accessToken: { type: "string", example: "eyJhbGciOiJIUzI1NiIsInR5cCI6..." },
+                                            refreshToken: { type: "string", example: "eyJhbGciOiJIUzI1NiIsInR5cCI6..." },
                                         },
                                     },
                                 },
@@ -68,7 +107,19 @@ export const authPaths = {
                         },
                     },
                 },
-                400: { description: "Validation error or user already exists" },
+                400: {
+                    description: "Bad Request: Validation error (e.g. missing name/email/password or invalid format), or email already registered.",
+                    content: {
+                        "application/json": {
+                            schema: { $ref: "#/components/schemas/ErrorResponse" },
+                            example: {
+                                success: false,
+                                message: "Email already registered. Please sign in.",
+                                errorSources: [{ path: "email", message: "Email already registered. Please sign in." }],
+                            },
+                        },
+                    },
+                },
             },
         },
     },
@@ -77,50 +128,117 @@ export const authPaths = {
         post: {
             tags: ["Authentication"],
             summary: "Register restaurant owner and create restaurant profile",
-            description: "Registers a new restaurant owner account while simultaneously creating the associated restaurant profile and uploading restaurant cover/gallery images.",
+            description: `
+Registers a new restaurant owner account while simultaneously creating the associated restaurant profile and uploading restaurant cover/gallery images.
+
+#### 💡 Frontend Integration Guide (\`FormData\` with files + JSON \`body\`):
+\`\`\`javascript
+const formData = new FormData();
+
+// 1. Files
+if (avatarFile) formData.append("profileImage", avatarFile);
+if (coverFile) formData.append("restaurantImage", coverFile);
+galleryFiles.forEach(file => formData.append("restaurantImages", file));
+
+// 2. Data payload as JSON-stringified 'body'
+formData.append("body", JSON.stringify({
+  name: "Chef Mario",
+  email: "mario@bistro.ch",
+  password: "SecurePassword123!",
+  phone: "+41791234567",
+  restaurantName: "Mario's Italian Trattoria",
+  restaurantDescription: "Wood-fired authentic pizzas and handmade pasta in Zurich.",
+  restaurantType: "RESTAURANT",
+  cuisineType: ["ITALIAN"],
+  foodType: ["PIZZA", "PASTA"],
+  restaurantWebsite: "https://mariosbistro.ch",
+  restaurantAddress: {
+    street: "Seestrasse 14",
+    city: "Zurich",
+    state: "ZH",
+    zipCode: "8002",
+    country: "Switzerland"
+  },
+  restaurantOpenHours: [
+    {
+      day: "WEDNESDAY",
+      isOpen: true,
+      slots: [{ type: "DINNER", openTime: "18:00", closeTime: "23:00" }]
+    }
+  ]
+}));
+
+await axios.post("/api/v1/auth/register-restaurant", formData);
+\`\`\`
+            `,
             requestBody: {
                 required: true,
                 content: {
                     "multipart/form-data": {
                         schema: {
                             type: "object",
+                            required: ["body"],
                             properties: {
-                                profileImage: { type: "string", format: "binary" },
-                                restaurantImage: { type: "string", format: "binary" },
+                                profileImage: { type: "string", format: "binary", description: "Owner profile avatar (JPG, PNG, WEBP)" },
+                                restaurantImage: { type: "string", format: "binary", description: "Restaurant cover image (JPG, PNG, WEBP)" },
                                 restaurantImages: {
                                     type: "array",
                                     items: { type: "string", format: "binary" },
+                                    description: "Restaurant gallery images (up to 20 images)",
                                 },
                                 body: {
-                                    type: "string",
-                                    description: "JSON string containing restaurant & owner data",
-                                    example: JSON.stringify({
-                                        name: "Chef Mario",
-                                        email: "mario@bistro.ch",
-                                        password: "SecurePassword123!",
-                                        phone: "+41791234567",
-                                        restaurantName: "Mario's Italian Trattoria",
-                                        restaurantDescription: "Wood-fired authentic pizzas and handmade pasta in Zurich.",
-                                        restaurantType: "RESTAURANT",
-                                        cuisineType: ["ITALIAN"],
-                                        foodType: ["PIZZA", "PASTA"],
-                                        restaurantWebsite: "https://mariosbistro.ch",
+                                    type: "object",
+                                    description: "Restaurant profile & Owner account details (sent as JSON in FormData)",
+                                    required: ["name", "email", "password", "restaurantName", "restaurantType", "cuisineType", "restaurantAddress"],
+                                    properties: {
+                                        name: { type: "string", example: "Chef Mario", description: "Owner full name" },
+                                        email: { type: "string", format: "email", example: "mario@bistro.ch", description: "Owner login email" },
+                                        password: { type: "string", example: "SecurePassword123!", description: "Owner password" },
+                                        phone: { type: "string", example: "+41791234567", description: "Owner contact phone" },
+                                        restaurantName: { type: "string", example: "Mario's Italian Trattoria", description: "Restaurant name" },
+                                        restaurantDescription: { type: "string", example: "Wood-fired authentic pizzas and handmade pasta in Zurich." },
+                                        restaurantType: { type: "string", enum: ["RESTAURANT", "BAR", "BISTRO", "CAFE", "BAKERY"], example: "RESTAURANT" },
+                                        cuisineType: { type: "array", items: { type: "string" }, example: ["ITALIAN"] },
+                                        foodType: { type: "array", items: { type: "string" }, example: ["PIZZA", "PASTA"] },
+                                        restaurantWebsite: { type: "string", example: "https://mariosbistro.ch" },
                                         restaurantAddress: {
-                                            street: "Seestrasse 14",
-                                            city: "Zurich",
-                                            state: "ZH",
-                                            zipCode: "8002",
-                                            country: "Switzerland",
-                                        },
-                                        restaurantOpenHours: [
-                                            {
-                                                day: "WEDNESDAY",
-                                                isOpen: true,
-                                                slots: [{ type: "DINNER", openTime: "18:00", closeTime: "23:00" }],
+                                            type: "object",
+                                            properties: {
+                                                street: { type: "string", example: "Seestrasse 14" },
+                                                city: { type: "string", example: "Zurich" },
+                                                state: { type: "string", example: "ZH" },
+                                                zipCode: { type: "string", example: "8002" },
+                                                country: { type: "string", example: "Switzerland" },
                                             },
-                                        ],
-                                    }),
+                                        },
+                                        restaurantOpenHours: {
+                                            type: "array",
+                                            items: {
+                                                type: "object",
+                                                properties: {
+                                                    day: { type: "string", enum: ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"], example: "WEDNESDAY" },
+                                                    isOpen: { type: "boolean", example: true },
+                                                    slots: {
+                                                        type: "array",
+                                                        items: {
+                                                            type: "object",
+                                                            properties: {
+                                                                type: { type: "string", enum: ["LUNCH", "DINNER"], example: "DINNER" },
+                                                                openTime: { type: "string", example: "18:00" },
+                                                                closeTime: { type: "string", example: "23:00" },
+                                                            },
+                                                        },
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
                                 },
+                            },
+                        },
+                        encoding: {
+                            body: {
+                                contentType: "application/json",
                             },
                         },
                     },
@@ -456,17 +574,34 @@ export const authPaths = {
                         schema: {
                             type: "object",
                             properties: {
-                                profileImage: { type: "string", format: "binary" },
+                                profileImage: { type: "string", format: "binary", description: "Optional new avatar image (JPG, PNG, WEBP)" },
                                 body: {
-                                    type: "string",
-                                    example: JSON.stringify({
-                                        name: "Johnathan Doe",
-                                        phone: "+41791234567",
-                                        language: "de",
-                                        aboutme: "Food enthusiast",
-                                        favoriteCuisines: ["ITALIAN", "SWISS_CUISINE"],
-                                    }),
+                                    type: "object",
+                                    description: "Profile updates (sent as JSON in FormData)",
+                                    properties: {
+                                        name: { type: "string", example: "Johnathan Doe" },
+                                        phone: { type: "string", example: "+41791234567" },
+                                        language: { type: "string", example: "de" },
+                                        aboutme: { type: "string", example: "Food enthusiast" },
+                                        favoriteCuisines: { type: "array", items: { type: "string" }, example: ["ITALIAN", "SWISS_CUISINE"] },
+                                        dietaryPreferences: { type: "array", items: { type: "string" }, example: ["VEGETARIAN"] },
+                                        address: {
+                                            type: "object",
+                                            properties: {
+                                                street: { type: "string", example: "Limmatquai 42" },
+                                                city: { type: "string", example: "Zurich" },
+                                                state: { type: "string", example: "ZH" },
+                                                zipCode: { type: "string", example: "8001" },
+                                                country: { type: "string", example: "Switzerland" },
+                                            },
+                                        },
+                                    },
                                 },
+                            },
+                        },
+                        encoding: {
+                            body: {
+                                contentType: "application/json",
                             },
                         },
                     },

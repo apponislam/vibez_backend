@@ -89,15 +89,49 @@ export const restaurantPaths = {
                         schema: {
                             type: "object",
                             properties: {
-                                restaurantImage: { type: "string", format: "binary" },
+                                restaurantImage: { type: "string", format: "binary", description: "Optional new cover banner (JPG, PNG, WEBP)" },
                                 restaurantImages: {
                                     type: "array",
                                     items: { type: "string", format: "binary" },
+                                    description: "Optional new gallery images to add",
                                 },
                                 body: {
-                                    type: "string",
-                                    description: "JSON string with update payload",
+                                    type: "object",
+                                    description: "Restaurant update fields (sent as JSON in FormData)",
+                                    properties: {
+                                        restaurantName: { type: "string", example: "Vibez Gourmet Bistro" },
+                                        restaurantDescription: { type: "string", example: "Updated description of our bistro." },
+                                        restaurantWebsite: { type: "string", example: "https://vibezbistro.ch" },
+                                        cuisineType: { type: "array", items: { type: "string" }, example: ["ITALIAN", "SWISS_CUISINE"] },
+                                        foodType: { type: "array", items: { type: "string" }, example: ["PASTA", "PIZZA"] },
+                                        restaurantOpenHours: {
+                                            type: "array",
+                                            items: {
+                                                type: "object",
+                                                properties: {
+                                                    day: { type: "string", example: "WEDNESDAY" },
+                                                    isOpen: { type: "boolean", example: true },
+                                                    slots: {
+                                                        type: "array",
+                                                        items: {
+                                                            type: "object",
+                                                            properties: {
+                                                                type: { type: "string", example: "LUNCH" },
+                                                                openTime: { type: "string", example: "11:30" },
+                                                                closeTime: { type: "string", example: "14:30" },
+                                                            },
+                                                        },
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
                                 },
+                            },
+                        },
+                        encoding: {
+                            body: {
+                                contentType: "application/json",
                             },
                         },
                     },

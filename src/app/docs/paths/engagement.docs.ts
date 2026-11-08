@@ -41,20 +41,29 @@ export const engagementPaths = {
                     "multipart/form-data": {
                         schema: {
                             type: "object",
+                            required: ["body"],
                             properties: {
-                                images: {
+                                reviewImages: {
                                     type: "array",
                                     items: { type: "string", format: "binary" },
+                                    description: "Review photos (up to 10 images)",
                                 },
                                 body: {
-                                    type: "string",
-                                    example: JSON.stringify({
-                                        restaurantId: "66207b81f993d0319ca70d44",
-                                        rating: 5,
-                                        comment: "Delicious pizza and great vibe!",
-                                        reservationId: "6622bcaff993d0319ca70f50",
-                                    }),
+                                    type: "object",
+                                    description: "Review details (sent as JSON in FormData)",
+                                    required: ["restaurantId", "rating"],
+                                    properties: {
+                                        restaurantId: { type: "string", example: "66207b81f993d0319ca70d44" },
+                                        rating: { type: "number", minimum: 1, maximum: 5, example: 5 },
+                                        comment: { type: "string", example: "Delicious pizza and great vibe!" },
+                                        reservationId: { type: "string", example: "6622bcaff993d0319ca70f50" },
+                                    },
                                 },
+                            },
+                        },
+                        encoding: {
+                            body: {
+                                contentType: "application/json",
                             },
                         },
                     },
@@ -102,8 +111,20 @@ export const engagementPaths = {
                         schema: {
                             type: "object",
                             properties: {
-                                images: { type: "array", items: { type: "string", format: "binary" } },
-                                body: { type: "string" },
+                                reviewImages: { type: "array", items: { type: "string", format: "binary" }, description: "Optional new images" },
+                                body: {
+                                    type: "object",
+                                    description: "Review update fields (sent as JSON in FormData)",
+                                    properties: {
+                                        rating: { type: "number", minimum: 1, maximum: 5, example: 4 },
+                                        comment: { type: "string", example: "Updated review comment." },
+                                    },
+                                },
+                            },
+                        },
+                        encoding: {
+                            body: {
+                                contentType: "application/json",
                             },
                         },
                     },

@@ -49,6 +49,74 @@ export const openApiSchemas = {
         },
     },
 
+    RegisterUserInput: {
+        type: "object",
+        required: ["name", "email", "password"],
+        properties: {
+            name: {
+                type: "string",
+                example: "John Doe",
+                description: "Full legal or display name of the user (Required)",
+            },
+            email: {
+                type: "string",
+                format: "email",
+                example: "john.doe@example.com",
+                description: "Unique email address for user login & account verification (Required)",
+            },
+            password: {
+                type: "string",
+                format: "password",
+                example: "StrongPassword123!",
+                description: "User password with minimum 6 characters (Required)",
+            },
+            role: {
+                type: "string",
+                enum: ["USER", "RESTAURANT_OWNER"],
+                default: "USER",
+                example: "USER",
+                description: "Platform role ('USER' for regular consumers/diners, 'RESTAURANT_OWNER' for managers). Default: 'USER'.",
+            },
+            phone: {
+                type: "string",
+                example: "+41791234567",
+                description: "Contact phone number with international country code (Optional)",
+            },
+            referredByCode: {
+                type: "string",
+                example: "VBZ-98210",
+                description: "Optional referral invite code if this user was invited by an existing user/influencer. ⚠️ NOTE: Never send 'referralCode' or 'balance'. The backend automatically generates a unique referral code and initializes balance to 0.",
+            },
+            location: {
+                type: "object",
+                description: "User's current GPS location coordinates (Optional)",
+                properties: {
+                    lat: { type: "number", example: 47.3769, description: "Latitude" },
+                    lng: { type: "number", example: 8.5417, description: "Longitude" },
+                },
+            },
+            preferences: {
+                type: "array",
+                items: { type: "string" },
+                example: ["ITALIAN", "SWISS"],
+                description: "General dining or cuisine preferences (Optional)",
+            },
+        },
+        example: {
+            name: "John Doe",
+            email: "john.doe@example.com",
+            password: "StrongPassword123!",
+            role: "USER",
+            phone: "+41791234567",
+            referredByCode: "VBZ-98210",
+            location: {
+                lat: 47.3769,
+                lng: 8.5417,
+            },
+            preferences: ["ITALIAN", "SWISS"],
+        },
+    },
+
     Restaurant: {
         type: "object",
         properties: {
