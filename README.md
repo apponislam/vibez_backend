@@ -189,6 +189,22 @@ MAPS_API_KEY=AIzaSy...
 
 ---
 
+## 📚 Interactive Swagger API Documentation
+
+The VIBEZ backend includes full interactive **OpenAPI 3.0 / Swagger UI** documentation with support for JWT Bearer token authorization, schema inspection, multipart file uploads, and sample requests.
+
+- **Interactive Swagger UI**: [http://localhost:5000/api-docs](http://localhost:5000/api-docs) (also available at `/docs` and `/api/v1/docs`)
+- **Raw OpenAPI 3.0 JSON Spec**: [http://localhost:5000/api-docs.json](http://localhost:5000/api-docs.json) (importable directly into Postman, Insomnia, or Swagger Editor)
+
+### Testing Authenticated Endpoints in Swagger:
+1. Call `POST /api/v1/auth/login` with your credentials.
+2. Copy the `accessToken` from the JSON response.
+3. Click the green **Authorize 🔓** button at the top right of the Swagger UI.
+4. Enter `Bearer <your_token>` and click **Authorize**.
+5. All protected endpoints are now authorized for testing in your browser!
+
+---
+
 ## 🛰️ API Routes Reference
 
 All API routes are prefixed with `/api/v1`.

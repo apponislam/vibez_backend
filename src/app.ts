@@ -9,6 +9,7 @@ import globalErrorHandler from "./errors/globalErrorhandler";
 import router from "./app/routes";
 import { stripeWebhooks } from "./app/modules/stripe/stripe.webhook";
 import config from "./app/config";
+import { serveSwaggerUi, setupSwaggerUi, getSwaggerJson } from "./app/docs/swagger";
 
 const app: Application = express();
 
@@ -59,6 +60,13 @@ app.get("/", (req: Request, res: Response) => {
         res.send(modifiedHtml);
     });
 });
+
+// Swagger API Documentation routes
+app.use("/api-docs", serveSwaggerUi, setupSwaggerUi);
+app.use("/docs", serveSwaggerUi, setupSwaggerUi);
+app.use("/api/v1/docs", serveSwaggerUi, setupSwaggerUi);
+app.get("/api-docs.json", getSwaggerJson);
+app.get("/api/v1/docs.json", getSwaggerJson);
 
 app.use("/api/v1", router);
 
